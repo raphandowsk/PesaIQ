@@ -8,8 +8,8 @@ Must run in Expo Go. No native modules. No Android Studio.
 | Phase | Scope | Status |
 |---|---|---|
 | **1A** | Foundation: Expo + Router + TS, theme tokens, fonts, UI primitives, lint/format/test, docs | **Done** — 2026-09-11 |
-| **1B** | Parser core: normalizer, classifier, generic parser, confidence, samples, Zod — tests first | Next |
-| **1C** | Data layer: SQLite schema, migrations, repositories, demo seed, `ManualSmsSource`, Zustand store | |
+| **1B** | Parser core: normalizer, classifier, generic parser, confidence, samples, Zod — tests first | **Done** — 2026-09-11 |
+| **1C** | Data layer: SQLite schema, migrations, repositories, demo seed, `ManualSmsSource`, Zustand store | Next |
 | **1D** | Onboarding: welcome, how it works, privacy, senders picker, setup | |
 | **1E** | Parser Lab + Result: paste, samples, pipeline, per-field edit, "How we got this", save | |
 | **1F** | Dashboard: health ring, factor bars, in/out/net, category toggle, tips, providers, recent | |

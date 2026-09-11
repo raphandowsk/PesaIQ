@@ -1,6 +1,6 @@
 # PesaIQ — Parser engine
 
-Status: **specified, not yet implemented.** Phase 1B builds this.
+Status: **implemented and tested** (Phase 1B, 2026-09-11). 138 tests green.
 
 ## Provenance
 
@@ -103,3 +103,41 @@ Normalizer (whitespace, unicode, original preserved) · classifier (each categor
 boosts, promo/OTP caps) · extractors (amount, currency, reference, counterparty,
 mask, date) · confidence bands · the 4 samples · missing-amount, missing-reference,
 unexpected formatting, duplicate, unknown.
+
+## Deviations from the canvas
+
+The port is faithful except for two deliberate fixes, both covered by tests.
+
+### 1. Counterparty verb matching is now case-insensitive
+
+The canvas patterns match the leading verb in lower case only
+(`/\b(?:paid|umelipa|to)\s+.../`). A real Swahili message opens with a capital —
+"**U**melipa TZS 38,500 LUKU TOKEN" — so the counterparty was silently dropped.
+The canvas hides this because its bill-payment record is hardcoded seed data that
+never passes through the parser.
+
+Fixed by allowing either case on the verb only (`[Uu]melipa`). The captured name
+stays strictly upper-case: an `/i/` flag would start capturing ordinary prose,
+since the all-caps convention is what identifies a name in the first place.
+
+### 2. The non-transactional cap is applied after damping
+
+The canvas caps promotional and OTP confidence at 0.52 **before** multiplying by
+`(0.72 + classifierConfidence × 0.30)`. That multiplier reaches 1.02, so the cap
+can be lifted back over its own ceiling — it holds today only because promotional
+(max 0.75) and OTP (max 0.93) classifier confidences happen to stay below ~0.933.
+
+Applying the cap after damping makes the ceiling hold by construction. On real
+input the difference is at most 0.003 and never changes a band.
+
+## Known limitations
+
+- **Dates are read day-first** (`dd/mm/yy`). A US-style `mm/dd` message is
+  misread. Acceptable for Tanzania; revisit if the market widens.
+- **Confidence clamps at 0.98**, so a parse with six of seven factors scores the
+  same as a perfect one. The band is identical either way, but the number does
+  not distinguish them. This is the canvas formula, kept deliberately.
+- **A bare number is assumed to be TZS.** Flagged low (0.55) with a warning, and
+  never treated as verified.
+- **No duplicate detection yet.** The reference is extracted for it; the check
+  itself arrives with the repository in Phase 1C.
