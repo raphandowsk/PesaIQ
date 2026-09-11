@@ -193,13 +193,13 @@ with a *Preview* tag naming the phase that finishes it:
 | Review | queue, Confirm, Ignore | progress ring, field corrections — 1H |
 | Settings | Replay onboarding, remove demo data | toggles, providers, export — 1I |
 
-### Open: what provider selection does
+### Provider selection
 
 Onboarding saves which providers the user picked (`providers.enabled`), and the
-choice survives restarts. **In Stage 1 it does not change parsing** — every hint is
-still checked. The design's copy says "Choose the providers you want parsed", which
-over-promises today. Either the selection should filter parsing, or the copy should
-say it takes effect when Stage 2 reads incoming SMS. Awaiting a product decision.
+choice survives restarts. **In Stage 1 it does not change parsing**: a message the
+user pastes is always analyzed. Its job is Stage 2, deciding which incoming senders
+PesaIQ reads. The setup copy says exactly that, "Choose the providers PesaIQ should
+watch" (decided 2026-09-11; the design's "providers you want parsed" over-promised).
 
 ## Phase 1E — Parser Lab and Result
 

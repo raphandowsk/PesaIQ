@@ -37,7 +37,9 @@ export const PRIVACY_DISCLAIMER =
 
 export const SETUP_COPY = {
   title: 'Which senders matter?',
-  body: 'Choose the providers you want parsed. You can change this later in Settings.',
+  // "Watch", not "parse": in Stage 1 every pasted message is analyzed regardless.
+  // The choice decides which incoming senders Stage 2 will read. Decided 2026-09-11.
+  body: 'Choose the providers PesaIQ should watch. You can change this later in Settings.',
   maturity: 'All parsers ship as DEMO',
   note: 'Stage 1 reads only messages you paste in. Nothing is intercepted.',
 } as const;

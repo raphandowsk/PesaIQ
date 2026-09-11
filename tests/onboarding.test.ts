@@ -53,6 +53,13 @@ describe('onboarding copy', () => {
     }
   });
 
+  it('describes the provider choice as watching, not parsing', () => {
+    // Stage 1 analyzes every pasted message whatever is selected, so promising
+    // to parse only the chosen providers would be untrue.
+    expect(SETUP_COPY.body).toMatch(/providers PesaIQ should watch/);
+    expect(SETUP_COPY.body).not.toMatch(/pars/i);
+  });
+
   it('does not claim any provider is supported', () => {
     expect(SETUP_COPY.maturity).toMatch(/demo/i);
     expect(everything).not.toMatch(/fully supported|officially supported/);
