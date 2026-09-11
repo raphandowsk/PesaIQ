@@ -71,12 +71,14 @@ export const type = {
 } as const;
 
 /**
- * Violet-tinted elevation. RN cannot express the canvas's CSS shadows exactly:
- * Android uses `elevation`, iOS uses the shadow* props.
+ * Violet-tinted elevation. Android uses `elevation` and iOS the shadow* props;
+ * web uses the design's own CSS shadows, since react-native-web deprecates
+ * shadow*.
  */
 export const shadow = {
   sm: Platform.select({
     android: { elevation: 1 },
+    web: { boxShadow: '0 2px 10px rgba(74,64,110,0.06)' },
     default: {
       shadowColor: '#4a406e',
       shadowOpacity: 0.06,
@@ -86,6 +88,7 @@ export const shadow = {
   }),
   md: Platform.select({
     android: { elevation: 3 },
+    web: { boxShadow: '0 10px 28px rgba(74,64,110,0.11)' },
     default: {
       shadowColor: '#4a406e',
       shadowOpacity: 0.11,
@@ -95,6 +98,7 @@ export const shadow = {
   }),
   lg: Platform.select({
     android: { elevation: 8 },
+    web: { boxShadow: '0 20px 52px rgba(74,64,110,0.18)' },
     default: {
       shadowColor: '#4a406e',
       shadowOpacity: 0.18,

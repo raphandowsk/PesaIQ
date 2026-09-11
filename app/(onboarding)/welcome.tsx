@@ -36,8 +36,8 @@ export default function Welcome() {
       style={{ flex: 1, backgroundColor: colors.bg, overflow: 'hidden' }}
     >
       <View
-        pointerEvents="none"
         style={{
+          pointerEvents: 'none',
           position: 'absolute',
           width: BLOB,
           height: BLOB,

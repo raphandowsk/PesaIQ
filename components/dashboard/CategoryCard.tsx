@@ -60,9 +60,7 @@ export function CategoryCard({
           <Text variant="kicker" tone="muted">
             {mode === 'spend' ? 'Total spending' : 'Total income'}
           </Text>
-          <Text variant="amount" numberOfLines={1} adjustsFontSizeToFit>
-            {formatTzs(data.total)}
-          </Text>
+          <Text variant="amount">{formatTzs(data.total)}</Text>
         </View>
 
         <View

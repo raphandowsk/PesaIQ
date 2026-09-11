@@ -1,4 +1,4 @@
-import { Animated, Easing, View } from 'react-native';
+import { Easing, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import type { Health } from '../../features/insights';
@@ -7,8 +7,6 @@ import { formatAmount, formatTzs, MINUS } from '../../utils/format';
 import { Icon } from '../ui/Icon';
 import { Text } from '../ui/Text';
 import { useCountUp, useProgress } from './animation';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Geometry from the design's health ring.
 const RING = 116;
@@ -38,10 +36,9 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
   const shown = useCountUp(health.score, progress, animate);
 
   const ringInk = health.score >= 60 ? colors.accent2Ramp[600] : colors.accentRamp[500];
-  const dashOffset = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [CIRCUMFERENCE, CIRCUMFERENCE * (1 - health.score / 100)],
-  });
+  // Follows the count-up rather than animating an SVG prop: on web, Animated
+  // forwards `collapsable` onto the DOM <circle>.
+  const dashOffset = CIRCUMFERENCE * (1 - shown / 100);
 
   const positive = health.net >= 0;
   const net = `${positive ? '+' : MINUS}${formatAmount(Math.abs(health.net))}`;
@@ -60,8 +57,8 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
       }}
     >
       <View
-        pointerEvents="none"
         style={{
+          pointerEvents: 'none',
           position: 'absolute',
           width: BLOB,
           height: BLOB,
@@ -85,7 +82,7 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
                 stroke={colors.accent2Ramp[400]}
                 strokeWidth={STROKE}
               />
-              <AnimatedCircle
+              <Circle
                 cx={RING / 2}
                 cy={RING / 2}
                 r={RADIUS}

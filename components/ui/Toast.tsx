@@ -51,8 +51,8 @@ export function Toast() {
 
   return (
     <View
-      pointerEvents="none"
       style={{
+        pointerEvents: 'none',
         position: 'absolute',
         left: space[4],
         right: space[4],

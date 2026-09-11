@@ -7,7 +7,7 @@
  */
 import { create } from 'zustand';
 
-import { getDatabase, type SqlDatabase } from '../../database/client';
+import { describeOpenError, getDatabase, type SqlDatabase } from '../../database/client';
 import {
   messageRepository,
   processingEventRepository,
@@ -188,7 +188,7 @@ export const useAppStore = create<AppState>((set, get) => {
         set({
           loading: false,
           ready: false,
-          error: e instanceof Error ? e.message : 'Could not open the database.',
+          error: describeOpenError(e),
         });
       }
     },

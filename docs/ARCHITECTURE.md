@@ -337,3 +337,64 @@ Home and whenever the score changes, and both are skipped under reduced motion.
 Totals are all-time: the design has no period selector. A month/30-day view is a
 product decision for later, and every insight function already takes the record
 list, so filtering it first is the whole change.
+
+## Web preview target
+
+Added after 1F so screens can be seen and checked in the desktop app's in-app
+browser. PesaIQ remains an Android-first app; web is a development aid, not a
+shipped platform.
+
+### What it took
+
+- **`react-native-web` 0.21**, the version SDK 57 pins. `react-dom` stays pinned
+  at 19.2.3 to match React.
+- **`metro.config.js`** adds `.wasm` as an asset extension, because expo-sqlite
+  runs on web as WebAssembly (wa-sqlite) inside a worker. Native builds never
+  request a `.wasm` file: with the config alone changed, the Android bundle hash
+  was byte-identical.
+- **No cross-origin-isolation headers.** expo-sqlite needs `SharedArrayBuffer`,
+  and so COOP/COEP, only for its synchronous API. PesaIQ uses the async API
+  exclusively, which reaches the worker by message passing. Verified: the page
+  is not cross-origin isolated, and records and settings survive a reload. (The
+  headers were first tried through Metro's `enhanceMiddleware`, but they never
+  reached the HTML document and turned out to be unnecessary, so they were
+  removed.) `database/client.ts` records why it must stay async-only.
+
+### One tab at a time
+
+On web the database lives in the browser's origin-private file system under an
+exclusive lock, so a second tab cannot open it. The boot screen now says
+"PesaIQ is already open in another tab or window. Close the other one, then tap
+Try again." instead of showing the raw `NoModificationAllowedError`. This cannot
+happen on Android, where the app runs as a single instance.
+
+### Web fixes that also tidy native
+
+- Icons are hidden from assistive technology by a wrapping `View aria-hidden`.
+  react-native-svg forwards unknown props to the DOM on web, so React Native
+  accessibility props on `<Svg>` leaked as stray attributes.
+- The health ring's stroke follows the count-up number instead of an animated
+  SVG prop. On web, `Animated` forwarded `collapsable` onto the DOM `<circle>`.
+- `pointerEvents` is a style rather than a prop (the prop is deprecated on web).
+- On web, shadows are the design's own CSS `boxShadow`; Android keeps
+  `elevation` and iOS the `shadow*` props.
+- The spending total wraps onto a second line, as in the design, instead of
+  relying on shrink-to-fit, which web does not support.
+
+### Running it
+
+- In the desktop app's preview: `.claude/launch.json` (local and gitignored) runs
+  `npm run start -- --port 8082`. Port 8081 stays free for `npm start` and
+  Expo Go on a phone.
+- In any browser: `npm run web`.
+
+### Verified in the preview at 375 × 812
+
+Home (ring, parts, nudge, categories, recent, providers), Records, the Parser
+Lab, Result (bank sample, analyzed: counterparty flagged at 62%, button reads
+"Save to review", Discard returns to the Lab and saves nothing), Review,
+Settings, and the whole onboarding flow replayed from Settings (Welcome, How it
+works, Privacy with its disclaimer, Setup with the "should watch" copy and all
+ten providers), ending back on Home with the onboarding flag restored. The app
+fills the viewport exactly: the root and the tab bar end at 812 of 812 px. The unfiltered dev-server log showed no errors or warnings once the
+fixes above were in.

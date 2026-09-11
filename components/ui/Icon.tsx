@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { View } from 'react-native';
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 import { colors } from '../../theme';
@@ -138,22 +139,20 @@ export interface IconProps {
  */
 export function Icon({ name, size = 20, color = colors.text, strokeWidth = 2.75 }: IconProps) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      <G
-        fill="none"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {GLYPHS[name]}
-      </G>
-    </Svg>
+    // Hidden on a wrapping View: react-native-svg passes unknown props straight
+    // to the DOM on web, where RN accessibility props become stray attributes.
+    <View aria-hidden style={{ width: size, height: size }}>
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <G
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {GLYPHS[name]}
+        </G>
+      </Svg>
+    </View>
   );
 }
