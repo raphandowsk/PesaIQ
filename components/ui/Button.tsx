@@ -1,0 +1,106 @@
+import {
+  ActivityIndicator,
+  Pressable,
+  type PressableProps,
+  type StyleProp,
+  View,
+  type ViewStyle,
+} from 'react-native';
+
+import { colors, MIN_TOUCH, radius, space } from '../../theme';
+import { Text } from './Text';
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+
+export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
+  label: string;
+  variant?: Variant;
+  loading?: boolean;
+  block?: boolean;
+  left?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
+/**
+ * Pill button. Pressed states step one rung down the accent ramp, matching the
+ * design's interaction rules.
+ */
+export function Button({
+  label,
+  variant = 'primary',
+  loading = false,
+  block = false,
+  left,
+  disabled,
+  style,
+  ...rest
+}: ButtonProps) {
+  const isDisabled = disabled || loading;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!isDisabled, busy: loading }}
+      accessibilityLabel={label}
+      disabled={isDisabled}
+      style={({ pressed }) => [
+        {
+          minHeight: MIN_TOUCH,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: space[2],
+          paddingHorizontal: space[4],
+          paddingVertical: space[3],
+          borderRadius: radius.pill,
+          opacity: isDisabled ? 0.45 : 1,
+          ...surfaceFor(variant, pressed),
+        },
+        block && { alignSelf: 'stretch' },
+        style,
+      ]}
+      {...rest}
+    >
+      {loading ? (
+        <ActivityIndicator size="small" color={inkFor(variant)} />
+      ) : (
+        <>
+          {left ? <View>{left}</View> : null}
+          <Text variant="bodyMedium" style={{ color: inkFor(variant) }}>
+            {label}
+          </Text>
+        </>
+      )}
+    </Pressable>
+  );
+}
+
+function surfaceFor(variant: Variant, pressed: boolean): ViewStyle {
+  switch (variant) {
+    case 'primary':
+      return {
+        backgroundColor: pressed ? colors.accentRamp[700] : colors.accent,
+      };
+    case 'danger':
+      return {
+        backgroundColor: pressed ? colors.accentRamp[200] : 'transparent',
+        borderWidth: 1,
+        borderColor: colors.accentRamp[500],
+      };
+    case 'secondary':
+      return {
+        backgroundColor: pressed ? colors.neutralRamp[200] : 'transparent',
+        borderWidth: 1,
+        borderColor: colors.neutralRamp[300],
+      };
+    case 'ghost':
+      return { backgroundColor: pressed ? colors.accentRamp[100] : 'transparent' };
+  }
+}
+
+function inkFor(variant: Variant): string {
+  if (variant === 'primary') return colors.surface;
+  if (variant === 'danger') return colors.accentRamp[700];
+  if (variant === 'ghost') return colors.accentRamp[700];
+  return colors.text;
+}
