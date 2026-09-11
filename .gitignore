@@ -43,3 +43,6 @@ yarn-error.*
 # local secrets
 .env
 .env.local
+
+# Local desktop-app tooling (in-app preview config), not project code
+.claude/launch.json
