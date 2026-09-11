@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<style>
+  :root {
+    --color-bg: #f7f6fc;
+    --color-surface: #ffffff;
+    --color-text: #16151c;
+    --color-accent: #8a4fd8;
+    --color-accent-2: #6aad39;
+    --color-divider: rgba(32,30,43,.09);
+
+    --color-neutral-100: #ffffff;
+    --color-neutral-200: #f3f2f8;
+    --color-neutral-300: #e6e4ef;
+    --color-neutral-400: #cfccdd;
+    --color-neutral-500: #a8a4bb;
+    --color-neutral-600: #817d95;
+    --color-neutral-700: #605c72;
+    --color-neutral-800: #403d4e;
+    --color-neutral-900: #201e2b;
+
+    --color-accent-100: #f8f1ff;
+    --color-accent-200: #eddffd;
+    --color-accent-300: #ddc4fa;
+    --color-accent-400: #c49af3;
+    --color-accent-500: #a76fe8;
+    --color-accent-600: #8a4fd8;
+    --color-accent-700: #6d33b8;
+    --color-accent-800: #4f2288;
+    --color-accent-900: #33165a;
+
+    --color-accent-2-100: #f2fbe7;
+    --color-accent-2-200: #e3f7ce;
+    --color-accent-2-300: #cbeeab;
+    --color-accent-2-400: #a9de7d;
+    --color-accent-2-500: #86cd52;
+    --color-accent-2-600: #6aad39;
+    --color-accent-2-700: #4c8226;
+    --color-accent-2-800: #375f1c;
+    --color-accent-2-900: #233d12;
+
+    --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-heading-weight: 800;
+    --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+
+    --space-1: 4px; --space-2: 8px; --space-3: 12px;
+    --space-4: 18px; --space-6: 26px; --space-8: 36px;
+
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 30px;
+
+    --shadow-sm: 0 2px 10px rgba(74,64,110,.06);
+    --shadow-md: 0 10px 28px rgba(74,64,110,.11);
+    --shadow-lg: 0 20px 52px rgba(74,64,110,.18);
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); letter-spacing: -.02em; }
+  body { margin: 0; background: #eeebf8; font-family: var(--font-body); font-weight: 500; }
+  button, input, textarea { font-weight: 600; }
+  :focus { outline: none }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px }
+  ::selection { background: var(--color-accent-200) }
+  a { color: var(--color-accent-700); }
+  a:hover { color: var(--color-accent-600); }
+  @keyframes pq-pulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+  @keyframes pq-spin { to { transform: rotate(360deg) } }
+  @keyframes pq-rise { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+  .pq-scroll::-webkit-scrollbar { width: 0; height: 0 }
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:44px 32px 64px;box-sizing:border-box;position:relative;overflow:hidden">
+  <div style="position:absolute;width:620px;height:620px;border-radius:50%;background:var(--color-accent-2-200);opacity:.5;top:-220px;right:-180px"></div>
+  <div style="position:absolute;width:460px;height:460px;border-radius:50%;background:var(--color-accent-200);opacity:.45;bottom:-200px;left:-140px"></div>
+
+  <div style="position:relative;max-width:1120px;margin:0 auto">
+    <div style="margin-bottom:28px;max-width:620px">
+      <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--color-accent-700);margin-bottom:8px">PesaIQ · Stage 1 · Android</div>
+      <h1 style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1.05;margin:0 0 10px;color:var(--color-text)">SMS intelligence, on the phone</h1>
+      <p style="margin:0;font-size:16px;line-height:1.5;color:var(--color-neutral-700);text-wrap:pretty">A clickable Stage 1 walkthrough: paste an anonymized demo SMS, watch it normalize, classify and parse, then confirm the transaction and see the dashboard move. Every field carries its own confidence.</p>
+    </div>
+
+    <div style="display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap">
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="428px,908px">
+        <div style="height:100%;display:flex;flex-direction:column;background:var(--color-bg);font-family:var(--font-body);color:var(--color-text);font-size:14px">
+          <div class="pq-scroll" style="flex:1;overflow-y:auto;overflow-x:hidden">
+
+            <!-- ══════ ONBOARDING 1 · WELCOME ══════ -->
+            <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Onboarding · Welcome" style="min-height:100%;box-sizing:border-box;padding:28px 22px 30px;display:flex;flex-direction:column;position:relative;overflow:hidden">
+                <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:var(--color-accent-2-200);top:-80px;right:-110px"></div>
+                <div style="position:relative;display:flex;align-items:center;gap:10px">
+                  <div style="width:40px;height:40px;border-radius:50%;background:var(--color-accent);display:flex;align-items:center;justify-content:center;color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:17px">P</div>
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:19px">PesaIQ</div>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;padding:34px 0 10px">
+                  <h2 style="font-family:var(--font-heading);font-weight:800;font-size:34px;line-height:1.08;margin:0 0 16px;text-wrap:pretty">Turn SMS notifications into organized financial records.</h2>
+                  <p style="margin:0;font-size:15px;line-height:1.55;color:var(--color-neutral-700)">Built for Tanzanian mobile money and bank messages. Amounts in TZS.</p>
+                </div>
+                <div style="position:relative;display:flex;gap:6px;margin-bottom:20px">
+                  <div style="width:26px;height:6px;border-radius:999px;background:var(--color-accent)"></div>
+                  <div style="width:6px;height:6px;border-radius:999px;background:var(--color-neutral-400)"></div>
+                  <div style="width:6px;height:6px;border-radius:999px;background:var(--color-neutral-400)"></div>
+                  <div style="width:6px;height:6px;border-radius:999px;background:var(--color-neutral-400)"></div>
+                </div>
+                <div style="position:relative;display:flex;flex-direction:column;gap:10px">
+                  <button onClick="{{ goHow }}" style="height:54px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer" style-hover="background:var(--color-accent-600)">Get started</button>
+                  <button onClick="{{ goDash }}" style="height:50px;border:1px solid var(--color-neutral-300);border-radius:999px;background:transparent;color:var(--color-neutral-700);font-family:var(--font-body);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:var(--color-neutral-200)">Skip to dashboard</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ══════ ONBOARDING 2 · HOW IT WORKS ══════ -->
+            <sc-if value="{{ isHow }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Onboarding · How it works" style="min-height:100%;box-sizing:border-box;padding:22px 22px 30px;display:flex;flex-direction:column">
+                <button onClick="{{ goWelcome }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:20px" style-hover="background:var(--color-neutral-300)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                </button>
+                <h2 style="font-family:var(--font-heading);font-weight:800;font-size:30px;line-height:1.1;margin:0 0 6px">How it works</h2>
+                <p style="margin:0 0 22px;font-size:14px;color:var(--color-neutral-700)">Four steps, all on your phone.</p>
+                <div style="display:flex;flex-direction:column;gap:12px;flex:1">
+                  <sc-for list="{{ howSteps }}" as="s" hint-placeholder-count="4">
+                    <div style="display:flex;gap:14px;align-items:center;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm)">
+                      <div style="width:52px;height:52px;flex:0 0 52px;border-radius:50%;background:var(--color-accent-2-200);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:800;font-size:20px;color:var(--color-accent-2-800)">{{ s.n }}</div>
+                      <div style="min-width:0">
+                        <div style="font-family:var(--font-heading);font-weight:800;font-size:18px;line-height:1.2">{{ s.en }}</div>
+                        <div style="font-size:13px;color:var(--color-neutral-700);margin-top:2px">{{ s.sw }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <button onClick="{{ goPrivacy }}" style="height:54px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer;margin-top:20px" style-hover="background:var(--color-accent-600)">Continue</button>
+              </div>
+            </sc-if>
+
+            <!-- ══════ ONBOARDING 3 · PRIVACY ══════ -->
+            <sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Onboarding · Privacy" style="min-height:100%;box-sizing:border-box;padding:22px 22px 30px;display:flex;flex-direction:column">
+                <button onClick="{{ goHow }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:18px" style-hover="background:var(--color-neutral-300)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                </button>
+                <div style="width:60px;height:60px;border-radius:50%;background:var(--color-accent-200);display:flex;align-items:center;justify-content:center;color:var(--color-accent-800);margin-bottom:16px">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+                </div>
+                <h2 style="font-family:var(--font-heading);font-weight:800;font-size:30px;line-height:1.1;margin:0 0 6px">Your messages stay here</h2>
+                <p style="margin:0 0 20px;font-size:14px;color:var(--color-neutral-700)">Your financial data is sensitive.</p>
+                <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+                  <sc-for list="{{ privacyPoints }}" as="p" hint-placeholder-count="5">
+                    <div style="display:flex;gap:12px;align-items:flex-start;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:14px 15px">
+                      <div style="width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--color-accent-2-300);color:var(--color-accent-2-900);display:flex;align-items:center;justify-content:center;margin-top:1px">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg>
+                      </div>
+                      <div style="font-size:14px;line-height:1.5;color:var(--color-neutral-800)">{{ p }}</div>
+                    </div>
+                  </sc-for>
+                  <div style="font-size:12px;line-height:1.5;color:var(--color-neutral-700);padding:4px 4px 0">This screen describes how the app behaves. It is not a legal, compliance or app-store approval statement.</div>
+                </div>
+                <button onClick="{{ goSetup }}" style="height:54px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer;margin-top:18px" style-hover="background:var(--color-accent-600)">I understand</button>
+              </div>
+            </sc-if>
+
+            <!-- ══════ ONBOARDING 4 · SETUP ══════ -->
+            <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Onboarding · Setup" style="min-height:100%;box-sizing:border-box;padding:22px 22px 30px;display:flex;flex-direction:column">
+                <button onClick="{{ goPrivacy }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:18px" style-hover="background:var(--color-neutral-300)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                </button>
+                <h2 style="font-family:var(--font-heading);font-weight:800;font-size:30px;line-height:1.1;margin:0 0 6px">Which senders matter?</h2>
+                <p style="margin:0 0 8px;font-size:14px;color:var(--color-neutral-700)">Choose the providers you want parsed. You can change this later in Settings.</p>
+                <div style="display:inline-flex;align-self:flex-start;gap:6px;align-items:center;background:var(--color-accent-200);color:var(--color-accent-800);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px">All parsers ship as DEMO</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;flex:1;align-content:flex-start">
+                  <sc-for list="{{ setupProviders }}" as="p" hint-placeholder-count="9">
+                    <button onClick="{{ p.toggle }}" style="border-radius:999px;min-height:44px;padding:0 18px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.fg }};font-family:var(--font-body)">{{ p.name }}</button>
+                  </sc-for>
+                </div>
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-md);padding:14px 15px;font-size:13px;line-height:1.5;color:var(--color-neutral-700);margin-bottom:14px">Stage 1 reads only messages you paste in. Nothing is intercepted.</div>
+                <button onClick="{{ finishSetup }}" style="height:54px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer" style-hover="background:var(--color-accent-600)">Open dashboard</button>
+              </div>
+            </sc-if>
+
+            <!-- ══════ DASHBOARD ══════ -->
+            <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+              <div data-screen-label="Dashboard" style="padding:16px 16px 96px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+                  <div style="width:44px;height:44px;border-radius:50%;background:var(--color-accent-2-400);color:var(--color-accent-2-900);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:800;font-size:16px">DM</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;line-height:1.15">Hello, Deo</div>
+                    <div style="font-size:12px;color:var(--color-neutral-700)">Friday, 12 March 2026</div>
+                  </div>
+                  <button onClick="{{ goLab }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-accent-700)" style-hover="background:var(--color-accent-200)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                  </button>
+                  <button onClick="{{ goReview }}" style="position:relative;width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-neutral-800)" style-hover="background:var(--color-neutral-200)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
+                    <span style="position:absolute;top:7px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--color-accent);border:2px solid var(--color-neutral-100)"></span>
+                  </button>
+                </div>
+
+                <div style="background:var(--color-accent-2-200);border-radius:var(--radius-lg);padding:20px 18px;margin-bottom:12px;position:relative;overflow:hidden">
+                  <div style="position:absolute;width:180px;height:180px;border-radius:50%;background:var(--color-accent-2-300);opacity:.55;top:-70px;right:-60px"></div>
+                  <div style="position:relative;display:flex;align-items:center;gap:16px">
+                    <div style="position:relative;flex:0 0 116px;width:116px;height:116px">
+                      <svg width="116" height="116" viewBox="0 0 116 116" style="transform:rotate(-90deg)">
+                        <circle cx="58" cy="58" r="47" fill="none" stroke="var(--color-accent-2-400)" stroke-width="10"></circle>
+                        <circle cx="58" cy="58" r="47" fill="none" stroke="{{ ins.ringInk }}" stroke-width="10" stroke-linecap="round" stroke-dasharray="295.3" stroke-dashoffset="{{ ins.ringOffSm }}" style="transition:stroke-dashoffset .12s linear"></circle>
+                      </svg>
+                      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                        <div style="font-family:var(--font-heading);font-weight:800;font-size:34px;line-height:1;color:var(--color-accent-2-900)">{{ ins.score }}</div>
+                        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-2-800);margin-top:2px">out of 100</div>
+                      </div>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-2-800)">Financial health</div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:21px;line-height:1.1;margin-top:4px;color:var(--color-accent-2-900)">{{ ins.band }}</div>
+                      <div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--color-neutral-100);border-radius:999px;padding:6px 11px">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4 5 6 7 6 10a6 6 0 0 1-12 0c0-2 1-3.5 3-5 0 2 1 3 2 3s1-4 1-8z"></path></svg>
+                        <span style="font-size:11px;font-weight:700">{{ streak }}-day streak</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="position:relative;display:flex;gap:8px;margin-top:16px">
+                    <div style="flex:1;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:10px;min-width:0">
+                      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-accent-2-800)">Received</div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:14px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ totals.inFmt }}</div>
+                    </div>
+                    <div style="flex:1;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:10px;min-width:0">
+                      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-accent-700)">Sent</div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:14px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ totals.outFmt }}</div>
+                    </div>
+                    <div style="flex:1;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:10px;min-width:0">
+                      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-neutral-700)">Net</div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:14px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ ins.netInk }}">{{ ins.netShort }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:12px">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:11px">What builds the score</div>
+                  <div style="display:flex;flex-direction:column;gap:11px">
+                    <sc-for list="{{ ins.parts }}" as="p" hint-placeholder-count="4">
+                      <div>
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px;gap:8px">
+                          <span style="font-weight:600;min-width:0">{{ p.label }}</span>
+                          <span style="color:var(--color-neutral-700);white-space:nowrap">{{ p.pct }} · {{ p.weight }}</span>
+                        </div>
+                        <div style="height:9px;border-radius:999px;background:var(--color-neutral-300);overflow:hidden">
+                          <div style="height:100%;width:{{ p.width }}%;border-radius:999px;background:{{ p.bar }};transition:width .75s cubic-bezier(.2,.85,.2,1)"></div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <button onClick="{{ goReview }}" style="width:100%;text-align:left;border:0;background:var(--color-accent-200);border-radius:var(--radius-lg);padding:15px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;margin-bottom:22px;font-family:var(--font-body)" style-hover="background:var(--color-accent-300)">
+                  <div style="width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:var(--color-accent-400);color:var(--color-accent-900);display:flex;align-items:center;justify-content:center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z" stroke-width="2"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 14px; color: var(--color-accent-900)">{{ totals.review }} need review</div>
+                    <div style="font-size:12px;color:var(--color-accent-800)">Each review raises your score</div>
+                  </div>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-accent-800)"><path d="M9 6l6 6-6 6"></path></svg>
+                </button>
+
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:22px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700)">{{ ins.catLabel }}</div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:24px;line-height:1.1;margin-top:3px">TZS {{ ins.catTotal }}</div>
+                    </div>
+                    <div style="display:flex;gap:3px;background:var(--color-neutral-200);border-radius:999px;padding:2px">
+                      <sc-for list="{{ ins.modes }}" as="m" hint-placeholder-count="2">
+                        <button onClick="{{ m.pick }}" style="border:0;border-radius:999px;min-height:44px;padding:0 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);background:{{ m.bg }};color:{{ m.fg }}">{{ m.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <sc-if value="{{ ins.hasRows }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;flex-direction:column;gap:13px">
+                      <sc-for list="{{ ins.rows }}" as="c" hint-placeholder-count="4">
+                        <div>
+                          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+                            <div style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+                            <div style="font-family:var(--font-heading);font-weight:800;font-size:15px">{{ c.amountFmt }}</div>
+                            <div style="flex:0 0 44px;text-align:center;font-size:11px;font-weight:800;color:var(--color-accent-900);background:var(--color-accent-200);border-radius:999px;padding:3px 0">{{ c.pct }}</div>
+                          </div>
+                          <div style="height:11px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+                            <div style="height:100%;width:{{ c.width }}%;border-radius:999px;background:{{ c.bar }};transition:width .8s cubic-bezier(.2,.85,.2,1)"></div>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <h3 style="font-family:var(--font-heading);font-weight:800;font-size:19px;margin:0 0 3px">Spend smarter</h3>
+                <p style="margin:0 0 11px;font-size:13px;color:var(--color-neutral-700)">Tips drawn from your own transactions</p>
+                <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:20px">
+                  <sc-for list="{{ ins.spendTips }}" as="t" hint-placeholder-count="3">
+                    <div style="background:var(--color-accent-200);border-radius:var(--radius-lg);padding:15px 16px;display:flex;gap:13px;align-items:flex-start">
+                      <div style="width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:var(--color-accent-400);color:var(--color-accent-900);display:flex;align-items:center;justify-content:center">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M11 7h6v6"></path></svg>
+                      </div>
+                      <div style="min-width:0">
+                        <div style="font-family:var(--font-heading);font-weight:800;font-size:16px;line-height:1.2;color:var(--color-accent-900)">{{ t.title }}</div>
+                        <div style="font-size:13px;line-height:1.5;color:var(--color-accent-900);margin-top:5px;text-wrap:pretty">{{ t.body }}</div>
+                        <div style="font-size:11px;font-weight:700;color:var(--color-accent-800);margin-top:7px">{{ t.why }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <h3 style="font-family:var(--font-heading);font-weight:800;font-size:19px;margin:0 0 3px">Earn more</h3>
+                <p style="margin:0 0 11px;font-size:13px;color:var(--color-neutral-700)">And keep it easy to trace</p>
+                <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
+                  <sc-for list="{{ ins.earnTips }}" as="t" hint-placeholder-count="3">
+                    <div style="background:var(--color-accent-2-200);border-radius:var(--radius-lg);padding:15px 16px;display:flex;gap:13px;align-items:flex-start">
+                      <div style="width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:var(--color-accent-2-700);color:#fff;display:flex;align-items:center;justify-content:center">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17"></path><path d="M7 11v6h6"></path></svg>
+                      </div>
+                      <div style="min-width:0">
+                        <div style="font-family:var(--font-heading);font-weight:800;font-size:16px;line-height:1.2;color:var(--color-accent-2-900)">{{ t.title }}</div>
+                        <div style="font-size:13px;line-height:1.5;color:var(--color-accent-2-900);margin-top:5px;text-wrap:pretty">{{ t.body }}</div>
+                        <div style="font-size:11px;font-weight:700;color:var(--color-accent-2-800);margin-top:7px">{{ t.why }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+                  <h3 style="font-family:var(--font-heading);font-weight:800;font-size:19px;margin:0">Recent transactions</h3>
+                  <button onClick="{{ goTxns }}" style="border:0;background:transparent;color:var(--color-accent-700);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--font-body);min-height:44px;padding:0 10px">All {{ totals.count }} →</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+                  <sc-for list="{{ recent }}" as="t" hint-placeholder-count="4">
+                    <button onClick="{{ t.open }}" style="width:100%;text-align:left;border:0;background:var(--color-neutral-100);border-radius:var(--radius-md);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--shadow-sm);font-family:var(--font-body)" style-hover="background:var(--color-neutral-200)">
+                      <div style="width:38px;height:38px;flex:0 0 38px;border-radius:14px;background:{{ t.tint }};color:{{ t.ink }};display:flex;align-items:center;justify-content:center">
+                        <sc-if value="{{ t.isIn }}" hint-placeholder-val="{{ false }}">
+                          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17"></path><path d="M7 11v6h6"></path></svg>
+                        </sc-if>
+                        <sc-if value="{{ t.isOut }}" hint-placeholder-val="{{ false }}">
+                          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M11 7h6v6"></path></svg>
+                        </sc-if>
+                      </div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.party }}</div>
+                        <div style="font-size:12px;color:var(--color-neutral-700)">{{ t.meta }}</div>
+                      </div>
+                      <div style="text-align:right">
+                        <div style="font-family:var(--font-heading);font-weight:800;font-size:15px;color:{{ t.amountInk }}">{{ t.amountSigned }}</div>
+                        <div style="font-size:11px;color:var(--color-neutral-700)">{{ t.confPct }}</div>
+                      </div>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <sc-if value="{{ demo }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;align-items:center;gap:10px;background:var(--color-neutral-200);border-radius:var(--radius-md);padding:12px 14px">
+                    <div style="flex:1;font-size:12px;line-height:1.45;color:var(--color-neutral-700)"><strong style="font-weight:700">Demo data is on.</strong> These records are generated samples, not real messages.</div>
+                    <button onClick="{{ clearDemo }}" style="border:1px solid var(--color-neutral-400);background:transparent;border-radius:999px;min-height:44px;padding:0 15px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;display:inline-flex;align-items:center" style-hover="background:var(--color-neutral-300)">Remove</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ══════ PARSER LAB ══════ -->
+            <sc-if value="{{ isLab }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Parser Lab" style="padding:16px 16px 96px">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                  <button onClick="{{ goDash }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:var(--color-neutral-300)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                  </button>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:var(--font-heading);font-weight:800;font-size:20px;line-height:1.15">Parser Lab</div>
+                    <div style="font-size:12px;color:var(--color-neutral-700)">Paste a message to analyze</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow-sm);margin-bottom:12px">
+                  <textarea value="{{ sms }}" onChange="{{ onSms }}" placeholder="Paste an SMS here…" rows="6" style="width:100%;box-sizing:border-box;border:1px solid var(--color-neutral-300);border-radius:var(--radius-md);background:var(--color-bg);padding:13px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;color:var(--color-text);resize:none"></textarea>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;font-size:11px;color:var(--color-neutral-700)">
+                    <span>{{ smsLen }} characters</span>
+                    <button onClick="{{ clearSms }}" style="border:0;background:transparent;color:var(--color-neutral-700);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font-body);min-height:44px;padding:0 10px">Clear</button>
+                  </div>
+                </div>
+
+                <sc-if value="{{ labError }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:11px;align-items:flex-start;background:var(--color-accent-200);border-radius:var(--radius-md);padding:13px 14px;margin-bottom:12px">
+                    <div style="color:var(--color-accent-800);flex:0 0 20px;margin-top:1px">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                    </div>
+                    <div style="font-size:13px;line-height:1.5;color:var(--color-accent-900)">{{ labError }}</div>
+                  </div>
+                </sc-if>
+
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700)">Sample messages</div>
+                  <div style="background:var(--color-accent-2-200);color:var(--color-accent-2-800);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Demo · anonymized</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                  <sc-for list="{{ samples }}" as="s" hint-placeholder-count="4">
+                    <button onClick="{{ s.load }}" style="width:100%;text-align:left;border:1px solid var(--color-neutral-300);background:var(--color-neutral-100);border-radius:var(--radius-md);padding:12px 14px;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:11px" style-hover="background:var(--color-accent-100)">
+                      <div style="width:32px;height:32px;flex:0 0 32px;border-radius:10px;background:{{ s.tint }};color:{{ s.ink }};display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:800;font-size:13px">{{ s.badge }}</div>
+                      <div style="min-width:0;flex:1">
+                        <div style="font-weight:700;font-size:13px">{{ s.name }}</div>
+                        <div style="font-size:11px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.hint }}</div>
+                      </div>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <button onClick="{{ analyze }}" style="width:100%;height:56px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer;box-shadow:var(--shadow-md)" style-hover="background:var(--color-accent-600)">Analyze message</button>
+
+                <sc-if value="{{ analyzing }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:16px;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm)">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round" style="animation:pq-spin 1s linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:15px">Analyzing…</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:9px">
+                      <sc-for list="{{ pipeline }}" as="p" hint-placeholder-count="4">
+                        <div style="display:flex;align-items:center;gap:11px;opacity:{{ p.op }}">
+                          <div style="width:24px;height:24px;flex:0 0 24px;border-radius:50%;background:{{ p.dot }};color:var(--color-neutral-100);display:flex;align-items:center;justify-content:center">
+                            <sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg>
+                            </sc-if>
+                          </div>
+                          <div style="font-size:13px;font-weight:600">{{ p.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ══════ ANALYSIS RESULT ══════ -->
+            <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Analysis result" style="padding:16px 16px 30px">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                  <button onClick="{{ goLab }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:var(--color-neutral-300)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                  </button>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:var(--font-heading);font-weight:800;font-size:20px;line-height:1.15">Result</div>
+                    <div style="font-size:12px;color:var(--color-neutral-700)">{{ r.parserId }}</div>
+                  </div>
+                  <button onClick="{{ toggleEdit }}" style="border:1px solid var(--color-neutral-300);background:var(--color-neutral-100);border-radius:999px;min-height:44px;padding:0 17px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body)" style-hover="background:var(--color-neutral-200)">{{ editLabel }}</button>
+                </div>
+
+                <div style="background:{{ r.heroTint }};border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;animation:pq-rise .3s ease">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                    <div style="background:var(--color-neutral-100);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:{{ r.heroInk }}">{{ r.category }}</div>
+                    <div style="background:{{ r.bandTint }};color:{{ r.bandInk }};border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">{{ r.band }} · {{ r.confPct }}</div>
+                  </div>
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:34px;line-height:1.05;color:{{ r.heroInk }}">{{ r.amountLabel }}</div>
+                  <div style="font-size:13px;color:{{ r.heroInk }};opacity:.85;margin-top:4px">{{ r.subLabel }}</div>
+                </div>
+
+                <sc-if value="{{ r.hasWarnings }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:var(--color-accent-200);border-radius:var(--radius-md);padding:13px 14px;margin-bottom:12px">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-accent-800);margin-bottom:7px">Warnings</div>
+                    <sc-for list="{{ r.warnings }}" as="w" hint-placeholder-count="2">
+                      <div style="display:flex;gap:8px;font-size:13px;line-height:1.45;color:var(--color-accent-900);margin-top:3px">
+                        <span>·</span><span>{{ w }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:6px 16px 10px;box-shadow:var(--shadow-sm);margin-bottom:12px">
+                  <sc-for list="{{ r.fields }}" as="f" hint-placeholder-count="8">
+                    <div style="padding:12px 0;border-bottom:1px solid var(--color-divider)">
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-neutral-700);flex:1">{{ f.label }}</div>
+                        <sc-if value="{{ f.low }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex;align-items:center;gap:5px;background:var(--color-accent-200);color:var(--color-accent-800);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"></path><path d="M12 11v3"></path></svg>
+                            {{ f.confPct }} · check
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ f.verified }}" hint-placeholder-val="{{ false }}">
+                          <div style="background:var(--color-accent-2-200);color:var(--color-accent-2-800);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Verified</div>
+                        </sc-if>
+                      </div>
+                      <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+                        <input value="{{ f.value }}" onChange="{{ f.onEdit }}" style="width:100%;box-sizing:border-box;border:1px solid var(--color-neutral-400);border-radius:999px;background:var(--color-bg);min-height:44px;padding:0 16px;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--color-text)">
+                      </sc-if>
+                      <sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}">
+                        <div style="font-size:15px;font-weight:600;color:{{ f.ink }};word-break:break-word">{{ f.display }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <button onClick="{{ toggleWhy }}" style="width:100%;border:0;background:var(--color-neutral-200);border-radius:var(--radius-md);padding:14px 15px;display:flex;align-items:center;gap:10px;cursor:pointer;font-family:var(--font-body);text-align:left" style-hover="background:var(--color-neutral-300)">
+                  <div style="flex:1;font-weight:700;font-size:14px">How we got this</div>
+                  <div style="font-size:12px;color:var(--color-neutral-700)">{{ whyLabel }}</div>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate({{ whyRot }}deg);transition:transform .18s"><path d="M6 9l6 6 6-6"></path></svg>
+                </button>
+
+                <sc-if value="{{ why }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);margin-top:8px;animation:pq-rise .22s ease">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:7px">1 · Normalized</div>
+                    <div style="background:var(--color-bg);border-radius:var(--radius-md);padding:11px 12px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.5;color:var(--color-neutral-800);white-space:pre-wrap;word-break:break-word;margin-bottom:6px">{{ r.normalizedText }}</div>
+                    <div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:16px">{{ r.normNote }} The original message is kept unchanged.</div>
+
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:7px">2 · Classified</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+                      <sc-for list="{{ r.reasons }}" as="x" hint-placeholder-count="3">
+                        <div style="display:flex;gap:9px;align-items:flex-start">
+                          <div style="width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:var(--color-accent-2-300);color:var(--color-accent-2-900);display:flex;align-items:center;justify-content:center;margin-top:1px">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg>
+                          </div>
+                          <div style="font-size:13px;line-height:1.45">{{ x }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:9px">3 · Confidence factors</div>
+                    <div style="display:flex;flex-direction:column;gap:9px">
+                      <sc-for list="{{ r.factors }}" as="f" hint-placeholder-count="5">
+                        <div>
+                          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                            <span style="color:{{ f.ink }};font-weight:600">{{ f.label }}</span>
+                            <span style="color:var(--color-neutral-700)">{{ f.delta }}</span>
+                          </div>
+                          <div style="height:7px;border-radius:999px;background:var(--color-neutral-300);overflow:hidden">
+                            <div style="height:100%;width:{{ f.pct }}%;border-radius:999px;background:{{ f.bar }}"></div>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="margin-top:14px;font-size:12px;line-height:1.5;color:var(--color-neutral-700);border-top:1px solid var(--color-divider);padding-top:12px">Parser <strong style="font-weight:700">{{ r.parserId }}</strong> · maturity DEMO. Rule-based, no AI. Low-confidence fields are never treated as verified.</div>
+                  </div>
+                </sc-if>
+
+                <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+                  <button onClick="{{ saveResult }}" style="height:56px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer;box-shadow:var(--shadow-md)" style-hover="background:var(--color-accent-600)">{{ saveLabel }}</button>
+                  <div style="display:flex;gap:9px">
+                    <button onClick="{{ markIncorrect }}" style="flex:1;height:48px;border:1px solid var(--color-neutral-300);border-radius:999px;background:transparent;font-family:var(--font-body);font-weight:700;font-size:14px;cursor:pointer" style-hover="background:var(--color-neutral-200)">Not correct</button>
+                    <button onClick="{{ discard }}" style="flex:1;height:48px;border:0;border-radius:999px;background:transparent;color:var(--color-neutral-700);font-family:var(--font-body);font-weight:700;font-size:14px;cursor:pointer" style-hover="background:var(--color-neutral-200)">Discard</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ══════ TRANSACTIONS ══════ -->
+            <sc-if value="{{ isTxns }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Transactions" style="padding:16px 16px 96px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+                  <h2 style="font-family:var(--font-heading);font-weight:800;font-size:26px;margin:0">Transactions</h2>
+                  <div style="font-size:12px;color:var(--color-neutral-700)">{{ filtered.length }} of {{ totals.count }}</div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:8px;background:var(--color-neutral-100);border:1px solid var(--color-neutral-300);border-radius:999px;padding:0 14px;margin-bottom:11px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-700)" stroke-width="2.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+                  <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search name, reference…" style="flex:1;border:0;background:transparent;height:48px;font-family:var(--font-body);font-size:14px;color:var(--color-text);outline:none">
+                </div>
+
+                <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px" class="pq-scroll">
+                  <sc-for list="{{ filterChips }}" as="c" hint-placeholder-count="5">
+                    <button onClick="{{ c.pick }}" style="flex:0 0 auto;border-radius:999px;min-height:44px;padding:0 17px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;display:inline-flex;align-items:center;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+
+                <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:16px">
+                    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+                      <div>
+                        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">{{ g.date }}</div>
+                        <div style="display:flex;flex-direction:column;gap:8px">
+                          <sc-for list="{{ g.rows }}" as="t" hint-placeholder-count="3">
+                            <button onClick="{{ t.open }}" style="width:100%;text-align:left;border:0;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--shadow-sm);font-family:var(--font-body)" style-hover="background:var(--color-neutral-200)">
+                              <div style="width:40px;height:40px;flex:0 0 40px;border-radius:14px;background:{{ t.tint }};color:{{ t.ink }};display:flex;align-items:center;justify-content:center">
+                                <sc-if value="{{ t.isIn }}" hint-placeholder-val="{{ false }}">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17"></path><path d="M7 11v6h6"></path></svg>
+                                </sc-if>
+                                <sc-if value="{{ t.isOut }}" hint-placeholder-val="{{ false }}">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M11 7h6v6"></path></svg>
+                                </sc-if>
+                              </div>
+                              <div style="flex:1;min-width:0">
+                                <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.party }}</div>
+                                <div style="font-size:12px;color:var(--color-neutral-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.typeSw }} · {{ t.masked }}</div>
+                                <sc-if value="{{ t.needsReview }}" hint-placeholder-val="{{ false }}">
+                                  <div style="display:inline-block;margin-top:5px;background:var(--color-accent-200);color:var(--color-accent-800);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Needs review</div>
+                                </sc-if>
+                              </div>
+                              <div style="text-align:right">
+                                <div style="font-family:var(--font-heading);font-weight:800;font-size:16px;color:{{ t.amountInk }}">{{ t.amountSigned }}</div>
+                                <div style="font-size:11px;color:var(--color-neutral-700)">{{ t.confPct }}</div>
+                              </div>
+                            </button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:44px 20px;text-align:center;display:flex;flex-direction:column;align-items:center">
+                    <div style="width:104px;height:104px;border-radius:50%;background:var(--color-accent-2-200);display:flex;align-items:center;justify-content:center;color:var(--color-accent-2-700);margin-bottom:18px">
+                      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H8l-4 4z"></path></svg>
+                    </div>
+                    <div style="font-family:var(--font-heading);font-weight:800;font-size:21px;margin-bottom:6px">Nothing here yet</div>
+                    <div style="font-size:14px;line-height:1.5;color:var(--color-neutral-700);max-width:250px">No records match this filter. Paste a message in the Parser Lab to add one.</div>
+                    <button onClick="{{ goLab }}" style="margin-top:18px;height:48px;padding:0 22px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:15px;cursor:pointer" style-hover="background:var(--color-accent-600)">Analyze an SMS</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ══════ TRANSACTION DETAIL ══════ -->
+            <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Transaction detail" style="padding:16px 16px 30px">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                  <button onClick="{{ goTxns }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:var(--color-neutral-300)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                  </button>
+                  <div style="flex:1;font-family:var(--font-heading);font-weight:800;font-size:20px">Transaction</div>
+                </div>
+
+                <div style="background:{{ d.tint }};border-radius:var(--radius-lg);padding:20px 18px;margin-bottom:12px">
+                  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+                    <div style="background:var(--color-neutral-100);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:{{ d.ink }}">{{ d.typeLabel }}</div>
+                    <div style="background:{{ d.statusTint }};color:{{ d.statusInk }};border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">{{ d.status }}</div>
+                  </div>
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:34px;line-height:1.05;color:{{ d.ink }}">{{ d.amountLabel }}</div>
+                  <div style="font-size:13px;color:{{ d.ink }};opacity:.85;margin-top:4px">{{ d.party }} · {{ d.date }}</div>
+                </div>
+
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:12px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                    <svg width="34" height="34" viewBox="0 0 34 34" style="flex:0 0 34px;transform:rotate(-90deg)">
+                      <circle cx="17" cy="17" r="13" fill="none" stroke="var(--color-neutral-300)" stroke-width="5"></circle>
+                      <circle cx="17" cy="17" r="13" fill="none" stroke="{{ d.confBar }}" stroke-width="5" stroke-linecap="round" stroke-dasharray="81.7" stroke-dashoffset="{{ d.confOff }}"></circle>
+                    </svg>
+                    <div style="flex:1">
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:16px;line-height:1.15">{{ d.confPct }} · {{ d.band }}</div>
+                      <div style="font-size:12px;color:var(--color-neutral-700)">Confidence</div>
+                    </div>
+                    <div style="background:var(--color-neutral-200);border-radius:999px;padding:6px 11px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--color-neutral-700)">Rules · no AI</div>
+                  </div>
+                  <sc-for list="{{ d.fields }}" as="f" hint-placeholder-count="8">
+                    <div style="display:flex;gap:12px;align-items:baseline;padding:10px 0;border-top:1px solid var(--color-divider)">
+                      <div style="flex:0 0 40%;font-size:12px;font-weight:600;color:var(--color-neutral-700)">{{ f.label }}</div>
+                      <div style="flex:1;font-size:14px;font-weight:600;word-break:break-word">{{ f.display }}</div>
+                      <sc-if value="{{ f.low }}" hint-placeholder-val="{{ false }}">
+                        <div style="color:var(--color-accent-700);flex:0 0 16px">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"></path><path d="M12 11v3"></path></svg>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="background:var(--color-neutral-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);flex:1">Source message</div>
+                    <div style="background:var(--color-accent-2-200);color:var(--color-accent-2-800);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:700;text-transform:uppercase">Kept intact</div>
+                  </div>
+                  <div style="background:var(--color-bg);border-radius:var(--radius-md);padding:12px 13px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.55;color:var(--color-neutral-800);white-space:pre-wrap;word-break:break-word">{{ d.source }}</div>
+                  <div style="font-size:11px;color:var(--color-neutral-700);margin-top:8px">Sender {{ d.sender }} · stored on this device only</div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <div style="display:flex;gap:9px">
+                    <button onClick="{{ d.confirm }}" style="flex:1;height:52px;border:0;border-radius:999px;background:var(--color-accent-2-700);color:#fff;font-family:var(--font-heading);font-weight:800;font-size:15px;cursor:pointer" style-hover="background:var(--color-accent-2-800)">Confirm</button>
+                    <button onClick="{{ d.edit }}" style="flex:1;height:52px;border:1px solid var(--color-neutral-300);border-radius:999px;background:var(--color-neutral-100);font-family:var(--font-body);font-weight:700;font-size:14px;cursor:pointer" style-hover="background:var(--color-neutral-200)">Edit</button>
+                  </div>
+                  <div style="display:flex;gap:9px">
+                    <button onClick="{{ d.incorrect }}" style="flex:1;height:48px;border:1px solid var(--color-neutral-300);border-radius:999px;background:transparent;font-family:var(--font-body);font-weight:700;font-size:14px;cursor:pointer" style-hover="background:var(--color-neutral-200)">Not correct</button>
+                    <button onClick="{{ d.remove }}" style="flex:1;height:48px;border:0;border-radius:999px;background:transparent;color:var(--color-accent-700);font-family:var(--font-body);font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="background:var(--color-accent-200)">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="M6 7l1 13h10l1-13"></path></svg>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ══════ REVIEW QUEUE ══════ -->
+            <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Review queue" style="padding:16px 16px 96px">
+                <h2 style="font-family:var(--font-heading);font-weight:800;font-size:26px;margin:0 0 4px">Review</h2>
+                <p style="margin:0 0 14px;font-size:13px;color:var(--color-neutral-700)">Fields the parser was unsure about. Confirming makes a record verified.</p>
+
+                <div style="display:flex;gap:8px;margin-bottom:16px">
+                  <div style="flex:1;background:var(--color-accent-2-200);border-radius:var(--radius-lg);padding:14px;display:flex;align-items:center;gap:11px">
+                    <svg width="40" height="40" viewBox="0 0 40 40" style="flex:0 0 40px;transform:rotate(-90deg)">
+                      <circle cx="20" cy="20" r="16" fill="none" stroke="var(--color-accent-2-400)" stroke-width="5"></circle>
+                      <circle cx="20" cy="20" r="16" fill="none" stroke="var(--color-accent-2-700)" stroke-width="5" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="{{ ring.off2 }}"></circle>
+                    </svg>
+                    <div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;line-height:1.1;color:var(--color-accent-2-900)">{{ ring.label }}</div>
+                      <div style="font-size:11px;color:var(--color-accent-2-800)">Cleared this week</div>
+                    </div>
+                  </div>
+                  <div style="flex:0 0 128px;background:var(--color-accent-200);border-radius:var(--radius-lg);padding:14px;display:flex;align-items:center;gap:10px">
+                    <div style="width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:var(--color-accent-400);color:var(--color-accent-900);display:flex;align-items:center;justify-content:center">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4 5 6 7 6 10a6 6 0 0 1-12 0c0-2 1-3.5 3-5 0 2 1 3 2 3s1-4 1-8z"></path></svg>
+                    </div>
+                    <div>
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;line-height:1.1;color:var(--color-accent-900)">{{ streak }}</div>
+                      <div style="font-size:11px;color:var(--color-accent-800)">day streak</div>
+                    </div>
+                  </div>
+                </div>
+
+                <sc-if value="{{ hasReview }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <sc-for list="{{ reviewQueue }}" as="q" hint-placeholder-count="2">
+                      <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm)">
+                        <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+                          <div style="width:38px;height:38px;flex:0 0 38px;border-radius:14px;background:{{ q.tint }};color:{{ q.ink }};display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:800;font-size:13px">{{ q.initials }}</div>
+                          <div style="flex:1;min-width:0">
+                            <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;line-height:1.15">{{ q.amountLabel }}</div>
+                            <div style="font-size:12px;color:var(--color-neutral-700)">{{ q.provider }} · {{ q.date }}</div>
+                          </div>
+                          <div style="background:var(--color-accent-200);color:var(--color-accent-800);border-radius:999px;padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">{{ q.confPct }}</div>
+                        </div>
+
+                        <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:7px">Type</div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px">
+                          <sc-for list="{{ q.typeOptions }}" as="o" hint-placeholder-count="4">
+                            <button onClick="{{ o.pick }}" style="border-radius:999px;min-height:44px;padding:0 15px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+                          </sc-for>
+                        </div>
+
+                        <sc-for list="{{ q.inputs }}" as="i" hint-placeholder-count="3">
+                          <div style="margin-bottom:11px">
+                            <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+                              <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-neutral-700)">{{ i.label }}</div>
+                              <sc-if value="{{ i.low }}" hint-placeholder-val="{{ false }}">
+                                <div style="color:var(--color-accent-700);display:flex">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"></path><path d="M12 11v3"></path></svg>
+                                </div>
+                              </sc-if>
+                            </div>
+                            <input value="{{ i.value }}" onChange="{{ i.onEdit }}" placeholder="{{ i.placeholder }}" style="width:100%;box-sizing:border-box;border:1px solid {{ i.border }};border-radius:999px;background:var(--color-bg);min-height:44px;padding:0 16px;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--color-text)">
+                          </div>
+                        </sc-for>
+
+                        <div style="display:flex;gap:8px;margin-top:14px">
+                          <button onClick="{{ q.confirm }}" style="flex:1;height:50px;border:0;border-radius:999px;background:var(--color-accent-2-700);color:#fff;font-family:var(--font-heading);font-weight:800;font-size:15px;cursor:pointer" style-hover="background:var(--color-accent-2-800)">Save &amp; confirm</button>
+                          <button onClick="{{ q.ignore }}" style="flex:0 0 96px;height:50px;border:1px solid var(--color-neutral-300);border-radius:999px;background:transparent;font-family:var(--font-body);font-weight:700;font-size:14px;cursor:pointer" style-hover="background:var(--color-neutral-200)">Ignore</button>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ noReview }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:40px 20px;text-align:center;display:flex;flex-direction:column;align-items:center">
+                    <div style="width:104px;height:104px;border-radius:50%;background:var(--color-accent-2-300);display:flex;align-items:center;justify-content:center;color:var(--color-accent-2-900);margin-bottom:18px">
+                      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg>
+                    </div>
+                    <div style="font-family:var(--font-heading);font-weight:800;font-size:21px;margin-bottom:6px">The queue is clear</div>
+                    <div style="font-size:14px;line-height:1.5;color:var(--color-neutral-700);max-width:250px">Nothing to review. Every saved record has been confirmed by you.</div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ══════ SETTINGS ══════ -->
+            <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Settings" style="padding:16px 16px 96px">
+                <h2 style="font-family:var(--font-heading);font-weight:800;font-size:26px;margin:0 0 16px">Settings</h2>
+
+                <sc-for list="{{ settingGroups }}" as="g" hint-placeholder-count="3">
+                  <div style="margin-bottom:18px">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px;padding-left:4px">{{ g.title }}</div>
+                    <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:4px 16px;box-shadow:var(--shadow-sm)">
+                      <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--color-divider)">
+                          <div style="flex:1;min-width:0">
+                            <div style="font-weight:600;font-size:14px">{{ r.label }}</div>
+                            <div style="font-size:12px;line-height:1.4;color:var(--color-neutral-700);margin-top:2px">{{ r.sub }}</div>
+                          </div>
+                          <sc-if value="{{ r.isToggle }}" hint-placeholder-val="{{ false }}">
+                            <button onClick="{{ r.toggle }}" style="flex:0 0 52px;width:52px;height:44px;border:0;background:transparent;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center">
+                              <span style="width:52px;height:30px;border-radius:999px;background:{{ r.trackBg }};padding:3px;box-sizing:border-box;display:flex;justify-content:{{ r.knob }}">
+                                <span style="width:24px;height:24px;border-radius:50%;background:var(--color-neutral-100);box-shadow:var(--shadow-sm);display:block"></span>
+                              </span>
+                            </button>
+                          </sc-if>
+                          <sc-if value="{{ r.isTag }}" hint-placeholder-val="{{ false }}">
+                            <div style="background:{{ r.tagBg }};color:{{ r.tagInk }};border-radius:999px;padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap">{{ r.tag }}</div>
+                          </sc-if>
+                          <sc-if value="{{ r.isAction }}" hint-placeholder-val="{{ false }}">
+                            <button onClick="{{ r.act }}" style="border:1px solid {{ r.actBorder }};background:transparent;color:{{ r.actInk }};border-radius:999px;min-height:44px;padding:0 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;display:inline-flex;align-items:center" style-hover="background:var(--color-neutral-200)">{{ r.actLabel }}</button>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+
+                <div style="background:var(--color-neutral-200);border-radius:var(--radius-lg);padding:16px;font-size:12px;line-height:1.55;color:var(--color-neutral-700)">
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:15px;color:var(--color-text);margin-bottom:6px">PesaIQ · Stage 1</div>
+                  Pasted messages only. No SMS is intercepted, uploaded or logged in full. Provider parsers are demo rules until anonymized fixtures validate them.
+                  <button onClick="{{ goWelcome }}" style="display:inline-flex;align-items:center;margin-top:8px;border:0;background:transparent;color:var(--color-accent-700);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font-body);min-height:44px;padding:0">Replay onboarding →</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ══════ EXPORT ══════ -->
+            <sc-if value="{{ isExport }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="Export data" style="padding:16px 16px 30px">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                  <button onClick="{{ goSettings }}" style="width:44px;height:44px;border:0;border-radius:50%;background:var(--color-neutral-200);cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:var(--color-neutral-300)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"></path><path d="M5 12h14"></path></svg>
+                  </button>
+                  <div style="flex:1;font-family:var(--font-heading);font-weight:800;font-size:20px">Export data</div>
+                </div>
+
+                <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">Format</div>
+                <div style="display:flex;gap:8px;margin-bottom:18px">
+                  <sc-for list="{{ exportFormats }}" as="f" hint-placeholder-count="2">
+                    <button onClick="{{ f.pick }}" style="flex:1;border-radius:var(--radius-md);padding:15px 14px;text-align:left;cursor:pointer;font-family:var(--font-body);border:1px solid {{ f.border }};background:{{ f.bg }}">
+                      <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;color:{{ f.fg }}">{{ f.name }}</div>
+                      <div style="font-size:11px;color:{{ f.subInk }};margin-top:2px">{{ f.sub }}</div>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:8px">Range</div>
+                <div style="display:flex;gap:7px;margin-bottom:18px">
+                  <sc-for list="{{ exportRanges }}" as="r" hint-placeholder-count="3">
+                    <button onClick="{{ r.pick }}" style="flex:1;border-radius:999px;min-height:44px;padding:0 8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);border:1px solid {{ r.border }};background:{{ r.bg }};color:{{ r.fg }}">{{ r.label }}</button>
+                  </sc-for>
+                </div>
+
+                <div style="background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:14px">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--color-neutral-700);flex:1">Preview</div>
+                    <div style="background:var(--color-neutral-200);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--color-neutral-700)">{{ exportCount }} rows</div>
+                  </div>
+                  <div style="background:var(--color-bg);border-radius:var(--radius-md);padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:10px;line-height:1.7;color:var(--color-neutral-800);white-space:pre;overflow-x:auto">{{ exportPreview }}</div>
+                </div>
+
+                <div style="background:var(--color-accent-2-200);border-radius:var(--radius-md);padding:13px 14px;font-size:12px;line-height:1.5;color:var(--color-accent-2-900);margin-bottom:14px">Export runs only when you tap the button. The file is written to your device; nothing is sent anywhere.</div>
+
+                <button onClick="{{ doExport }}" style="width:100%;height:56px;border:0;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-weight:800;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:var(--shadow-md)" style-hover="background:var(--color-accent-600)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7 11l5 5 5-5"></path><path d="M5 20h14"></path></svg>
+                  Export {{ exportFmt }}
+                </button>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <!-- ══════ BOTTOM NAV ══════ -->
+          <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:0 0 auto;display:flex;background:var(--color-neutral-100);border-top:1px solid var(--color-divider);padding:6px 4px 4px">
+              <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+                <button onClick="{{ n.go }}" style="flex:1;min-height:56px;border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ n.ink }};font-family:var(--font-body);border-radius:var(--radius-md)" style-hover="background:var(--color-neutral-200)">
+                  <div style="width:46px;height:26px;border-radius:999px;background:{{ n.pill }};display:flex;align-items:center;justify-content:center;position:relative">
+                    <sc-if value="{{ n.isDash }}" hint-placeholder-val="{{ false }}">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"></rect><rect x="14" y="3" width="7" height="5" rx="2"></rect><rect x="14" y="12" width="7" height="9" rx="2"></rect><rect x="3" y="16" width="7" height="5" rx="2"></rect></svg>
+                    </sc-if>
+                    <sc-if value="{{ n.isTxns }}" hint-placeholder-val="{{ false }}">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ n.isLab }}" hint-placeholder-val="{{ false }}">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H8l-4 4z"></path><path d="M12 8v4"></path><path d="M10 10h4"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ n.isReview }}" hint-placeholder-val="{{ false }}">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-3-6.2"></path><path d="M9 12l3 3 8-8"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ n.isSettings }}" hint-placeholder-val="{{ false }}">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2"></path><path d="M12 19v2"></path><path d="M3 12h2"></path><path d="M19 12h2"></path><path d="M5.6 5.6l1.5 1.5"></path><path d="M16.9 16.9l1.5 1.5"></path><path d="M18.4 5.6l-1.5 1.5"></path><path d="M7.1 16.9l-1.5 1.5"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute;top:-1px;right:6px;min-width:15px;height:15px;border-radius:999px;background:var(--color-accent);color:var(--color-bg);font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 3px">{{ n.badge }}</span>
+                    </sc-if>
+                  </div>
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.01em">{{ n.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- ══════ TOAST ══════ -->
+          <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:16px;right:16px;bottom:88px;background:var(--color-neutral-900);color:var(--color-neutral-100);border-radius:999px;padding:14px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;animation:pq-rise .2s ease">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-2-400)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 17px"><path d="M5 13l4 4 10-10"></path></svg>
+              {{ toast }}
+            </div>
+          </sc-if>
+        </div>
+      </x-import>
+
+      <!-- ══════ SCREEN INDEX (outside the device) ══════ -->
+      <div style="flex:1;min-width:260px;max-width:340px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:10px">Screens</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <sc-for list="{{ index }}" as="g" hint-placeholder-count="4">
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:6px">{{ g.title }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+                  <button onClick="{{ i.go }}" style="border-radius:999px;min-height:40px;padding:0 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body);display:inline-flex;align-items:center;border:1px solid {{ i.border }};background:{{ i.bg }};color:{{ i.fg }}">{{ i.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:22px;background:var(--color-neutral-100);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);font-size:13px;line-height:1.55;color:var(--color-neutral-700)">
+          <div style="font-family:var(--font-heading);font-weight:800;font-size:16px;color:var(--color-text);margin-bottom:7px">The parser is real</div>
+          Load a sample in the Parser Lab and analyze it: normalization, keyword classification, field extraction and the confidence weighting all run in the prototype, so the result card reflects what the message actually contains. Sample messages are invented and anonymized — no live provider formats are claimed.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1080}}">
+const TZ = n => n == null ? '—' : Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+const TYPE_SW = { RECEIVED: 'Received', SENT: 'Sent', WITHDRAWAL: 'Withdrawal', DEPOSIT: 'Deposit', TRANSFER: 'Transfer', AIRTIME: 'Airtime', BILL_PAYMENT: 'Bill payment', UNKNOWN: 'Unknown' };
+const CAT_TO_TYPE = { PAYMENT_RECEIVED: 'RECEIVED', PAYMENT_SENT: 'SENT', WITHDRAWAL: 'WITHDRAWAL', DEPOSIT: 'DEPOSIT', BANK_TRANSFER: 'TRANSFER', AIRTIME_PURCHASE: 'AIRTIME', BILL_PAYMENT: 'BILL_PAYMENT', BALANCE_UPDATE: 'UNKNOWN', OTP: 'UNKNOWN', PROMOTIONAL: 'UNKNOWN', SECURITY_ALERT: 'UNKNOWN', OTHER: 'UNKNOWN' };
+const IN_TYPES = ['RECEIVED', 'DEPOSIT'];
+const OUT_TYPES = ['SENT', 'WITHDRAWAL', 'AIRTIME', 'BILL_PAYMENT', 'TRANSFER'];
+
+const SAMPLES = [
+  { id: 's1', name: 'Mobile money · received', badge: 'MM', hint: 'TZS 250,000 from a person, with reference', sender: 'DEMO-WALLET-A',
+    text: 'DEMO SAMPLE (anonymized)\nYou have received TZS 250,000.00 from JOHN MWAKASEGE 0712345678 on 12/03/26 at 14:22. Ref: QH42T8LM9P. New balance TZS 812,400.00.' },
+  { id: 's2', name: 'Mobile money · sent (Swahili)', badge: 'SW', hint: 'Swahili wording, with balance and fee', sender: 'DEMO-WALLET-B',
+    text: 'DEMO SAMPLE (anonymized)\nUmetuma TZS 45,000 kwa GRACE KIMARO 0687776887. Muamala 8FR2K1DD. Salio TZS 133,900. Ada TZS 1,000.' },
+  { id: 's3', name: 'Bank · ATM withdrawal', badge: 'BK', hint: 'Account debited, no counterparty name', sender: 'DEMO-BANK',
+    text: 'DEMO SAMPLE (anonymized)\nAcct ****4312 debited TZS 120,000.00 ATM withdrawal 11/03/26 09:07. Avail bal TZS 2,415,300.00. TxnID BK7741902.' },
+  { id: 's4', name: 'Unknown · promotional', badge: '??', hint: 'No amount, no reference — lands in review', sender: 'DEMO-PROMO',
+    text: 'DEMO SAMPLE (anonymized)\nKaribu! Bonasi ya 20% kwa kila bando unalonunua wiki hii. Bofya *149*88# kujiunga.' }
+];
+
+const PROVIDER_HINTS = [
+  { id: 'mpesa', match: /wallet-a|m-?pesa/i, name: 'Wallet A (M-Pesa-like demo)' },
+  { id: 'airtel', match: /wallet-b|airtel/i, name: 'Wallet B (Airtel-like demo)' },
+  { id: 'bank', match: /demo-bank|crdb|nmb|nbc|absa|stanbic|acct|account/i, name: 'Demo Bank' },
+  { id: 'promo', match: /promo/i, name: 'Unrecognized sender' }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.timers = [];
+    this.state = {
+      screen: 'dash', sms: '', sender: '', labStage: 'idle', steps: 0, labError: '',
+      result: null, editing: false, why: false,
+      sel: null, filter: 'All', query: '',
+      auto: false, ai: false, cloud: false, demo: true,
+      exportFmt: 'CSV', exportRange: '30 days', toast: '', cleared: 2, streak: 6,
+      catMode: 'spend', healthShown: 0, barsIn: false,
+      watch: ['M-Pesa', 'CRDB', 'NMB'],
+      txns: [
+        { id: 't1', type: 'RECEIVED', provider: 'Wallet A (M-Pesa-like demo)', amount: 250000, party: 'JOHN M.', masked: '07** *** 678', ref: 'QH42T8LM9P', balance: 812400, date: '12 Mar 2026', time: '14:22', conf: 0.96, status: 'CONFIRMED', source: SAMPLES[0].text, sender: 'DEMO-WALLET-A', lowFields: [] },
+        { id: 't2', type: 'SENT', provider: 'Wallet B (Airtel-like demo)', amount: 45000, party: 'GRACE K.', masked: '06** *** 887', ref: '8FR2K1DD', balance: 133900, date: '12 Mar 2026', time: '11:04', conf: 0.88, status: 'PARSED', source: SAMPLES[1].text, sender: 'DEMO-WALLET-B', lowFields: [] },
+        { id: 't3', type: 'WITHDRAWAL', provider: 'Demo Bank', amount: 120000, party: 'ATM withdrawal', masked: '**** 4312', ref: 'BK7741902', balance: 2415300, date: '11 Mar 2026', time: '09:07', conf: 0.74, status: 'NEEDS_REVIEW', source: SAMPLES[2].text, sender: 'DEMO-BANK', lowFields: ['party'] },
+        { id: 't4', type: 'AIRTIME', provider: 'Unrecognized sender', amount: 5000, party: '', masked: '', ref: '', balance: null, date: '10 Mar 2026', time: '18:40', conf: 0.58, status: 'NEEDS_REVIEW', source: 'DEMO SAMPLE (anonymized)\nUmenunua muda wa maongezi 5000. Asante.', sender: 'DEMO-UNKNOWN', lowFields: ['party', 'ref', 'amount'] },
+        { id: 't5', type: 'RECEIVED', provider: 'Demo Bank', amount: 1200000, party: 'PAYROLL BATCH', masked: '**** 4312', ref: 'BK7710455', balance: 2535300, date: '05 Mar 2026', time: '07:15', conf: 0.93, status: 'CONFIRMED', source: 'DEMO SAMPLE (anonymized)\nAcct ****4312 credited TZS 1,200,000.00 PAYROLL BATCH 05/03/26 07:15. TxnID BK7710455.', sender: 'DEMO-BANK', lowFields: [] },
+        { id: 't6', type: 'BILL_PAYMENT', provider: 'Wallet A (M-Pesa-like demo)', amount: 38500, party: 'LUKU TOKEN', masked: '07** *** 678', ref: 'QH39LL22B', balance: 566900, date: '04 Mar 2026', time: '20:12', conf: 0.81, status: 'CONFIRMED', source: 'DEMO SAMPLE (anonymized)\nUmelipa TZS 38,500 LUKU TOKEN. Muamala QH39LL22B. Salio TZS 566,900.', sender: 'DEMO-WALLET-A', lowFields: [] }
+      ]
+    };
+  }
+
+  componentDidMount() { this.startHealth(this.health(this.state.txns).score); }
+
+  componentWillUnmount() { this.timers.forEach(clearTimeout); if (this._hTimer) clearInterval(this._hTimer); }
+
+  flash(msg) {
+    this.setState({ toast: msg });
+    const t = setTimeout(() => this.setState({ toast: '' }), 2400);
+    this.timers.push(t);
+  }
+
+  go(screen) {
+    this.setState({ screen, labError: '' });
+    if (screen === 'dash') this.startHealth(this.health(this.state.txns).score);
+  }
+
+  startHealth(target) {
+    if (this._hTimer) clearInterval(this._hTimer);
+    this.setState({ healthShown: 0, barsIn: false });
+    let v = 0;
+    const step = Math.max(1, Math.round(target / 24));
+    this._hTimer = setInterval(() => {
+      v = Math.min(target, v + step);
+      this.setState({ healthShown: v });
+      if (v >= target) { clearInterval(this._hTimer); this._hTimer = null; }
+    }, 36);
+    this.timers.push(setTimeout(() => this.setState({ barsIn: true }), 160));
+  }
+
+  health(txns) {
+    const inn = txns.filter(t => IN_TYPES.includes(t.type)).reduce((a, t) => a + (t.amount || 0), 0);
+    const out = txns.filter(t => OUT_TYPES.includes(t.type)).reduce((a, t) => a + (t.amount || 0), 0);
+    const cash = txns.filter(t => t.type === 'WITHDRAWAL').reduce((a, t) => a + (t.amount || 0), 0);
+    const n = txns.length || 1;
+    const savings = inn > 0 ? Math.max(0, Math.min(1, (inn - out) / inn)) : 0;
+    const verified = txns.filter(t => t.status === 'CONFIRMED').length / n;
+    const cashLight = out > 0 ? 1 - Math.min(1, cash / out) : 1;
+    const traceable = txns.filter(t => t.ref).length / n;
+    const parts = [
+      { label: 'Kept from income', v: savings, w: 0.4 },
+      { label: 'Verified records', v: verified, w: 0.25 },
+      { label: 'Low cash-out', v: cashLight, w: 0.2 },
+      { label: 'Traceable records', v: traceable, w: 0.15 }
+    ];
+    const score = Math.round(100 * parts.reduce((a, p) => a + p.v * p.w, 0));
+    const band = score >= 80 ? 'Strong' : score >= 60 ? 'Steady' : score >= 40 ? 'Mixed' : 'Strained';
+    return { score, band, parts, inn, out, cash, savings };
+  }
+
+  catOf(t) {
+    const p = (t.party || '').toUpperCase();
+    if (t.type === 'AIRTIME') return 'Airtime & data';
+    if (t.type === 'WITHDRAWAL') return 'Cash withdrawals';
+    if (t.type === 'BILL_PAYMENT') return /LUKU|UMEME/.test(p) ? 'Electricity & LUKU' : 'Bills & fees';
+    if (t.type === 'SENT' || t.type === 'TRANSFER') return 'Payments to people';
+    if (t.type === 'DEPOSIT') return 'Deposits';
+    if (t.type === 'RECEIVED') return /PAYROLL|MSHAHARA|SALARY/.test(p) ? 'Salary' : 'Payments in';
+    return 'Other';
+  }
+
+  // ── parser engine ────────────────────────────────────────────
+  normalize(raw) {
+    return raw.replace(/\r\n?/g, '\n')
+      .replace(/[\u00a0\u2000-\u200a\u2007\u202f\u3000]/g, ' ')
+      .replace(/[ \t]{2,}/g, ' ')
+      .split('\n').map(l => l.trim()).filter(Boolean).join('\n').trim();
+  }
+
+  classify(t) {
+    const reasons = [];
+    let category = 'OTHER', conf = 0.4;
+    const has = re => re.test(t);
+    if (has(/\b(otp|one[- ]time|do not share|usitoe|siri)\b/i)) { category = 'OTP'; conf = 0.9; reasons.push('One-time-code wording'); }
+    else if (has(/\b(bonasi|bonus|offer|promo|karibu!|bofya|dial \*|win)\b/i) && !has(/tzs\s?[\d,]+\.?\d*\s?(received|sent)?/i)) { category = 'PROMOTIONAL'; conf = 0.72; reasons.push('Promotional wording (offer / dial code)'); reasons.push('No transaction verbs found'); }
+    else if (has(/\b(received|umepokea|imepokelewa|credited)\b/i)) { category = 'PAYMENT_RECEIVED'; conf = 0.92; reasons.push('Incoming-payment wording'); }
+    else if (has(/\b(withdraw|withdrawal|umetoa|atm)\b/i)) { category = 'WITHDRAWAL'; conf = 0.9; reasons.push('Withdrawal wording'); }
+    else if (has(/\b(deposit|umeweka)\b/i)) { category = 'DEPOSIT'; conf = 0.88; reasons.push('Deposit wording'); }
+    else if (has(/\b(airtime|muda wa maongezi|bando)\b/i)) { category = 'AIRTIME_PURCHASE'; conf = 0.84; reasons.push('Airtime wording'); }
+    else if (has(/\b(luku|bili|bill|umelipa|paid to)\b/i)) { category = 'BILL_PAYMENT'; conf = 0.84; reasons.push('Bill-payment wording'); }
+    else if (has(/\b(sent|umetuma|debited|transferred)\b/i)) { category = 'PAYMENT_SENT'; conf = 0.91; reasons.push('Outgoing-payment wording'); }
+    else if (has(/\b(salio|balance)\b/i)) { category = 'BALANCE_UPDATE'; conf = 0.7; reasons.push('Balance-only wording'); }
+    else reasons.push('No known transaction wording matched');
+    if (/\bTZS\b/i.test(t)) { reasons.push('TZS amount present'); conf = Math.min(0.97, conf + 0.03); }
+    if (/(ref|muamala|txnid|receipt)/i.test(t)) reasons.push('Reference-like token present');
+    return { category, confidence: conf, reasons };
+  }
+
+  runParse(raw, senderIn) {
+    const originalText = raw;
+    const normalizedText = this.normalize(raw);
+    const sender = senderIn || (/DEMO-[A-Z-]+/.exec(normalizedText) || [''])[0] || '';
+    const cls = this.classify(normalizedText);
+    const warnings = [];
+
+    const num = s => s == null ? null : Number(String(s).replace(/,/g, ''));
+    const amtM = /(?:TZS|TSH)\s*([\d,]+(?:\.\d{1,2})?)/i.exec(normalizedText) || /([\d,]+(?:\.\d{1,2})?)\s*(?:TZS|TSH)/i.exec(normalizedText);
+    const looseAmt = amtM ? null : /\b(\d{4,7})\b/.exec(normalizedText);
+    const amount = amtM ? num(amtM[1]) : (looseAmt ? num(looseAmt[1]) : null);
+    const amountConf = amtM ? 0.97 : (looseAmt ? 0.55 : 0);
+    if (amount == null) warnings.push('No amount found — this cannot be saved as a verified record.');
+    else if (!amtM) warnings.push('Amount read from a bare number, currency not stated.');
+
+    const balM = /(?:new balance|avail(?:able)?\.?\s?bal(?:ance)?|salio)[^\d]{0,14}([\d,]+(?:\.\d{1,2})?)/i.exec(normalizedText);
+    const refM = /(?:ref|receipt|txn\s?id|txnid|muamala|transaction id)\s*[:.]?\s*([A-Z0-9]{6,})/i.exec(normalizedText);
+    if (!refM) warnings.push('No transaction reference found — duplicates cannot be detected.');
+
+    let party = '', partyConf = 0;
+    const fromM = /\bfrom\s+([A-Z][A-Z .]{2,34}?)(?=\s+0\d|\s+on\b|,|\.|$)/.exec(normalizedText);
+    const kwaM = /\bkwa\s+([A-Z][A-Z .]{2,34}?)(?=\s+0\d|,|\.|$)/.exec(normalizedText);
+    const toM = /\b(?:paid|umelipa|to)\s+(?:TZS\s?[\d,.]+\s+)?([A-Z][A-Z .]{2,34}?)(?=\s+0\d|,|\.|$)/.exec(normalizedText);
+    const atmM = /\bATM withdrawal\b/i.exec(normalizedText);
+    if (fromM) { party = fromM[1].trim(); partyConf = 0.9; }
+    else if (kwaM) { party = kwaM[1].trim(); partyConf = 0.88; }
+    else if (toM) { party = toM[1].trim(); partyConf = 0.76; }
+    else if (atmM) { party = 'ATM withdrawal'; partyConf = 0.62; }
+    if (!party) partyConf = 0;
+
+    const phoneM = /\b(0\d{9})\b/.exec(normalizedText);
+    const acctM = /\*{2,4}\s?(\d{4})\b/.exec(normalizedText);
+    const masked = phoneM ? phoneM[1].slice(0, 2) + '** *** ' + phoneM[1].slice(-3) : (acctM ? '**** ' + acctM[1] : '');
+
+    const dateM = /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(normalizedText);
+    const timeM = /\b(\d{1,2}:\d{2})\b/.exec(normalizedText);
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const date = dateM ? String(dateM[1]).padStart(2, '0') + ' ' + (MON[Number(dateM[2]) - 1] || '?') + ' 20' + String(dateM[3]).slice(-2) : '';
+    if (!date) warnings.push('No date in the message — capture time will be used instead.');
+
+    const ph = PROVIDER_HINTS.find(p => p.match.test(sender) || p.match.test(normalizedText));
+    const provider = ph && ph.id !== 'promo' ? ph.name : '';
+    const providerConf = provider ? 0.86 : 0;
+
+    const factors = [
+      { label: 'Provider recognized', hit: !!provider, w: 0.16 },
+      { label: 'Message type recognized', hit: cls.category !== 'OTHER', w: 0.16 },
+      { label: 'Amount + currency', hit: !!amtM, w: 0.2 },
+      { label: 'Reference extracted', hit: !!refM, w: 0.14 },
+      { label: 'Counterparty extracted', hit: !!party, w: 0.12 },
+      { label: 'Date extracted', hit: !!date, w: 0.1 },
+      { label: 'Balance extracted', hit: !!balM, w: 0.08 }
+    ];
+    let confidence = 0.24 + factors.reduce((s, f) => s + (f.hit ? f.w : 0), 0);
+    if (cls.category === 'PROMOTIONAL' || cls.category === 'OTP') confidence = Math.min(confidence, 0.52);
+    confidence = Math.max(0.18, Math.min(0.98, confidence * (0.72 + cls.confidence * 0.3)));
+
+    const type = CAT_TO_TYPE[cls.category] || 'UNKNOWN';
+    const mk = (key, label, value, display, conf) => ({ key, label, value: value == null ? '' : String(value), display: display, conf, low: conf > 0 && conf < 0.75, missing: !value });
+    const fields = [
+      mk('category', 'Type', cls.category, cls.category.replace(/_/g, ' ') + ' · ' + TYPE_SW[type], cls.confidence),
+      mk('provider', 'Provider', provider, provider || 'Not recognized', providerConf),
+      mk('amount', 'Amount', amount == null ? '' : amount, amount == null ? 'Missing' : 'TZS ' + TZ(amount), amountConf),
+      mk('party', 'Counterparty', party, party || 'Not found', partyConf),
+      mk('masked', 'Account / phone', masked, masked || 'Not found', masked ? 0.82 : 0),
+      mk('ref', 'Reference', refM ? refM[1] : '', refM ? refM[1] : 'Not found', refM ? 0.93 : 0),
+      mk('balance', 'Balance after', balM ? num(balM[1]) : '', balM ? 'TZS ' + TZ(num(balM[1])) : 'Not found', balM ? 0.9 : 0),
+      mk('date', 'Date', date, date ? date + (timeM ? ' · ' + timeM[1] : '') : 'Not found', date ? 0.88 : 0)
+    ];
+
+    return {
+      originalText, normalizedText, sender, category: cls.category, type, provider,
+      amount, currency: 'TZS', party, masked, ref: refM ? refM[1] : '', balance: balM ? num(balM[1]) : null,
+      date, time: timeM ? timeM[1] : '', confidence, parserId: provider ? 'GenericParser + provider hints (DEMO)' : 'GenericParser (DEMO)',
+      warnings, reasons: cls.reasons, factors, fields, normNote: normalizedText.length === originalText.trim().length ? 'Whitespace already clean.' : 'Collapsed whitespace and blank lines.'
+    };
+  }
+
+  band(c) {
+    if (c >= 0.95) return 'Very high';
+    if (c >= 0.8) return 'High';
+    if (c >= 0.6) return 'Medium';
+    return 'Needs review';
+  }
+
+  analyze() {
+    const raw = this.state.sms;
+    if (!raw.trim()) { this.setState({ labError: 'Paste a message before analyzing.' }); return; }
+    if (raw.trim().length > 1600) { this.setState({ labError: 'Message is unusually long (over 1,600 characters). Trim it and try again.' }); return; }
+    this.setState({ labStage: 'analyzing', steps: 0, labError: '' });
+    [1, 2, 3, 4].forEach((n, i) => {
+      const t = setTimeout(() => {
+        if (n < 4) { this.setState({ steps: n }); return; }
+        const r = this.runParse(raw, this.state.sender);
+        this.setState({ steps: 4, result: r, labStage: 'done', screen: 'result', why: false, editing: false });
+      }, 400 * (i + 1));
+      this.timers.push(t);
+    });
+  }
+
+  editField(key, v) {
+    const r = this.state.result;
+    if (!r) return;
+    const fields = r.fields.map(f => f.key === key ? Object.assign({}, f, { value: v, display: v || 'Missing', conf: 1, low: false, verified: true }) : f);
+    this.setState({ result: Object.assign({}, r, { fields }) });
+  }
+
+  fieldVal(r, key) { const f = r.fields.find(x => x.key === key); return f ? f.value : ''; }
+
+  saveResult() {
+    const r = this.state.result;
+    if (!r) return;
+    const amount = Number(String(this.fieldVal(r, 'amount')).replace(/[^\d.]/g, '')) || null;
+    if (amount == null) { this.flash('Add an amount before saving.'); return; }
+    const edited = r.fields.some(f => f.verified);
+    const conf = edited ? Math.max(r.confidence, 0.95) : r.confidence;
+    const low = r.fields.filter(f => f.low).map(f => f.key);
+    const t = {
+      id: 'n' + Date.now(), type: r.type === 'UNKNOWN' ? 'UNKNOWN' : r.type,
+      provider: this.fieldVal(r, 'provider') || 'Unrecognized sender', amount,
+      party: this.fieldVal(r, 'party') || 'No name', masked: this.fieldVal(r, 'masked'),
+      ref: this.fieldVal(r, 'ref'), balance: Number(String(this.fieldVal(r, 'balance')).replace(/[^\d.]/g, '')) || null,
+      date: this.fieldVal(r, 'date') || '12 Mar 2026', time: r.time || '—',
+      conf, status: conf < 0.6 ? 'NEEDS_REVIEW' : 'CONFIRMED', source: r.originalText, sender: r.sender || 'PASTED', lowFields: low
+    };
+    this.setState(s => ({ txns: [t].concat(s.txns), screen: 'dash', sms: '', sender: '', labStage: 'idle', result: null, cleared: Math.min(7, s.cleared + (conf < 0.6 ? 0 : 1)) }), () => this.startHealth(this.health(this.state.txns).score));
+    this.flash(conf < 0.6 ? 'Saved to the review queue.' : 'Transaction saved.');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const scr = s.screen;
+    const txns = s.txns;
+    const tint = t => IN_TYPES.includes(t) ? 'var(--color-accent-2-200)' : 'var(--color-accent-200)';
+    const ink = t => IN_TYPES.includes(t) ? 'var(--color-accent-2-800)' : 'var(--color-accent-800)';
+    const rowOf = t => ({
+      id: t.id, party: t.party || 'No name', typeSw: TYPE_SW[t.type] || t.type, masked: t.masked || 'no number',
+      meta: (TYPE_SW[t.type] || t.type) + ' · ' + t.time, tint: tint(t.type), ink: ink(t.type),
+      isIn: IN_TYPES.includes(t.type), isOut: !IN_TYPES.includes(t.type),
+      amountSigned: (IN_TYPES.includes(t.type) ? '+' : '−') + TZ(t.amount),
+      amountInk: IN_TYPES.includes(t.type) ? 'var(--color-accent-2-700)' : 'var(--color-text)',
+      confPct: Math.round(t.conf * 100) + '%', needsReview: t.status === 'NEEDS_REVIEW',
+      open: () => this.setState({ sel: t.id, screen: 'detail' })
+    });
+
+    const totalIn = txns.filter(t => IN_TYPES.includes(t.type)).reduce((a, t) => a + (t.amount || 0), 0);
+    const totalOut = txns.filter(t => OUT_TYPES.includes(t.type)).reduce((a, t) => a + (t.amount || 0), 0);
+    const reviewList = txns.filter(t => t.status === 'NEEDS_REVIEW');
+
+    // provider summary
+    const pmap = {};
+    txns.forEach(t => {
+      const k = t.provider || 'Unrecognized sender';
+      if (!pmap[k]) pmap[k] = { name: k, count: 0, amount: 0 };
+      pmap[k].count++; pmap[k].amount += t.amount || 0;
+    });
+    const palette = [['var(--color-accent-2-200)', 'var(--color-accent-2-800)'], ['var(--color-accent-200)', 'var(--color-accent-800)'], ['var(--color-neutral-300)', 'var(--color-neutral-800)']];
+    const providerSummary = Object.values(pmap).sort((a, b) => b.amount - a.amount).map((p, i) => ({
+      name: p.name, count: p.count, amountFmt: TZ(p.amount), initials: p.name.replace(/[^A-Za-z ]/g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase(),
+      tint: palette[i % 3][0], ink: palette[i % 3][1]
+    }));
+
+    // transactions filter
+    const FILTERS = { 'All': null, 'Received': ['RECEIVED', 'DEPOSIT'], 'Sent': ['SENT', 'TRANSFER'], 'Cash out': ['WITHDRAWAL'], 'Bills': ['BILL_PAYMENT', 'AIRTIME'] };
+    const q = s.query.trim().toLowerCase();
+    let filtered = txns.filter(t => {
+      if (s.filter === 'Review') { if (t.status !== 'NEEDS_REVIEW') return false; }
+      else { const allow = FILTERS[s.filter]; if (allow && !allow.includes(t.type)) return false; }
+      if (!q) return true;
+      return ((t.party || '') + ' ' + (t.ref || '') + ' ' + (t.provider || '') + ' ' + (t.masked || '')).toLowerCase().includes(q);
+    });
+    const gmap = [];
+    filtered.forEach(t => {
+      let g = gmap.find(x => x.date === t.date);
+      if (!g) { g = { date: t.date, rows: [] }; gmap.push(g); }
+      g.rows.push(rowOf(t));
+    });
+    const filterChips = ['All', 'Received', 'Sent', 'Cash out', 'Bills', 'Review'].map(l => {
+      const on = s.filter === l;
+      return { label: l, pick: () => this.setState({ filter: l }), bg: on ? 'var(--color-accent-200)' : 'var(--color-neutral-100)', fg: on ? 'var(--color-accent-900)' : 'var(--color-neutral-800)', border: on ? 'var(--color-accent-300)' : 'var(--color-neutral-300)' };
+    });
+
+    // detail
+    const sel = txns.find(t => t.id === s.sel) || txns[0] || null;
+    let d = {};
+    if (sel) {
+      const lf = sel.lowFields || [];
+      const df = (label, display, key) => ({ label, display: display || 'Not found', low: lf.includes(key) });
+      const STATUS_TINT = { CONFIRMED: ['var(--color-accent-2-300)', 'var(--color-accent-2-900)'], NEEDS_REVIEW: ['var(--color-accent-300)', 'var(--color-accent-900)'], PARSED: ['var(--color-neutral-300)', 'var(--color-neutral-800)'], IGNORED: ['var(--color-neutral-300)', 'var(--color-neutral-700)'], FAILED: ['var(--color-accent-300)', 'var(--color-accent-900)'] };
+      const st = STATUS_TINT[sel.status] || STATUS_TINT.PARSED;
+      d = {
+        typeLabel: (TYPE_SW[sel.type] || sel.type) + ' · ' + sel.type.replace(/_/g, ' '),
+        status: sel.status.replace(/_/g, ' '), statusTint: st[0], statusInk: st[1],
+        amountLabel: (IN_TYPES.includes(sel.type) ? '+ ' : '− ') + 'TZS ' + TZ(sel.amount),
+        tint: tint(sel.type), ink: ink(sel.type), party: sel.party || 'No name', date: sel.date + ' · ' + sel.time,
+        confPct: Math.round(sel.conf * 100) + '%', band: this.band(sel.conf),
+        confBar: sel.conf >= 0.8 ? 'var(--color-accent-2-600)' : 'var(--color-accent-500)',
+        confOff: (81.7 * (1 - sel.conf)).toFixed(1),
+        source: sel.source, sender: sel.sender,
+        fields: [
+          df('Provider', sel.provider, 'provider'),
+          df('Amount', 'TZS ' + TZ(sel.amount), 'amount'),
+          df('Counterparty', sel.party, 'party'),
+          df('Account / phone', sel.masked, 'masked'),
+          df('Reference', sel.ref, 'ref'),
+          df('Balance after', sel.balance == null ? '' : 'TZS ' + TZ(sel.balance), 'balance'),
+          df('Date', sel.date + ' · ' + sel.time, 'date'),
+          df('Source', 'Pasted message · ' + sel.sender, 'sender')
+        ],
+        confirm: () => { this.setState(st2 => ({ txns: st2.txns.map(t => t.id === sel.id ? Object.assign({}, t, { status: 'CONFIRMED' }) : t) })); this.flash('Confirmed.'); },
+        edit: () => this.flash('Edit opens the field-by-field form.'),
+        incorrect: () => { this.setState(st2 => ({ txns: st2.txns.map(t => t.id === sel.id ? Object.assign({}, t, { status: 'NEEDS_REVIEW' }) : t) })); this.flash('Marked incorrect · sent to review.'); },
+        remove: () => { this.setState(st2 => ({ txns: st2.txns.filter(t => t.id !== sel.id), screen: 'txns' })); this.flash('Transaction deleted.'); }
+      };
+    }
+
+    // review queue
+    const TYPE_OPTS = ['RECEIVED', 'SENT', 'WITHDRAWAL', 'AIRTIME', 'BILL_PAYMENT'];
+    const patch = (id, obj) => this.setState(st2 => ({ txns: st2.txns.map(t => t.id === id ? Object.assign({}, t, obj) : t) }));
+    const reviewQueue = reviewList.map(t => ({
+      initials: (t.party || 'NA').replace(/[^A-Za-z ]/g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'NA',
+      amountLabel: 'TZS ' + TZ(t.amount), provider: t.provider, date: t.date,
+      confPct: Math.round(t.conf * 100) + '% conf', tint: tint(t.type), ink: ink(t.type),
+      typeOptions: TYPE_OPTS.map(o => {
+        const on = t.type === o;
+        return { label: TYPE_SW[o], pick: () => patch(t.id, { type: o }), bg: on ? 'var(--color-accent-2-700)' : 'transparent', fg: on ? '#fff' : 'var(--color-neutral-800)', border: on ? 'var(--color-accent-2-500)' : 'var(--color-neutral-300)' };
+      }),
+      inputs: [
+        { label: 'Amount (TZS)', value: t.amount == null ? '' : String(t.amount), placeholder: 'e.g. 45000', low: (t.lowFields || []).includes('amount'), border: (t.lowFields || []).includes('amount') ? 'var(--color-accent-400)' : 'var(--color-neutral-300)', onEdit: e => patch(t.id, { amount: Number(String(e.target.value).replace(/[^\d.]/g, '')) || null }) },
+        { label: 'Counterparty', value: t.party || '', placeholder: 'Sender or recipient name', low: (t.lowFields || []).includes('party'), border: (t.lowFields || []).includes('party') ? 'var(--color-accent-400)' : 'var(--color-neutral-300)', onEdit: e => patch(t.id, { party: e.target.value }) },
+        { label: 'Reference', value: t.ref || '', placeholder: 'e.g. QH42T8LM9P', low: (t.lowFields || []).includes('ref'), border: (t.lowFields || []).includes('ref') ? 'var(--color-accent-400)' : 'var(--color-neutral-300)', onEdit: e => patch(t.id, { ref: e.target.value }) }
+      ],
+      confirm: () => { patch(t.id, { status: 'CONFIRMED', conf: 1, lowFields: [] }); this.setState(st2 => ({ cleared: Math.min(7, st2.cleared + 1) })); this.flash('Confirmed, with your corrections saved.'); },
+      ignore: () => { patch(t.id, { status: 'IGNORED' }); this.flash('Ignored.'); }
+    }));
+
+    // settings
+    const tog = (key, label, sub) => ({ label, sub, isToggle: true, on: s[key], trackBg: s[key] ? 'var(--color-accent-2-500)' : 'var(--color-neutral-400)', knob: s[key] ? 'flex-end' : 'flex-start', toggle: () => this.setState({ [key]: !s[key] }) });
+    const act = (label, sub, actLabel, fn, danger) => ({ label, sub, isAction: true, actLabel, act: fn, actBorder: danger ? 'var(--color-accent-500)' : 'var(--color-neutral-300)', actInk: danger ? 'var(--color-accent-700)' : 'var(--color-neutral-800)' });
+    const tag = (label, sub, t2, kind) => ({ label, sub, isTag: true, tag: t2, tagBg: kind === 'on' ? 'var(--color-accent-2-200)' : 'var(--color-neutral-200)', tagInk: kind === 'on' ? 'var(--color-accent-2-800)' : 'var(--color-neutral-700)' });
+    const settingGroups = [
+      { title: 'Processing', rows: [
+        tog('auto', 'Automatic processing', 'Off in Stage 1. Messages are analyzed only when you paste them.'),
+        tag('SMS source', 'ManualSmsSource · pasted messages', 'Stage 1', 'off'),
+        tog('cloud', 'Cloud sync', 'Keep records on this device only.')
+      ] },
+      { title: 'Privacy', rows: [
+        tag('On-device parsing', 'Rules run locally; full messages are never logged.', 'On', 'on'),
+        act('Delete all transactions', 'Removes every saved record.', 'Delete', () => { this.setState({ txns: [] }); this.flash('All transactions deleted.'); }, true),
+        act('Delete all messages', 'Removes stored source messages.', 'Delete', () => this.flash('Source messages deleted.'), true),
+        act('Clear processing history', 'Removes parse events and corrections.', 'Clear', () => this.flash('Processing history cleared.'))
+      ] },
+      { title: 'AI · fallback', rows: [
+        tog('ai', 'AI fallback parsing', 'Off by default. When on, only low-confidence messages would be sent for structured extraction.'),
+        tag('AI provider', 'None connected in Stage 1.', 'Not set', 'off')
+      ] },
+      { title: 'Providers', rows: [
+        tag('Wallet A (M-Pesa-like demo)', 'Tanzania · demo rules', 'Demo', 'off'),
+        tag('Wallet B (Airtel-like demo)', 'Tanzania · demo rules', 'Demo', 'off'),
+        tag('Demo Bank (CRDB / NMB shape)', 'Tanzania · demo rules', 'Demo', 'off'),
+        tag('Generic bank / payment', 'Fallback rules', 'Demo', 'off')
+      ] },
+      { title: 'Data', rows: [
+        act('Export my data', 'CSV or JSON, on your action only.', 'Export', () => this.go('export')),
+        tag('Demo data', s.demo ? 'Sample records are included.' : 'Removed.', s.demo ? 'On' : 'Off', s.demo ? 'on' : 'off'),
+        act('Remove demo data', 'Deletes generated sample records.', 'Remove', () => { this.setState(st2 => ({ demo: false, txns: st2.txns.filter(t => t.id.startsWith('n')) })); this.flash('Demo data removed.'); }, true)
+      ] }
+    ];
+
+    // export preview
+    const header = 'Date,Type,Provider,Amount,Currency,Sender,Reference,Confidence';
+    const esc = v => { const x = String(v == null ? '' : v); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+    const exportRows = txns.slice(0, 3);
+    const exportPreview = s.exportFmt === 'CSV'
+      ? [header].concat(exportRows.map(t => [t.date, t.type, t.provider, t.amount, 'TZS', t.party, t.ref, t.conf.toFixed(2)].map(esc).join(','))).join('\n')
+      : JSON.stringify(exportRows.slice(0, 2).map(t => ({ date: t.date, type: t.type, provider: t.provider, amount: t.amount, currency: 'TZS', sender: t.party, reference: t.ref, confidence: Number(t.conf.toFixed(2)) })), null, 1);
+
+    const r = s.result;
+    let rv = {};
+    if (r) {
+      const inn = IN_TYPES.includes(r.type);
+      rv = {
+        parserId: r.parserId, category: r.category.replace(/_/g, ' '), band: this.band(r.confidence),
+        confPct: Math.round(r.confidence * 100) + '%',
+        bandTint: r.confidence >= 0.8 ? 'var(--color-accent-2-300)' : 'var(--color-accent-300)',
+        bandInk: r.confidence >= 0.8 ? 'var(--color-accent-2-900)' : 'var(--color-accent-900)',
+        heroTint: r.amount == null ? 'var(--color-neutral-200)' : (inn ? 'var(--color-accent-2-200)' : 'var(--color-accent-200)'),
+        heroInk: r.amount == null ? 'var(--color-neutral-800)' : (inn ? 'var(--color-accent-2-900)' : 'var(--color-accent-900)'),
+        amountLabel: r.amount == null ? 'Hakuna kiasi' : (inn ? '+ ' : '− ') + 'TZS ' + TZ(r.amount),
+        subLabel: (r.party || 'No counterparty') + ' · ' + (r.provider || 'sender not recognized'),
+        hasWarnings: r.warnings.length > 0, warnings: r.warnings, reasons: r.reasons,
+        normalizedText: r.normalizedText, normNote: r.normNote,
+        factors: r.factors.map(f => ({ label: f.label, delta: f.hit ? '+' + f.w.toFixed(2) : 'missing', pct: f.hit ? Math.round(f.w / 0.2 * 100) : 6, bar: f.hit ? 'var(--color-accent-2-500)' : 'var(--color-accent-400)', ink: f.hit ? 'var(--color-text)' : 'var(--color-accent-700)' })),
+        fields: r.fields.map(f => ({ label: f.label, value: f.value, display: f.display, low: f.low, verified: !!f.verified, confPct: Math.round(f.conf * 100) + '%', ink: f.low ? 'var(--color-accent-700)' : (f.conf === 0 ? 'var(--color-neutral-500)' : 'var(--color-text)'), onEdit: e => this.editField(f.key, e.target.value) }))
+      };
+    }
+
+    // ── insights: health, categories, tips ──────────────────────
+    const H = this.health(txns);
+    const shown = Math.min(s.healthShown, H.score);
+    const pctOf = x => Math.round(x * 100) + '%';
+    const BARS = ['var(--color-accent-500)', 'var(--color-accent-400)', 'var(--color-accent-2-500)', 'var(--color-accent-2-400)', 'var(--color-accent-300)', 'var(--color-neutral-500)'];
+    const catAgg = types => {
+      const m = {};
+      txns.filter(t => types.includes(t.type)).forEach(t => {
+        const k = this.catOf(t);
+        if (!m[k]) m[k] = { name: k, amount: 0, count: 0 };
+        m[k].amount += t.amount || 0; m[k].count++;
+      });
+      const rows = Object.values(m).sort((a, b) => b.amount - a.amount);
+      const tot = rows.reduce((a, r) => a + r.amount, 0) || 1;
+      return {
+        total: tot, rows: rows.map((r, i) => ({
+          name: r.name, amountFmt: TZ(r.amount), count: r.count, pct: Math.round(r.amount / tot * 100) + '%',
+          width: s.barsIn ? Math.max(3, Math.round(r.amount / tot * 100)) : 0, bar: BARS[i % BARS.length]
+        }))
+      };
+    };
+    const spendCat = catAgg(OUT_TYPES), earnCat = catAgg(IN_TYPES);
+    const cat = s.catMode === 'spend' ? spendCat : earnCat;
+    const cashShare = H.out > 0 ? H.cash / H.out : 0;
+    const topSpend = spendCat.rows[0], topEarn = earnCat.rows[0];
+    const unverified = txns.filter(t => t.status !== 'CONFIRMED').length;
+    const noRef = txns.filter(t => !t.ref).length;
+
+    const spendTips = [];
+    if (cashShare > 0.12) spendTips.push({ title: 'Cut down ATM trips', body: 'Cash is ' + pctOf(cashShare) + ' of what you spend. Withdraw larger amounts less often, since every withdrawal carries its own fee.', why: 'TZS ' + TZ(H.cash) + ' taken out as cash' });
+    const capTarget = spendCat.rows.filter(r => r.name !== 'Cash withdrawals' || cashShare <= 0.12)[0];
+    if (capTarget) spendTips.push({ title: 'Set a weekly cap', body: capTarget.name.toLowerCase() + ' is ' + capTarget.pct + ' of your spending. Set a cap and PesaIQ will tell you as you approach it.', why: 'TZS ' + capTarget.amountFmt + ' across ' + capTarget.count + ' transactions' });
+    if (H.savings < 0.35) spendTips.push({ title: 'Aim to keep 35%', body: 'You currently keep ' + pctOf(H.savings) + ' of what comes in. Move a share aside the moment a payment lands, before it gets spent.', why: 'TZS ' + TZ(H.inn) + ' in against TZS ' + TZ(H.out) + ' out' });
+    if (!spendTips.length) spendTips.push({ title: 'Your spending is steady', body: 'No category is running away with the month. Keep saving every message so the trend stays visible.', why: 'TZS ' + TZ(H.out) + ' spent' });
+
+    const earnTips = [];
+    if (topEarn) earnTips.push({ title: 'One source carries ' + topEarn.pct, body: topEarn.name.toLowerCase() + ' makes up most of your income. A second source, however small, softens the month a payment arrives late.', why: 'TZS ' + topEarn.amountFmt + ' from ' + topEarn.name.toLowerCase() });
+    if (noRef > 0) earnTips.push({ title: 'Ask for a reference every time', body: noRef + ' records carry no transaction number, so they cannot be verified or checked for duplicates. Ask for a reference whenever you are paid.', why: noRef + ' records without a reference' });
+    if (unverified > 0) earnTips.push({ title: 'Clear the review queue', body: unverified + ' records are still unconfirmed, so your totals cannot be relied on yet. Two minutes of review fixes that.', why: 'Your health score rises with every record confirmed' });
+    if (!earnTips.length) earnTips.push({ title: 'Your income is traceable', body: 'Every record has a reference and has been confirmed. Hold that pattern and your reports stay ready for a loan or a tax filing.', why: 'TZS ' + TZ(H.inn) + ' received' });
+
+    const ins = {
+      score: shown, target: H.score, band: H.band,
+      ringOff: (339.3 * (1 - shown / 100)).toFixed(1),
+      ringInk: H.score >= 60 ? 'var(--color-accent-2-600)' : 'var(--color-accent-500)',
+      inFmt: TZ(H.inn), outFmt: TZ(H.out), netFmt: (H.inn - H.out < 0 ? '− ' : '+ ') + 'TZS ' + TZ(Math.abs(H.inn - H.out)),
+      netShort: (H.inn - H.out < 0 ? '−' : '+') + TZ(Math.abs(H.inn - H.out)),
+      ringOffSm: (295.3 * (1 - shown / 100)).toFixed(1),
+      netInk: H.inn - H.out >= 0 ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)',
+      parts: H.parts.map(p => ({ label: p.label, pct: pctOf(p.v), width: s.barsIn ? Math.max(3, Math.round(p.v * 100)) : 0, bar: p.v >= 0.6 ? 'var(--color-accent-2-500)' : 'var(--color-accent-400)', weight: 'uzito ' + Math.round(p.w * 100) + '%' })),
+      modes: [{ key: 'spend', label: 'Spending' }, { key: 'earn', label: 'Income' }].map(m => {
+        const on = s.catMode === m.key;
+        return { label: m.label, pick: () => this.setState({ catMode: m.key, barsIn: false }, () => this.timers.push(setTimeout(() => this.setState({ barsIn: true }), 60))), bg: on ? 'var(--color-accent-200)' : 'transparent', fg: on ? 'var(--color-accent-900)' : 'var(--color-neutral-800)' };
+      }),
+      catLabel: s.catMode === 'spend' ? 'Total spending' : 'Total income',
+      catTotal: TZ(cat.total), rows: cat.rows, hasRows: cat.rows.length > 0,
+      spendTips, earnTips
+    };
+
+    const PIPE = ['Normalize whitespace and case', 'Classify the message', 'Extract fields', 'Score confidence'];
+    const NAV = [
+      { key: 'dash', label: 'Home', isDash: true }, { key: 'txns', label: 'Records', isTxns: true },
+      { key: 'lab', label: 'Lab', isLab: true }, { key: 'review', label: 'Review', isReview: true, badge: reviewList.length ? String(reviewList.length) : '' },
+      { key: 'settings', label: 'Settings', isSettings: true }
+    ];
+
+    const idxItem = (label, key) => {
+      const on = scr === key;
+      return { label, go: () => this.go(key), bg: on ? 'var(--color-accent-200)' : 'var(--color-neutral-100)', fg: on ? 'var(--color-accent-900)' : 'var(--color-neutral-800)', border: on ? 'var(--color-accent-300)' : 'var(--color-neutral-300)' };
+    };
+
+    return {
+      isWelcome: scr === 'welcome', isHow: scr === 'how', isPrivacy: scr === 'privacy', isSetup: scr === 'setup',
+      isDash: scr === 'dash', isLab: scr === 'lab', isResult: scr === 'result', isTxns: scr === 'txns',
+      isDetail: scr === 'detail', isReview: scr === 'review', isSettings: scr === 'settings', isExport: scr === 'export',
+      ins,
+      showNav: ['dash', 'lab', 'txns', 'review', 'settings'].includes(scr),
+      goWelcome: () => this.go('welcome'), goHow: () => this.go('how'), goPrivacy: () => this.go('privacy'),
+      goSetup: () => this.go('setup'), goDash: () => this.go('dash'), goLab: () => this.setState({ screen: 'lab', labStage: 'idle', labError: '' }),
+      goTxns: () => this.go('txns'), goReview: () => this.go('review'), goSettings: () => this.go('settings'),
+      finishSetup: () => { this.go('dash'); this.flash('Welcome to PesaIQ.'); },
+
+      howSteps: [
+        { n: '1', en: 'Message', sw: 'A message arrives, or you paste one in' },
+        { n: '2', en: 'Understand', sw: 'The kind of transaction is recognized' },
+        { n: '3', en: 'Extract', sw: 'Amount, name, reference and date' },
+        { n: '4', en: 'Organize', sw: 'Clean records, held on your phone' }
+      ],
+      privacyPoints: [
+        'Stage 1 processes only the messages you paste in.',
+        'A future Android version may read incoming SMS, with your permission.',
+        'Financial data is sensitive, so parsing runs on this device where possible.',
+        'Cloud sync and AI processing are optional and off by default.',
+        'You can delete your transactions, messages and history at any time.'
+      ],
+      setupProviders: ['M-Pesa', 'Airtel Money', 'Mixx by Yas', 'CRDB', 'NMB', 'NBC', 'Absa', 'Stanbic', 'Generic bank'].map(name => {
+        const on = s.watch.includes(name);
+        return { name, bg: on ? 'var(--color-accent-2-300)' : 'var(--color-neutral-100)', fg: on ? 'var(--color-accent-2-900)' : 'var(--color-neutral-800)', border: on ? 'var(--color-accent-2-500)' : 'var(--color-neutral-300)', toggle: () => this.setState(st2 => ({ watch: st2.watch.includes(name) ? st2.watch.filter(x => x !== name) : st2.watch.concat(name) })) };
+      }),
+
+      totals: { inFmt: TZ(totalIn), outFmt: TZ(totalOut), count: txns.length, review: reviewList.length },
+      streak: s.streak, demo: s.demo,
+      ring: { off: (94.2 * (1 - s.cleared / 7)).toFixed(1), off2: (100.5 * (1 - s.cleared / 7)).toFixed(1), label: s.cleared + '/7' },
+      clearDemo: () => { this.setState(st2 => ({ demo: false, txns: st2.txns.filter(t => t.id.startsWith('n')) })); this.flash('Demo data removed.'); },
+      recent: txns.slice(0, 3).map(rowOf),
+
+      sms: s.sms, smsLen: s.sms.length, labError: s.labError,
+      onSms: e => this.setState({ sms: e.target.value, labError: '' }),
+      clearSms: () => this.setState({ sms: '', sender: '', labError: '' }),
+      samples: SAMPLES.map((x, i) => ({ name: x.name, hint: x.hint, badge: x.badge, tint: palette[i % 3][0], ink: palette[i % 3][1], load: () => this.setState({ sms: x.text, sender: x.sender, labError: '' }) })),
+      analyze: () => this.analyze(), analyzing: s.labStage === 'analyzing',
+      pipeline: PIPE.map((label, i) => ({ label, done: s.steps > i, op: s.steps > i ? 1 : (s.steps === i ? 1 : 0.4), dot: s.steps > i ? 'var(--color-accent-2-500)' : 'var(--color-neutral-400)' })),
+
+      r: rv, why: s.why, notEditing: !s.editing, editing: s.editing,
+      whyLabel: s.why ? 'Ficha' : 'Onyesha', whyRot: s.why ? 180 : 0,
+      toggleWhy: () => this.setState({ why: !s.why }),
+      toggleEdit: () => this.setState({ editing: !s.editing }), editLabel: s.editing ? 'Done' : 'Edit',
+      saveLabel: s.editing ? 'Save edits' : 'Confirm & save',
+      saveResult: () => this.saveResult(),
+      markIncorrect: () => { this.flash('Marked incorrect. A correction event was recorded.'); this.go('lab'); },
+      discard: () => { this.setState({ result: null, sms: '', sender: '', labStage: 'idle', screen: 'lab' }); },
+
+      query: s.query, onQuery: e => this.setState({ query: e.target.value }),
+      filterChips, filtered, groups: gmap, hasRows: gmap.length > 0, noRows: gmap.length === 0,
+      d, reviewQueue, hasReview: reviewQueue.length > 0, noReview: reviewQueue.length === 0,
+      settingGroups,
+      exportFmt: s.exportFmt, exportCount: txns.length, exportPreview,
+      exportFormats: ['CSV', 'JSON'].map(f => {
+        const on = s.exportFmt === f;
+        return { name: f, sub: f === 'CSV' ? 'Spreadsheet-ready' : 'Full field detail', pick: () => this.setState({ exportFmt: f }), bg: on ? 'var(--color-accent-2-200)' : 'var(--color-neutral-100)', border: on ? 'var(--color-accent-2-500)' : 'var(--color-neutral-300)', fg: on ? 'var(--color-accent-2-900)' : 'var(--color-text)', subInk: on ? 'var(--color-accent-2-800)' : 'var(--color-neutral-700)' };
+      }),
+      exportRanges: ['7 days', '30 days', 'All'].map(l => {
+        const on = s.exportRange === l;
+        return { label: l, pick: () => this.setState({ exportRange: l }), bg: on ? 'var(--color-accent-200)' : 'var(--color-neutral-100)', fg: on ? 'var(--color-accent-900)' : 'var(--color-neutral-800)', border: on ? 'var(--color-accent-300)' : 'var(--color-neutral-300)' };
+      }),
+      doExport: () => this.flash(s.exportFmt + ' export written to your device.'),
+
+      nav: NAV.map(n => {
+        const on = scr === n.key;
+        return Object.assign({}, n, { go: () => this.go(n.key), pill: on ? 'var(--color-accent-200)' : 'transparent', ink: on ? 'var(--color-accent-800)' : 'var(--color-neutral-700)' });
+      }),
+      toast: s.toast,
+      index: [
+        { title: 'Onboarding', items: [idxItem('Welcome', 'welcome'), idxItem('How it works', 'how'), idxItem('Privacy', 'privacy'), idxItem('Setup', 'setup')] },
+        { title: 'Core', items: [idxItem('Dashboard', 'dash'), idxItem('Parser Lab', 'lab'), idxItem('Result', 'result')] },
+        { title: 'Records', items: [idxItem('Transactions', 'txns'), idxItem('Detail', 'detail'), idxItem('Review queue', 'review')] },
+        { title: 'Settings & data', items: [idxItem('Settings', 'settings'), idxItem('Export', 'export')] }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>
