@@ -34,6 +34,8 @@ export const fonts = {
   bold: 'PlusJakartaSans_700Bold',
   /** Headings. The design sets --font-heading-weight: 800. */
   heading: 'PlusJakartaSans_800ExtraBold',
+  /** Pasted and normalized message text. System monospace, nothing to load. */
+  mono: Platform.select({ ios: 'Menlo', default: 'monospace' }),
 } as const;
 
 /** Type scale. `font` names a key of `fonts`; sizes follow the canvas. */
@@ -64,6 +66,8 @@ export const type = {
   tabLabel: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13 },
   /** Counts inside the small tab badge. */
   badge: { fontFamily: fonts.heading, fontSize: 9, lineHeight: 11 },
+  /** Raw and normalized SMS text. */
+  mono: { fontFamily: fonts.mono, fontSize: 13, lineHeight: 20 },
 } as const;
 
 /**

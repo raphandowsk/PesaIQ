@@ -5,6 +5,7 @@
  * no dates read from the clock, no randomness — so a given message always
  * produces the same result and the tests can pin exact numbers.
  */
+import { formatAmount as formatMoney } from '../../utils/format';
 import { CATEGORY_TO_TYPE, DEFAULT_CURRENCY, TYPE_LABELS } from '../../types/domain';
 import { classify } from './classifier';
 import { isLowConfidenceField, scoreConfidence } from './confidence';
@@ -59,10 +60,9 @@ function buildField(
 /** Format a number the way the UI shows money. */
 export function formatAmount(n: number | null | undefined): string {
   if (n == null) return '-';
-  return Number(n).toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+  // Shared with the UI so a figure reads the same on every screen, and so the
+  // parser does not depend on per-device Intl data.
+  return formatMoney(n);
 }
 
 /**

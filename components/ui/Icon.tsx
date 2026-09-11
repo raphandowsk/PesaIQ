@@ -12,7 +12,17 @@ import { colors } from '../../theme';
  * round-capped, at the canvas's heavier 2.75 stroke.
  */
 export type IconName =
-  'back' | 'shield' | 'check' | 'home' | 'records' | 'lab' | 'review' | 'settings';
+  | 'back'
+  | 'shield'
+  | 'check'
+  | 'home'
+  | 'records'
+  | 'lab'
+  | 'review'
+  | 'settings'
+  | 'warning'
+  | 'caution'
+  | 'chevronDown';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   back: (
@@ -64,6 +74,22 @@ const GLYPHS: Record<IconName, ReactNode> = {
       <Path d="M7.1 16.9l-1.5 1.5" />
     </>
   ),
+  // Full warning triangle with a dot: the Lab's error note.
+  warning: (
+    <>
+      <Path d="M12 4l9 16H3z" />
+      <Path d="M12 10v4" />
+      <Path d="M12 17h.01" />
+    </>
+  ),
+  // Compact triangle for the per-field "check" badge.
+  caution: (
+    <>
+      <Path d="M12 4l9 16H3z" />
+      <Path d="M12 11v3" />
+    </>
+  ),
+  chevronDown: <Path d="M6 9l6 6 6-6" />,
 };
 
 export interface IconProps {

@@ -22,6 +22,8 @@ import { removeDemoData, seedDatabase } from '../../database/seed';
 import { parseMessage, type ParseResult, type SmsProvider } from '../parser';
 import { ManualSmsSource } from '../../services/sms';
 import { transactionFromParseResult, type Transaction } from './model';
+import { DEFAULT_CURRENCY } from '../../types/domain';
+import type { LabSaveReady } from '../lab/draft';
 
 /** Overridable for tests; production uses the real clock and crypto. */
 export interface StoreDeps {
@@ -65,6 +67,15 @@ interface AppState {
   /** Parse, store the message and result, and save a transaction. */
   analyzeAndSave(text: string, sender?: string): Promise<SaveOutcome>;
 
+  /**
+   * Save a result a person has looked at in the Lab, possibly corrected.
+   * Unlike `analyzeAndSave` — unattended processing, saved as PARSED — this can
+   * save as CONFIRMED, because someone checked it. `build` decides the status.
+   */
+  saveFromLab(result: ParseResult, build: LabSaveReady): Promise<SaveOutcome>;
+  /** The user said a Lab result was wrong. Recorded without message content. */
+  recordParseRejected(result: ParseResult): Promise<void>;
+
   confirm(id: string): Promise<void>;
   markIncorrect(id: string): Promise<void>;
   correct(id: string, patch: Partial<Transaction>): Promise<void>;
@@ -99,6 +110,41 @@ export const useAppStore = create<AppState>((set, get) => {
   const reload = async () => {
     const transactions = await transactionRepository.list(requireDb());
     set({ transactions });
+  };
+
+  /** The message, its parse result and the transaction land together or not at all. */
+  const persist = async (
+    database: SqlDatabase,
+    rows: {
+      messageId: string;
+      parseId: string;
+      result: ParseResult;
+      transaction: Transaction;
+      timestamp: string;
+    },
+  ) => {
+    const { messageId, parseId, result, transaction, timestamp } = rows;
+    await database.withTransactionAsync(async () => {
+      await messageRepository.insert(database, {
+        id: messageId,
+        originalText: result.originalText,
+        normalizedText: result.normalizedText,
+        sender: result.sender ?? null,
+        receivedAt: timestamp,
+        source: 'MANUAL',
+        isDemo: false,
+        createdAt: timestamp,
+      });
+
+      await parseResultRepository.insert(database, {
+        id: parseId,
+        messageId,
+        result,
+        createdAt: timestamp,
+      });
+
+      await transactionRepository.insert(database, transaction);
+    });
   };
 
   return {
@@ -168,27 +214,7 @@ export const useAppStore = create<AppState>((set, get) => {
         parseResultId: parseId,
       });
 
-      await database.withTransactionAsync(async () => {
-        await messageRepository.insert(database, {
-          id: messageId,
-          originalText: result.originalText,
-          normalizedText: result.normalizedText,
-          sender: result.sender ?? null,
-          receivedAt: timestamp,
-          source: 'MANUAL',
-          isDemo: false,
-          createdAt: timestamp,
-        });
-
-        await parseResultRepository.insert(database, {
-          id: parseId,
-          messageId,
-          result,
-          createdAt: timestamp,
-        });
-
-        await transactionRepository.insert(database, transaction);
-      });
+      await persist(database, { messageId, parseId, result, transaction, timestamp });
 
       await processingEventRepository.record(database, {
         id: makeId('evt'),
@@ -203,6 +229,74 @@ export const useAppStore = create<AppState>((set, get) => {
       await reload();
 
       return duplicate ? { transaction, duplicateOf: duplicate } : { transaction };
+    },
+
+    async saveFromLab(result, build) {
+      const database = requireDb();
+      const timestamp = now();
+
+      const messageId = makeId('msg');
+      const parseId = makeId('parse');
+      const transactionId = makeId('txn');
+
+      const reference = build.values.transactionReference;
+      const duplicate = reference
+        ? await transactionRepository.findByReference(database, reference)
+        : null;
+
+      const transaction: Transaction = {
+        ...transactionFromParseResult(result, {
+          id: transactionId,
+          now: timestamp,
+          sourceMessageId: messageId,
+          parseResultId: parseId,
+        }),
+        ...build.values,
+        currency: DEFAULT_CURRENCY,
+        confidence: build.confidence,
+        lowFields: build.remainingLow,
+        status: build.status,
+      };
+
+      // The parse result is stored as the parser produced it. The user's
+      // corrections live on the transaction and in the correction event.
+      await persist(database, { messageId, parseId, result, transaction, timestamp });
+
+      await processingEventRepository.record(database, {
+        id: makeId('evt'),
+        kind: duplicate ? 'DUPLICATE_DETECTED' : 'TRANSACTION_SAVED',
+        messageId,
+        transactionId,
+        detail: `lab; confidence ${build.confidence.toFixed(2)}`,
+        createdAt: timestamp,
+      });
+
+      if (build.editedKeys.length > 0) {
+        await processingEventRepository.record(database, {
+          id: makeId('evt'),
+          kind: 'TRANSACTION_CORRECTED',
+          messageId,
+          transactionId,
+          // Which fields changed, never what they were changed to.
+          detail: build.editedKeys.join(','),
+          createdAt: timestamp,
+        });
+      }
+
+      await reload();
+
+      return duplicate ? { transaction, duplicateOf: duplicate } : { transaction };
+    },
+
+    async recordParseRejected(result) {
+      await processingEventRepository.record(requireDb(), {
+        id: makeId('evt'),
+        kind: 'PARSE_REJECTED',
+        messageId: null,
+        transactionId: null,
+        detail: `${result.parserId}; ${result.category}; confidence ${result.confidence.toFixed(2)}`,
+        createdAt: now(),
+      });
     },
 
     async confirm(id) {

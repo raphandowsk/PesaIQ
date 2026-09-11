@@ -1,0 +1,24 @@
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo } from 'react-native';
+
+/**
+ * Whether the user has asked the OS for less motion. Purely decorative
+ * animation — like the Lab's pipeline — is skipped when this is true.
+ */
+export function useReduceMotion(): boolean {
+  const [reduce, setReduce] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (alive) setReduce(value);
+    });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduce);
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
+
+  return reduce;
+}

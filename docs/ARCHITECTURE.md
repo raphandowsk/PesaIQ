@@ -200,3 +200,84 @@ choice survives restarts. **In Stage 1 it does not change parsing** — every hi
 still checked. The design's copy says "Choose the providers you want parsed", which
 over-promises today. Either the selection should filter parsing, or the copy should
 say it takes effect when Stage 2 reads incoming SMS. Awaiting a product decision.
+
+## Phase 1E — Parser Lab and Result
+
+### Flow
+
+```
+Lab (tab)                                   Result (root stack, over the tabs)
+  paste / load sample
+  Analyze → validate → parse (instant)
+         → pipeline display, 4 × 400ms ───►  hero · warnings · fields · How we got this
+                                              Edit → correct fields → Save
+                                              Not correct → back to Lab, text kept
+                                              Discard → back to Lab, cleared
+```
+
+The parse is synchronous and instant. The four-stage animation only paces the
+display of stages that already ran; it is skipped when the OS asks for reduced
+motion, and cancelled if the user leaves the tab mid-way.
+
+### Two stores, on purpose
+
+`features/lab/store.ts` holds the Lab session — paste box, draft, edits — and is
+never persisted. The app store holds saved records. The draft travels to the
+Result screen through the Lab store, **never through route params**: SMS text does
+not belong in a URL.
+
+### Edit and save rules live in one pure module
+
+`features/lab/draft.ts` decides what an edit means, how the draft reads, and what
+status a save gets. Screens render its output; tests exercise it directly.
+
+- Only **real** changes are edits. Typing a field back to the parsed value removes
+  the edit.
+- **Type** is chosen from a picker. The design uses a free-text box whose value its
+  own save ignores, so an edit there would silently do nothing.
+- **Account / phone is read-only.** It is only ever held masked; a text box would
+  invite typing a full number back in.
+- An **amount is required** to save, as in the design. It must be a positive
+  number; `45,000`, `45000.50` and `TZS 45,000` all read.
+- A corrected record is trusted at **≥ 0.95**, as in the design.
+
+### Save status — a deliberate departure from the design
+
+| Situation | Design | PesaIQ |
+|---|---|---|
+| Confidence ≥ 0.6, nothing flagged | Confirmed | **Confirmed** |
+| Confidence ≥ 0.6, a field still flagged "check" and untouched | Confirmed | **Needs review** |
+| Confidence < 0.6 | Needs review | **Needs review** |
+
+The brief says low-confidence data is never treated as verified, and in the second
+row nobody verified the flagged field. The button reads **"Save to review"** in that
+case, so the outcome is visible before the tap.
+
+`analyzeAndSave` still exists for unattended processing (Stage 2) and saves as
+`PARSED`; only a person looking at the Result screen produces `CONFIRMED`.
+
+### What is recorded
+
+- The **parse result is stored as the parser produced it**; corrections live on
+  the transaction. The two can always be compared.
+- `TRANSACTION_CORRECTED` records **which fields** changed — never the new values.
+- "Not correct" records `PARSE_REJECTED` with parser id, category and confidence,
+  and nothing from the message. Tests serialize the event table and assert no name,
+  phone number, amount or reference appears.
+
+### Toasts
+
+A single root-level `Toast` (2.4s, the design's timing) confirms outcomes. Every
+toast is also announced to screen readers, since it is otherwise purely visual.
+
+### Other departures from the design, and why
+
+- The first pipeline stage reads "Normalize whitespace", not "…and case": the
+  normalizer deliberately preserves case.
+- The Lab has no Back button. It is a tab in this build, not a pushed screen.
+- Swahili leftovers in the revised canvas ("Ficha" / "Onyesha", "Hakuna kiasi")
+  are rendered in English, matching the rest of the revision.
+- The design's save falls back to a hard-coded date when none is found. PesaIQ
+  saves no date instead of an invented one.
+- The engine's `formatAmount` now delegates to `utils/format`, so money reads the
+  same on every screen without depending on per-device Intl data.

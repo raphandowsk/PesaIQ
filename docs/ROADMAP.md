@@ -11,8 +11,8 @@ Must run in Expo Go. No native modules. No Android Studio.
 | **1B** | Parser core: normalizer, classifier, generic parser, confidence, samples, Zod — tests first | **Done** — 2026-09-11 |
 | **1C** | Data layer: SQLite schema, migrations, repositories, demo seed, `ManualSmsSource`, Zustand store | **Done** — 2026-09-11 |
 | **1D** | Onboarding: welcome, how it works, privacy, senders picker, setup | **Done** — 2026-09-11 |
-| **1E** | Parser Lab + Result: paste, samples, pipeline, per-field edit, "How we got this", save | Next |
-| **1F** | Dashboard: health ring, factor bars, in/out/net, category toggle, tips, providers, recent | |
+| **1E** | Parser Lab + Result: paste, samples, pipeline, per-field edit, "How we got this", save | **Done** — 2026-09-11 |
+| **1F** | Dashboard: health ring, factor bars, in/out/net, category toggle, tips, providers, recent | Next |
 | **1G** | Records + Detail: search, filters, date groups, masking, confirm/edit/incorrect/delete | |
 | **1H** | Review queue: progress ring, streak, type chips, low-field inputs, confirm/ignore | |
 | **1I** | Settings + Export + Privacy: toggles, actions, CSV/JSON export, delete-all | |

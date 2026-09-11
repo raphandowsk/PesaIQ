@@ -13,7 +13,7 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 
-import { Button, Screen, Text } from '../components/ui';
+import { Button, Screen, Text, Toast } from '../components/ui';
 import { useAppStore } from '../features/transactions';
 import { colors, space } from '../theme';
 
@@ -74,8 +74,11 @@ export default function RootLayout() {
         </Stack.Protected>
         <Stack.Protected guard={onboarded}>
           <Stack.Screen name="(tabs)" />
+          {/* Pushed over the tabs from the Parser Lab; no tab bar. */}
+          <Stack.Screen name="result" />
         </Stack.Protected>
       </Stack>
+      <Toast />
     </SafeAreaProvider>
   );
 }

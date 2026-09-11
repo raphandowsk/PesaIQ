@@ -15,7 +15,9 @@ export type ProcessingEventKind =
   | 'TRANSACTION_IGNORED'
   | 'TRANSACTION_DELETED'
   | 'DUPLICATE_DETECTED'
-  | 'DEMO_DATA_REMOVED';
+  | 'DEMO_DATA_REMOVED'
+  /** The user said a Lab result was wrong. Carries parser id and category only. */
+  | 'PARSE_REJECTED';
 
 export interface ProcessingEvent {
   id: string;
