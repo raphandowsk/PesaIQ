@@ -1,54 +1,97 @@
-import { useMemo, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, TextInput, View } from 'react-native';
 
 import { Button, Card, Screen, Tag, Text } from '../components/ui';
-import { parseMessage, SAMPLES, type ParseResult, type SmsSample } from '../features/parser';
+import { SAMPLES, type ParseResult, type SmsSample } from '../features/parser';
+import { useAppStore } from '../features/transactions';
 import { colors, money, radius, space } from '../theme';
+import { isIncoming, TYPE_LABELS } from '../types/domain';
 
 /**
- * Phase 1B check: a working paste -> analyze -> result loop.
+ * Phase 1C check: the full paste -> analyze -> save -> list loop, on SQLite.
  *
- * This is deliberately plain — it proves the engine end to end in Expo Go.
- * Phase 1E replaces it with the designed Parser Lab, and Phase 1D puts
- * onboarding and the tab bar in front of it.
+ * Still deliberately plain. Phase 1D puts onboarding and the tab bar in front
+ * of this, and Phase 1E replaces it with the designed Parser Lab.
  */
-export default function ParserCheck() {
+export default function DataLayerCheck() {
+  const { ready, error, transactions, settings, initialize, analyzeAndSave, confirm, remove } =
+    useAppStore();
+
   const [text, setText] = useState('');
   const [sender, setSender] = useState<string | undefined>();
   const [result, setResult] = useState<ParseResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
 
   const loadSample = (s: SmsSample) => {
     setText(s.text);
     setSender(s.sender);
     setResult(null);
-    setError(null);
+    setNotice(null);
   };
 
-  const analyze = () => {
+  const save = async () => {
+    setBusy(true);
     try {
-      setResult(parseMessage(text, { sender }));
-      setError(null);
-    } catch (e) {
+      const outcome = await analyzeAndSave(text, sender);
       setResult(null);
-      setError(e instanceof Error ? e.message : 'Could not analyze that message.');
+      setText('');
+      setSender(undefined);
+      setNotice(
+        outcome.duplicateOf
+          ? `Saved, but reference ${outcome.transaction.transactionReference} already exists.`
+          : outcome.transaction.status === 'NEEDS_REVIEW'
+            ? 'Saved to the review queue.'
+            : 'Transaction saved.',
+      );
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : 'Could not save that message.');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const tint = useMemo(() => {
-    if (!result || result.amount == null) return money.none;
-    return result.type === 'RECEIVED' || result.type === 'DEPOSIT' ? money.in : money.out;
-  }, [result]);
+  if (!ready) {
+    return (
+      <Screen>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[3] }}>
+          {error ? (
+            <>
+              <Text variant="h3">Could not open the database</Text>
+              <Text variant="small" tone="muted">
+                {error}
+              </Text>
+              <Button label="Try again" onPress={() => void initialize()} />
+            </>
+          ) : (
+            <>
+              <ActivityIndicator color={colors.accent} />
+              <Text variant="small" tone="muted">
+                Opening PesaIQ
+              </Text>
+            </>
+          )}
+        </View>
+      </Screen>
+    );
+  }
+
+  const reviewCount = transactions.filter((t) => t.status === 'NEEDS_REVIEW').length;
 
   return (
     <Screen scroll>
       <View style={{ paddingTop: space[6], gap: space[2] }}>
         <Text variant="kicker" tone="accent">
-          PesaIQ · Stage 1 · Phase 1B
+          PesaIQ · Stage 1 · Phase 1C
         </Text>
-        <Text variant="display">Parser Lab</Text>
+        <Text variant="display">Records</Text>
         <Text variant="body" tone="muted">
-          Paste a message, or load one of the anonymized demo samples.
+          {transactions.length} saved · {reviewCount} need review
+          {settings.demoDataEnabled ? ' · demo data on' : ''}
         </Text>
       </View>
 
@@ -60,30 +103,26 @@ export default function ParserCheck() {
           {SAMPLES.map((s) => (
             <Button
               key={s.id}
-              label={`${s.badge} · ${s.name}`}
+              label={s.badge}
               variant="secondary"
               onPress={() => loadSample(s)}
+              accessibilityLabel={`Load sample: ${s.name}`}
             />
           ))}
         </View>
-      </Card>
 
-      <Card style={{ marginTop: space[3], gap: space[3] }}>
-        <Text variant="kicker" tone="muted">
-          Message
-        </Text>
         <TextInput
           multiline
           value={text}
           onChangeText={(t) => {
             setText(t);
-            setError(null);
+            setNotice(null);
           }}
           placeholder="Paste an SMS here"
           placeholderTextColor={colors.neutralRamp[500]}
           accessibilityLabel="Message to analyze"
           style={{
-            minHeight: 120,
+            minHeight: 110,
             borderRadius: radius.md,
             borderWidth: 1,
             borderColor: colors.neutralRamp[300],
@@ -95,106 +134,98 @@ export default function ParserCheck() {
             textAlignVertical: 'top',
           }}
         />
-        <Text variant="small" tone="faint">
-          {text.length} characters
-        </Text>
 
-        {error ? (
+        {notice ? (
           <Text variant="small" tone="accent">
-            {error}
+            {notice}
           </Text>
         ) : null}
 
-        <Button label="Analyze message" onPress={analyze} block />
+        <Button label="Analyze and save" onPress={() => void save()} loading={busy} block />
       </Card>
 
       {result ? (
-        <Card style={{ marginTop: space[3], gap: space[3] }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="kicker" tone="muted">
-              Result
-            </Text>
-            <Tag
-              label={`${result.band} · ${Math.round(result.confidence * 100)}%`}
-              tone={result.confidence >= 0.8 ? 'positive' : 'accent'}
-            />
-          </View>
-
-          <View style={{ backgroundColor: tint.tint, borderRadius: radius.md, padding: space[3] }}>
-            <Text variant="kicker" style={{ color: tint.ink }}>
-              {result.category.replace(/_/g, ' ')}
-            </Text>
-            <Text variant="amount" style={{ color: tint.amount }}>
-              {result.amount == null
-                ? 'No amount'
-                : `${result.type === 'RECEIVED' || result.type === 'DEPOSIT' ? '+' : '−'} TZS ${result.amount.toLocaleString('en-US')}`}
-            </Text>
-            <Text variant="small" style={{ color: tint.ink }}>
-              {result.counterparty ?? 'No counterparty'} ·{' '}
-              {result.provider ?? 'sender not recognized'}
-            </Text>
-          </View>
-
-          {result.fields.map((f) => (
-            <View
-              key={f.key}
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: space[3],
-              }}
-            >
-              <Text variant="small" tone="muted" style={{ flex: 1 }}>
-                {f.label}
-              </Text>
-              <Text
-                variant="smallMedium"
-                tone={f.missing ? 'faint' : f.low ? 'accent' : 'default'}
-                style={{ flex: 1, textAlign: 'right' }}
-              >
-                {f.display}
-                {f.low ? '  ⚠' : ''}
-              </Text>
-            </View>
-          ))}
-
-          {result.warnings.length > 0 ? (
-            <View style={{ gap: space[1] }}>
-              <Text variant="kicker" tone="accent">
-                Warnings
-              </Text>
-              {result.warnings.map((w) => (
-                <Text key={w} variant="small" tone="accent">
-                  · {w}
-                </Text>
-              ))}
-            </View>
-          ) : null}
-
-          <View style={{ gap: space[1] }}>
-            <Text variant="kicker" tone="muted">
-              Why
-            </Text>
-            {result.reasons.map((r) => (
-              <Text key={r} variant="small" tone="muted">
-                ✓ {r}
-              </Text>
-            ))}
-          </View>
-
-          <Text variant="small" tone="faint">
-            {result.parserId} · rules only, no AI. Low-confidence fields are never treated as
-            verified.
-          </Text>
+        <Card style={{ marginTop: space[3] }}>
+          <Text variant="small">{result.category}</Text>
         </Card>
       ) : null}
+
+      <View style={{ marginTop: space[6], gap: space[2] }}>
+        <Text variant="kicker" tone="muted">
+          Saved records
+        </Text>
+
+        {transactions.length === 0 ? (
+          <Card>
+            <Text variant="h3">Nothing here yet</Text>
+            <Text variant="small" tone="muted">
+              Paste a message above to create your first record.
+            </Text>
+          </Card>
+        ) : null}
+
+        {transactions.map((t) => {
+          const tint = t.amount == null ? money.none : isIncoming(t.type) ? money.in : money.out;
+
+          return (
+            <Card key={t.id} style={{ gap: space[2] }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: space[3],
+                }}
+              >
+                <View style={{ flex: 1, gap: space[1] }}>
+                  <Text variant="h3">{t.counterparty ?? 'No name'}</Text>
+                  <Text variant="small" tone="muted">
+                    {TYPE_LABELS[t.type]} · {t.provider ?? 'unrecognized sender'}
+                  </Text>
+                  <Text variant="small" tone="faint">
+                    {t.transactionDate ?? 'no date'} · {t.maskedAccountOrPhone ?? 'no number'} ·{' '}
+                    {t.transactionReference ?? 'no reference'}
+                  </Text>
+                </View>
+
+                <View style={{ alignItems: 'flex-end', gap: space[1] }}>
+                  <Text variant="bodyMedium" style={{ color: tint.amount }}>
+                    {t.amount == null
+                      ? '—'
+                      : `${isIncoming(t.type) ? '+' : '−'} ${t.amount.toLocaleString('en-US')}`}
+                  </Text>
+                  <Text variant="small" tone="faint">
+                    {Math.round(t.confidence * 100)}%
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
+                {t.status === 'NEEDS_REVIEW' ? <Tag label="Needs review" tone="accent" /> : null}
+                {t.status === 'CONFIRMED' ? <Tag label="Confirmed" tone="positive" /> : null}
+                {t.isDemo ? <Tag label="Demo" tone="neutral" /> : null}
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: space[2] }}>
+                {t.status !== 'CONFIRMED' ? (
+                  <Button
+                    label="Confirm"
+                    variant="secondary"
+                    onPress={() => void confirm(t.id)}
+                    accessibilityLabel={`Confirm record for ${t.counterparty ?? 'unnamed'}`}
+                  />
+                ) : null}
+                <Button
+                  label="Delete"
+                  variant="danger"
+                  onPress={() => void remove(t.id)}
+                  accessibilityLabel={`Delete record for ${t.counterparty ?? 'unnamed'}`}
+                />
+              </View>
+            </Card>
+          );
+        })}
+      </View>
     </Screen>
   );
 }

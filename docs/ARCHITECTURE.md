@@ -83,3 +83,54 @@ and none is faked.**
   must match Swahili keywords.
 - **`react-dom` is pinned to 19.2.3** to match the React version Expo pins. A
   hoisted 19.3.0 otherwise breaks peer resolution.
+
+## Phase 1C — the data layer
+
+### The database port
+
+Repositories depend on a `SqlDatabase` interface, not on expo-sqlite. Two things
+follow: repositories are tested against **real SQL** via Node's built-in
+`node:sqlite` (no mocks, no new dependency, nothing bundled into the app), and
+swapping the driver later touches one file.
+
+### Schema
+
+Six tables at `user_version = 1`, migrated idempotently on every launch:
+
+```
+messages ──< parse_results
+    │              │
+    └──────────────┴──< transactions
+providers   processing_events   settings
+```
+
+`parse_results.payload` holds the whole result as JSON rather than exploding it
+into columns. It is written once and read whole by "How we got this", the indexed
+columns beside it cover every query we run, and exploding it would mean a
+migration each time the parser gains a field.
+
+### What the store owns
+
+`useAppStore` (Zustand) holds the database handle, the settings and the
+transaction list. Screens call actions; they never see SQL. `initialize({
+database, now, makeId })` is the test seam — the clock and id generator are
+injected, so store tests are deterministic.
+
+`analyzeAndSave` writes the message, the parse result and the transaction in one
+transaction, so a failure partway leaves nothing behind.
+
+### Duplicate detection
+
+A repeated `transaction_reference` is **flagged, not dropped**. It is a strong
+hint rather than proof, and silently discarding a real transaction is worse than
+showing a duplicate the user can delete. Messages with no reference cannot be
+de-duplicated at all, which is why the parser warns about it.
+
+### Privacy in the data layer
+
+- `processing_events` carries ids, a kind and a short detail — **never message
+  content**. Asserted by tests that serialize the table and check no counterparty,
+  phone number or amount appears.
+- "Remove demo data" deletes demo **messages** as well as demo transactions;
+  leaving the source text would keep the sensitive half of what was removed.
+- Every privacy-sensitive setting defaults to off, asserted in tests.
