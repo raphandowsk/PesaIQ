@@ -19,6 +19,14 @@ export type ProcessingEventKind =
   /** The user said a Lab result was wrong. Carries parser id and category only. */
   | 'PARSE_REJECTED';
 
+/** Events that count as the user doing something, for the streak. */
+export const USER_ACTIVITY_KINDS: readonly ProcessingEventKind[] = [
+  'TRANSACTION_SAVED',
+  'DUPLICATE_DETECTED',
+  'TRANSACTION_CONFIRMED',
+  'TRANSACTION_CORRECTED',
+];
+
 export interface ProcessingEvent {
   id: string;
   kind: ProcessingEventKind;
@@ -62,6 +70,20 @@ export const processingEventRepository = {
       [limit],
     );
     return rows.map(toEvent);
+  },
+
+  /**
+   * When the user saved or reviewed something, newest first. The dashboard's
+   * streak is built from these. Timestamps only; no content exists to return.
+   */
+  async activityTimestamps(db: SqlDatabase, limit = 500): Promise<string[]> {
+    const kinds = USER_ACTIVITY_KINDS.map(() => '?').join(', ');
+    const rows = await db.getAllAsync<{ created_at: string }>(
+      `SELECT created_at FROM processing_events WHERE kind IN (${kinds})
+       ORDER BY created_at DESC LIMIT ?`,
+      [...USER_ACTIVITY_KINDS, limit],
+    );
+    return rows.map((r) => r.created_at);
   },
 
   async removeAll(db: SqlDatabase): Promise<number> {

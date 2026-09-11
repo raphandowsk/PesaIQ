@@ -46,3 +46,32 @@ export function initials(name: string | null | undefined): string {
 
   return letters || 'NA';
 }
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/** "Friday, 11 September 2026": the dashboard's date line. Built by hand, like the amounts. */
+export function formatLongDate(d: Date): string {
+  return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** Time-of-day greeting. The design greets the user by name; PesaIQ never asks for one. */
+export function greetingFor(d: Date): string {
+  const h = d.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}

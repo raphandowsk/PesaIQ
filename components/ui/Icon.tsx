@@ -22,7 +22,13 @@ export type IconName =
   | 'settings'
   | 'warning'
   | 'caution'
-  | 'chevronDown';
+  | 'chevronDown'
+  | 'chevronRight'
+  | 'plus'
+  | 'bell'
+  | 'flame'
+  | 'arrowIn'
+  | 'arrowOut';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   back: (
@@ -90,6 +96,33 @@ const GLYPHS: Record<IconName, ReactNode> = {
     </>
   ),
   chevronDown: <Path d="M6 9l6 6 6-6" />,
+  chevronRight: <Path d="M9 6l6 6-6 6" />,
+  plus: (
+    <>
+      <Path d="M12 5v14" />
+      <Path d="M5 12h14" />
+    </>
+  ),
+  bell: (
+    <>
+      <Path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" />
+      <Path d="M10 20a2 2 0 0 0 4 0" />
+    </>
+  ),
+  flame: <Path d="M12 3c4 5 6 7 6 10a6 6 0 0 1-12 0c0-2 1-3.5 3-5 0 2 1 3 2 3s1-4 1-8z" />,
+  // Money coming in points down-left; money going out points up-right.
+  arrowIn: (
+    <>
+      <Path d="M17 7L7 17" />
+      <Path d="M7 11v6h6" />
+    </>
+  ),
+  arrowOut: (
+    <>
+      <Path d="M7 17L17 7" />
+      <Path d="M11 7h6v6" />
+    </>
+  ),
 };
 
 export interface IconProps {

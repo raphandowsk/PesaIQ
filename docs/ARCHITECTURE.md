@@ -281,3 +281,59 @@ toast is also announced to screen readers, since it is otherwise purely visual.
   saves no date instead of an invented one.
 - The engine's `formatAmount` now delegates to `utils/format`, so money reads the
   same on every screen without depending on per-device Intl data.
+
+## Phase 1F — Home
+
+### Layout
+
+Greeting and date · health card (score ring, band, streak, received / sent / net) ·
+what builds the score · review nudge · spending / income by category · "Spend
+smarter" tips · "Earn more" tips · recent transactions · by provider · demo notice.
+
+Every figure comes from pure functions in `features/insights/` over the saved
+records; the screen only lays them out.
+
+### The health formula is locked
+
+`features/insights/health.ts` holds the prototype's formula as the shipped one
+(decided 2026-09-11): kept from income 0.40 · verified records 0.25 · low cash-out
+0.20 · traceable records 0.15, bands at 80 / 60 / 40. The constants live only
+there. A test runs the demo records through it and gets exactly what the design
+canvas shows: received 1,450,000, sent 208,500, parts 86% / 50% / 42% / 83%,
+score **68, Steady**.
+
+### Departures from the prototype, and why
+
+| Prototype | PesaIQ | Why |
+|---|---|---|
+| Empty ledger scores 20, "Strained" | "No score yet" | A score built from no data misleads. |
+| Ignored records count toward everything | Left out of score, categories, providers | Same rule as every other total. |
+| "6-day streak", hard-coded | Consecutive local days with a save or review; hidden at 0 | It should be true. |
+| "Hello, Deo" | Time-of-day greeting | PesaIQ never asks for a name. |
+| Date line fixed at "Friday, 12 March 2026" (a Thursday) | Today's date | — |
+| Tip: "PesaIQ will tell you as you approach [a cap]" | No promise of an alert | There is no budget alert. |
+| Tip: "…ready for a loan or a tax filing" | "…ready when you need to show them" | No claim about lending or tax use. |
+| "One source carries N%" whenever there is income | Only when one source is a majority | "Most of your income" must be true. |
+| "1 records carry", lowercase sentence starts | Correct plurals and capitals | — |
+| Weight labelled "uzito" (Swahili leftover) | "weight" | English UI. |
+| Provider summary computed, never shown | Compact "By provider" card | The brief requires it. |
+| Review nudge and bell dot always shown | Only when something is waiting | "0 need review" is noise. |
+
+### The streak
+
+Built from `processing_events`: saves (including flagged duplicates), confirmations
+and corrections. A streak last extended yesterday is still alive, so opening the app
+in the morning never shows a reset. It counts local days, not UTC days. Clearing
+processing history clears the streak, because that history is what it is made of.
+
+### Motion
+
+The score counts up (860ms, linear) as the ring fills, and the bars grow in (750ms,
+the design's `cubic-bezier(.2,.85,.2,1)`) after 160ms. Both replay on each visit to
+Home and whenever the score changes, and both are skipped under reduced motion.
+
+### Not decided yet
+
+Totals are all-time: the design has no period selector. A month/30-day view is a
+product decision for later, and every insight function already takes the record
+list, so filtering it first is the whole change.

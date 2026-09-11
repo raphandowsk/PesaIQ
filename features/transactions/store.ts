@@ -55,6 +55,8 @@ interface AppState {
   transactions: Transaction[];
   /** The provider registry, including which ones the user chose to watch. */
   providers: SmsProvider[];
+  /** When the user saved or reviewed something, newest first: the streak's source. */
+  activity: string[];
 
   smsSource: ManualSmsSource;
 
@@ -107,9 +109,15 @@ export const useAppStore = create<AppState>((set, get) => {
     return db;
   };
 
+  // Every mutating action ends here, and most also record an event, so the
+  // streak's activity is refreshed alongside the records.
   const reload = async () => {
-    const transactions = await transactionRepository.list(requireDb());
-    set({ transactions });
+    const database = requireDb();
+    const [transactions, activity] = await Promise.all([
+      transactionRepository.list(database),
+      processingEventRepository.activityTimestamps(database),
+    ]);
+    set({ transactions, activity });
   };
 
   /** The message, its parse result and the transaction land together or not at all. */
@@ -154,6 +162,7 @@ export const useAppStore = create<AppState>((set, get) => {
     settings: DEFAULT_SETTINGS,
     transactions: [],
     providers: [],
+    activity: [],
     smsSource: new ManualSmsSource(),
 
     async initialize(deps = {}) {
@@ -165,15 +174,16 @@ export const useAppStore = create<AppState>((set, get) => {
 
         await seedDatabase(db, now());
 
-        const [settings, transactions, providers] = await Promise.all([
+        const [settings, transactions, providers, activity] = await Promise.all([
           settingsRepository.getAll(db),
           transactionRepository.list(db),
           providerRepository.list(db),
+          processingEventRepository.activityTimestamps(db),
         ]);
 
         await get().smsSource.start();
 
-        set({ settings, transactions, providers, ready: true, loading: false });
+        set({ settings, transactions, providers, activity, ready: true, loading: false });
       } catch (e) {
         set({
           loading: false,
@@ -401,6 +411,8 @@ export const useAppStore = create<AppState>((set, get) => {
 
     async clearProcessingHistory() {
       await processingEventRepository.removeAll(requireDb());
+      // The streak is built from that history, so it goes with it.
+      set({ activity: [] });
     },
 
     async clearDemoData() {
