@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,10 +13,12 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 
-import { colors } from '../theme';
+import { Button, Screen, Text } from '../components/ui';
+import { useAppStore } from '../features/transactions';
+import { colors, space } from '../theme';
 
-// Hold the native splash until fonts resolve, so the first frame is never
-// rendered in a fallback face.
+// Hold the native splash until fonts and the database are both ready, so the
+// first painted frame is the right screen in the right face.
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -27,22 +30,80 @@ export default function RootLayout() {
     PlusJakartaSans_800ExtraBold,
   });
 
-  useEffect(() => {
-    // Hide on error too — shipping in a fallback face beats a stuck splash.
-    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
-  }, [fontsLoaded, fontError]);
+  const ready = useAppStore((s) => s.ready);
+  const error = useAppStore((s) => s.error);
+  const initialize = useAppStore((s) => s.initialize);
+  const onboarded = useAppStore((s) => s.settings.onboardingComplete);
 
-  if (!fontsLoaded && !fontError) return null;
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
+
+  // A font failure still lets the app start, in a fallback face; a stuck
+  // splash would be worse.
+  const fontsSettled = fontsLoaded || fontError != null;
+  const storeSettled = ready || error != null;
+
+  useEffect(() => {
+    if (fontsSettled && storeSettled) void SplashScreen.hideAsync();
+  }, [fontsSettled, storeSettled]);
+
+  if (!fontsSettled) return null;
+
+  if (!ready) {
+    return (
+      <SafeAreaProvider>
+        <Boot error={error} onRetry={() => void initialize()} />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        {/* Always reachable: decides where a launch lands (see app/index.tsx). */}
+        <Stack.Screen name="index" />
+
+        {/*
+          The guards make the rule structural. Onboarding cannot be reached by
+          Back once finished, and the tabs cannot be deep-linked into before.
+        */}
+        <Stack.Protected guard={!onboarded}>
+          <Stack.Screen name="(onboarding)" />
+        </Stack.Protected>
+        <Stack.Protected guard={onboarded}>
+          <Stack.Screen name="(tabs)" />
+        </Stack.Protected>
+      </Stack>
     </SafeAreaProvider>
+  );
+}
+
+/** Shown only if opening the database is slow or fails. */
+function Boot({ error, onRetry }: { error: string | null; onRetry: () => void }) {
+  return (
+    <Screen>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[3] }}>
+        {error ? (
+          <>
+            <Text variant="h3" accessibilityRole="header">
+              Could not open your records
+            </Text>
+            <Text variant="small" tone="muted" style={{ textAlign: 'center' }}>
+              {error}
+            </Text>
+            <Button label="Try again" onPress={onRetry} />
+          </>
+        ) : (
+          <>
+            <ActivityIndicator color={colors.accent} />
+            <Text variant="small" tone="muted">
+              Opening PesaIQ
+            </Text>
+          </>
+        )}
+      </View>
+    </Screen>
   );
 }

@@ -8,3 +8,5 @@ export { Tag } from './Tag';
 export type { TagProps } from './Tag';
 export { Screen } from './Screen';
 export type { ScreenProps } from './Screen';
+export { Icon } from './Icon';
+export type { IconName, IconProps } from './Icon';

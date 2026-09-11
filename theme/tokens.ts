@@ -39,6 +39,8 @@ export const fonts = {
 /** Type scale. `font` names a key of `fonts`; sizes follow the canvas. */
 export const type = {
   display: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 38 },
+  /** Onboarding and screen titles — the design sets these at 30px. */
+  title: { fontFamily: fonts.heading, fontSize: 30, lineHeight: 33 },
   h1: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 32 },
   h2: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 27 },
   h3: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 23 },
@@ -56,6 +58,12 @@ export const type = {
   },
   /** Monetary figures — tabular so columns align. */
   amount: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 29 },
+  /** Labels on the large call-to-action buttons. */
+  button: { fontFamily: fonts.heading, fontSize: 16, lineHeight: 20 },
+  /** Bottom-tab labels. */
+  tabLabel: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13 },
+  /** Counts inside the small tab badge. */
+  badge: { fontFamily: fonts.heading, fontSize: 9, lineHeight: 11 },
 } as const;
 
 /**

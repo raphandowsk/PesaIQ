@@ -11,6 +11,7 @@ import { getDatabase, type SqlDatabase } from '../../database/client';
 import {
   messageRepository,
   processingEventRepository,
+  providerRepository,
   settingsRepository,
   transactionRepository,
   parseResultRepository,
@@ -18,7 +19,7 @@ import {
   type AppSettings,
 } from '../../database/repositories';
 import { removeDemoData, seedDatabase } from '../../database/seed';
-import { parseMessage, type ParseResult } from '../parser';
+import { parseMessage, type ParseResult, type SmsProvider } from '../parser';
 import { ManualSmsSource } from '../../services/sms';
 import { transactionFromParseResult, type Transaction } from './model';
 
@@ -50,6 +51,8 @@ interface AppState {
 
   settings: AppSettings;
   transactions: Transaction[];
+  /** The provider registry, including which ones the user chose to watch. */
+  providers: SmsProvider[];
 
   smsSource: ManualSmsSource;
 
@@ -69,6 +72,12 @@ interface AppState {
   remove(id: string): Promise<void>;
 
   setSetting(key: keyof AppSettings, value: boolean): Promise<void>;
+
+  /** Record whether a provider matters to the user (onboarding and Settings). */
+  setProviderEnabled(id: string, enabled: boolean): Promise<void>;
+  completeOnboarding(): Promise<void>;
+  /** Send the user back through onboarding: Settings -> Replay onboarding. */
+  resetOnboarding(): Promise<void>;
 
   deleteAllTransactions(): Promise<void>;
   deleteAllMessages(): Promise<void>;
@@ -98,6 +107,7 @@ export const useAppStore = create<AppState>((set, get) => {
     error: null,
     settings: DEFAULT_SETTINGS,
     transactions: [],
+    providers: [],
     smsSource: new ManualSmsSource(),
 
     async initialize(deps = {}) {
@@ -109,14 +119,15 @@ export const useAppStore = create<AppState>((set, get) => {
 
         await seedDatabase(db, now());
 
-        const [settings, transactions] = await Promise.all([
+        const [settings, transactions, providers] = await Promise.all([
           settingsRepository.getAll(db),
           transactionRepository.list(db),
+          providerRepository.list(db),
         ]);
 
         await get().smsSource.start();
 
-        set({ settings, transactions, ready: true, loading: false });
+        set({ settings, transactions, providers, ready: true, loading: false });
       } catch (e) {
         set({
           loading: false,
@@ -269,6 +280,20 @@ export const useAppStore = create<AppState>((set, get) => {
       const database = requireDb();
       await settingsRepository.set(database, key, value, now());
       set({ settings: await settingsRepository.getAll(database) });
+    },
+
+    async setProviderEnabled(id, enabled) {
+      const database = requireDb();
+      await providerRepository.setEnabled(database, id, enabled);
+      set({ providers: await providerRepository.list(database) });
+    },
+
+    async completeOnboarding() {
+      await get().setSetting('onboardingComplete', true);
+    },
+
+    async resetOnboarding() {
+      await get().setSetting('onboardingComplete', false);
     },
 
     async deleteAllTransactions() {

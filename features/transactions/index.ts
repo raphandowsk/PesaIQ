@@ -11,3 +11,5 @@ export { DEMO_RECORDS, demoMessageId } from './demoData';
 export type { DemoRecord } from './demoData';
 export { useAppStore } from './store';
 export type { StoreDeps, SaveOutcome } from './store';
+export { summarize, isCounted, needsReview } from './selectors';
+export type { Summary } from './selectors';

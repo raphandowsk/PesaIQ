@@ -5,3 +5,4 @@ android
 ios
 package-lock.json
 Android app design questions
+expo-env.d.ts

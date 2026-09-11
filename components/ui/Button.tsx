@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,15 +12,20 @@ import { colors, MIN_TOUCH, radius, space } from '../../theme';
 import { Text } from './Text';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Size = 'md' | 'lg';
 
 export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   label: string;
   variant?: Variant;
+  /** `lg` is the design's 54px call-to-action at the foot of a screen. */
+  size?: Size;
   loading?: boolean;
   block?: boolean;
-  left?: React.ReactNode;
+  left?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
+
+const LARGE_HEIGHT = 54;
 
 /**
  * Pill button. Pressed states step one rung down the accent ramp, matching the
@@ -28,6 +34,7 @@ export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> 
 export function Button({
   label,
   variant = 'primary',
+  size = 'md',
   loading = false,
   block = false,
   left,
@@ -36,6 +43,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const large = size === 'lg';
 
   return (
     <Pressable
@@ -45,18 +53,18 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         {
-          minHeight: MIN_TOUCH,
+          minHeight: large ? LARGE_HEIGHT : MIN_TOUCH,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
           gap: space[2],
           paddingHorizontal: space[4],
-          paddingVertical: space[3],
+          paddingVertical: large ? space[3] : space[2],
           borderRadius: radius.pill,
           opacity: isDisabled ? 0.45 : 1,
           ...surfaceFor(variant, pressed),
         },
-        block && { alignSelf: 'stretch' },
+        (block || large) && { alignSelf: 'stretch' },
         style,
       ]}
       {...rest}
@@ -66,7 +74,7 @@ export function Button({
       ) : (
         <>
           {left ? <View>{left}</View> : null}
-          <Text variant="bodyMedium" style={{ color: inkFor(variant) }}>
+          <Text variant={large ? 'button' : 'bodyMedium'} style={{ color: inkFor(variant) }}>
             {label}
           </Text>
         </>
@@ -100,7 +108,7 @@ function surfaceFor(variant: Variant, pressed: boolean): ViewStyle {
 
 function inkFor(variant: Variant): string {
   if (variant === 'primary') return colors.surface;
-  if (variant === 'danger') return colors.accentRamp[700];
-  if (variant === 'ghost') return colors.accentRamp[700];
-  return colors.text;
+  if (variant === 'danger' || variant === 'ghost') return colors.accentRamp[700];
+  // The design sets secondary labels in neutral-700, a step softer than body text.
+  return colors.neutralRamp[700];
 }

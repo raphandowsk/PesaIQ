@@ -134,3 +134,69 @@ de-duplicated at all, which is why the parser warns about it.
 - "Remove demo data" deletes demo **messages** as well as demo transactions;
   leaving the source text would keep the sensitive half of what was removed.
 - Every privacy-sensitive setting defaults to off, asserted in tests.
+
+## Phase 1D — onboarding and navigation
+
+### Route tree
+
+```
+app/
+  _layout.tsx        root Stack; holds the splash until fonts AND the database are ready
+  index.tsx          the one place a launch is routed from
+  (onboarding)/      welcome → how-it-works → privacy → setup      guard: !onboarded
+  (tabs)/            dashboard · transactions · parser-lab · review · settings   guard: onboarded
+```
+
+Both groups sit behind `Stack.Protected`, so the rule is structural: Back cannot
+return to onboarding once it is finished, and a deep link cannot reach the tabs
+before it. Finishing onboarding, skipping it, and Settings → Replay onboarding all
+flip the flag and then `router.replace('/')`; `index.tsx` re-decides. The routing
+rule lives in exactly one place.
+
+**Skip counts as finishing.** The user chose it, and every skipped screen is one tap
+away in Settings.
+
+### The tab bar is custom
+
+The design puts a tinted pill behind the active icon and a count badge on Review;
+the stock bar draws neither. `TabBar` keeps React Navigation's tap contract (emits
+`tabPress`, honours `preventDefault`), so screens can still intercept taps.
+
+In expo-router 57, `Tabs` is imported from `expo-router/tabs`, not the main entry —
+the router now vendors its own copy of React Navigation.
+
+### Icons are the design's own paths
+
+The 2026-09-11 canvas draws its icons by hand; it contains no Lucide reference.
+`components/ui/Icon.tsx` carries its SVG paths verbatim on the `react-native-svg`
+already installed. An icon library would have added a dependency and been visibly
+off.
+
+### Typed routes
+
+`npx expo start` generates `.expo/types/router.d.ts` and `expo-env.d.ts` (both
+gitignored). With them present, `tsc` rejects any route string that does not match
+a file — a mistyped `router.push` is a compile error rather than a runtime dead end.
+On a fresh clone, run the dev server once before `npm run typecheck`, or route
+strings go unchecked.
+
+### Interim tab screens
+
+Onboarding is complete. The tabs are working shells over real data, each marked
+with a *Preview* tag naming the phase that finishes it:
+
+| Tab | Real now | Arrives in |
+|---|---|---|
+| Home | totals, review count, recent records, demo notice and removal | health, categories, tips — 1F |
+| Records | full list from SQLite | search, filters, detail — 1G |
+| Lab | paste → analyze → save | pipeline, result card, field edit — 1E |
+| Review | queue, Confirm, Ignore | progress ring, field corrections — 1H |
+| Settings | Replay onboarding, remove demo data | toggles, providers, export — 1I |
+
+### Open: what provider selection does
+
+Onboarding saves which providers the user picked (`providers.enabled`), and the
+choice survives restarts. **In Stage 1 it does not change parsing** — every hint is
+still checked. The design's copy says "Choose the providers you want parsed", which
+over-promises today. Either the selection should filter parsing, or the copy should
+say it takes effect when Stage 2 reads incoming SMS. Awaiting a product decision.
