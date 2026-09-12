@@ -6,3 +6,5 @@ ios
 package-lock.json
 Android app design questions
 expo-env.d.ts
+# A reference document, kept exactly as written.
+PesaIQ_BUILD_PROMPT.md

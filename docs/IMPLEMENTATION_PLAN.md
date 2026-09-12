@@ -10,19 +10,19 @@ app where you paste a Tanzanian financial SMS, watch it parse, confirm/edit, and
 
 The clickable prototype is **more than the original MVP spec**. Confirmed additions I will build:
 
-| Area | The design specifies | Impact on plan |
-|---|---|---|
-| **Language** | **English-only UI** (revised 2026-09-11 — Swahili removed). Nav: Home, Records, Lab, Review, Settings. SMS *content* can still be Swahili. | No i18n layer needed. Parser must still match Swahili keywords. |
-| **Design system** | **Violet/lime on near-white** (revised 2026-09-11, replaces Organic): accent `#8a4fd8`, accent-2 `#6aad39`, bg `#f7f6fc`, surface `#ffffff`, text `#16151c`. Plus Jakarta Sans (800 headings). Radii 12/20/30. | A `theme` tokens module + one font family. Not Material default. |
-| **Dashboard** | Personalized greeting, **Financial Health score 0–100** (animated ring) with 4 weighted factors, "what builds the score" bars, In/Out/Net, **category breakdown** (spend/earn toggle), **insight tips**, provider summary, recent list, review count, "Analyze SMS" CTA, demo-data banner. | New `insights` feature (pure selectors over transactions). Bigger than the original dashboard. |
-| **Parser Lab** | Paste box + char count + clear, 4 labeled DEMO samples, animated 4-step pipeline, rich result card. | Matches brief; pipeline animation is cosmetic. |
-| **Result** | Per-field confidence, warnings, **"How we got this"** explainability (1 Normalized · 2 Classified · 3 Confidence factors with deltas), inline field edit, Save / Not-correct / Discard. | Matches brief + explainability. |
-| **Transactions** | Search, filter chips (All / Received / Sent / Cash out / Bills / Review), date-grouped rows, masked identifiers, needs-review flag, empty state. | Matches brief. |
-| **Detail** | Full fields, confidence ring, source message "kept intact", Confirm/Edit/Incorrect/Delete. | Matches brief. |
-| **Review** | Progress ring (x/7 cleared this week), day streak, per-item type chips + inline inputs for low-confidence fields, Confirm / Ignore. | Matches brief + gamification. |
-| **Settings** | Grouped: Processing / Privacy / AI / Providers / Data, toggles + actions + status tags, replay onboarding. | Matches brief. |
-| **Export** | Format (CSV/JSON), range, live preview + row count, "runs only on tap". | Matches brief. |
-| **Onboarding** | Welcome, How-it-works (4 steps), Privacy (non-legal disclaimer), **Senders/providers picker**, setup. | One extra step vs. brief. |
+| Area              | The design specifies                                                                                                                                                                                                                                                                       | Impact on plan                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| **Language**      | **English-only UI** (revised 2026-09-11 — Swahili removed). Nav: Home, Records, Lab, Review, Settings. SMS _content_ can still be Swahili.                                                                                                                                                 | No i18n layer needed. Parser must still match Swahili keywords.                                |
+| **Design system** | **Violet/lime on near-white** (revised 2026-09-11, replaces Organic): accent `#8a4fd8`, accent-2 `#6aad39`, bg `#f7f6fc`, surface `#ffffff`, text `#16151c`. Plus Jakarta Sans (800 headings). Radii 12/20/30.                                                                             | A `theme` tokens module + one font family. Not Material default.                               |
+| **Dashboard**     | Personalized greeting, **Financial Health score 0–100** (animated ring) with 4 weighted factors, "what builds the score" bars, In/Out/Net, **category breakdown** (spend/earn toggle), **insight tips**, provider summary, recent list, review count, "Analyze SMS" CTA, demo-data banner. | New `insights` feature (pure selectors over transactions). Bigger than the original dashboard. |
+| **Parser Lab**    | Paste box + char count + clear, 4 labeled DEMO samples, animated 4-step pipeline, rich result card.                                                                                                                                                                                        | Matches brief; pipeline animation is cosmetic.                                                 |
+| **Result**        | Per-field confidence, warnings, **"How we got this"** explainability (1 Normalized · 2 Classified · 3 Confidence factors with deltas), inline field edit, Save / Not-correct / Discard.                                                                                                    | Matches brief + explainability.                                                                |
+| **Transactions**  | Search, filter chips (All / Received / Sent / Cash out / Bills / Review), date-grouped rows, masked identifiers, needs-review flag, empty state.                                                                                                                                           | Matches brief.                                                                                 |
+| **Detail**        | Full fields, confidence ring, source message "kept intact", Confirm/Edit/Incorrect/Delete.                                                                                                                                                                                                 | Matches brief.                                                                                 |
+| **Review**        | Progress ring (x/7 cleared this week), day streak, per-item type chips + inline inputs for low-confidence fields, Confirm / Ignore.                                                                                                                                                        | Matches brief + gamification.                                                                  |
+| **Settings**      | Grouped: Processing / Privacy / AI / Providers / Data, toggles + actions + status tags, replay onboarding.                                                                                                                                                                                 | Matches brief.                                                                                 |
+| **Export**        | Format (CSV/JSON), range, live preview + row count, "runs only on tap".                                                                                                                                                                                                                    | Matches brief.                                                                                 |
+| **Onboarding**    | Welcome, How-it-works (4 steps), Privacy (non-legal disclaimer), **Senders/providers picker**, setup.                                                                                                                                                                                      | One extra step vs. brief.                                                                      |
 
 > **The parser is real in the prototype.** The design's embedded script contains a complete,
 > working `normalize → classify → extract → confidence` engine with 4 anonymized DEMO samples
@@ -51,6 +51,7 @@ Paste (ManualSmsSource)
 - **Health/insights/categories are pure functions** over the transaction list (no new tables).
 
 ### Folder layout (matches the build prompt, adjusted for what the design added)
+
 ```
 app/                      # Expo Router screens (tabs + stacks)
   (onboarding)/ welcome, how-it-works, privacy, senders, setup
@@ -139,7 +140,7 @@ labels are gone, so **no i18n layer ships in Stage 1**. Strings live beside thei
 Two things survive from the Swahili era and must not be dropped:
 
 - **SMS content is still Swahili.** Sample `s2` is a Swahili message (`Umetuma TZS 45,000 kwa …
-  Salio … Ada …`), and the classifier matches Swahili keywords (`umepokea`, `umetuma`, `umetoa`,
+Salio … Ada …`), and the classifier matches Swahili keywords (`umepokea`, `umetuma`, `umetoa`,
   `umeweka`, `umelipa`, `salio`, `muamala`, `muda wa maongezi`, `bando`, `bonasi`, `bofya`).
   These are **parser inputs**, not UI copy — they stay exactly as they are.
 - **Two leftover Swahili strings in the canvas**: `weight: 'uzito '` (the score-factor weight
