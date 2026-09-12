@@ -66,10 +66,6 @@ export function ReportCard({ report }: { report: MonthlyReport }) {
           </View>
         ))}
       </View>
-
-      <Text variant="small" tone="muted">
-        Compared with {report.previous.label}, by category, with a PDF to save.
-      </Text>
     </Pressable>
   );
 }

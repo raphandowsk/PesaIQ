@@ -186,13 +186,13 @@ export default function Dashboard() {
       {health ? <ReportCard report={monthReport} /> : null}
 
       {spendList.length > 0 ? (
-        <Section title="Spend smarter" subtitle="Tips drawn from your own transactions">
+        <Section title="Spend smarter">
           <TipCarousel tips={spendList} tone="spend" autoplay={animate} />
         </Section>
       ) : null}
 
       {earnList.length > 0 ? (
-        <Section title="Earn more" subtitle="And keep it easy to trace">
+        <Section title="Earn more">
           <TipCarousel tips={earnList} tone="earn" autoplay={animate} />
         </Section>
       ) : null}
@@ -340,21 +340,10 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <View style={{ marginBottom: space[6] }}>
+    <View style={{ marginBottom: space[6], gap: space[3] }}>
       <SectionTitle>{title}</SectionTitle>
-      <Text variant="small" tone="muted" style={{ marginBottom: space[3] }}>
-        {subtitle}
-      </Text>
       <View style={{ gap: space[2] }}>{children}</View>
     </View>
   );

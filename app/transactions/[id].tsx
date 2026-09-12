@@ -555,8 +555,6 @@ function ChargesCard({ t }: { t: Transaction }) {
   const debt = t.details.debtCollected;
   if (lines.length === 0 && debt == null) return null;
 
-  const vatInsideFee = t.taxes.some((x) => x.within === 'fee');
-
   return (
     <Card style={{ marginBottom: space[3], gap: space[1] }}>
       <Text variant="kicker" tone="muted" accessibilityRole="header">
@@ -581,11 +579,6 @@ function ChargesCard({ t }: { t: Transaction }) {
           <ChargeRow label="Total out" value={formatTzs(totalOutOf(t))} strong />
         ) : null}
       </View>
-      {vatInsideFee ? (
-        <Text variant="small" tone="muted" style={{ fontSize: 12 }}>
-          The VAT is already inside the fee, as the message states it.
-        </Text>
-      ) : null}
     </Card>
   );
 }
