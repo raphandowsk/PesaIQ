@@ -40,7 +40,7 @@ export function FieldRow({
   const ink = field.low
     ? colors.accentRamp[700]
     : field.missing && !field.verified
-      ? colors.neutralRamp[500]
+      ? colors.neutralRamp[700]
       : colors.text;
 
   return (
@@ -91,7 +91,7 @@ export function FieldRow({
           onChangeText={onChangeText}
           accessibilityLabel={field.label}
           placeholder={field.numeric ? 'e.g. 45,000' : 'Not found'}
-          placeholderTextColor={colors.neutralRamp[500]}
+          placeholderTextColor={colors.neutralRamp[700]}
           keyboardType={field.numeric ? 'decimal-pad' : 'default'}
           autoCapitalize={CAPITALIZE[field.key] ?? 'none'}
           autoCorrect={false}
@@ -140,7 +140,8 @@ export function FieldRow({
                   variant="small"
                   style={{
                     fontFamily: fonts.semibold,
-                    color: on ? colors.surface : colors.neutralRamp[800],
+                    // White on lime-500 is 1.9:1; the darkest lime reads at 6.2:1.
+                    color: on ? colors.accent2Ramp[900] : colors.neutralRamp[800],
                   }}
                 >
                   {TYPE_LABELS[option]}

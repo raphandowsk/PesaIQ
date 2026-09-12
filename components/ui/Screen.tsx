@@ -31,6 +31,8 @@ export function Screen({
           style={{ flex: 1 }}
           contentContainerStyle={[pad, { paddingBottom: space[8] }, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          // Scrolling away from a field puts the keyboard away with it.
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           {children}

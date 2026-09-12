@@ -205,7 +205,8 @@ export function ReviewCard({
                   style={{
                     fontFamily: fonts.bold,
                     fontSize: 12,
-                    color: on ? colors.surface : colors.neutralRamp[800],
+                    // White on lime-500 is 1.9:1; the darkest lime reads at 6.2:1.
+                    color: on ? colors.accent2Ramp[900] : colors.neutralRamp[800],
                   }}
                 >
                   {TYPE_LABELS[option]}
@@ -228,7 +229,7 @@ export function ReviewCard({
               value={value}
               onChangeText={(v) => setText(key, v)}
               placeholder={meta.placeholder}
-              placeholderTextColor={colors.neutralRamp[500]}
+              placeholderTextColor={colors.neutralRamp[700]}
               accessibilityLabel={flagged ? `${meta.label}, unsure, worth checking` : meta.label}
               keyboardType={meta.numeric ? 'decimal-pad' : 'default'}
               autoCapitalize={meta.caps ?? 'none'}

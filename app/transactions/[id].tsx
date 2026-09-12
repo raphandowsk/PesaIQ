@@ -335,7 +335,7 @@ export default function RecordDetail() {
                     flex: 1,
                     fontFamily: fonts.semibold,
                     fontSize: 14,
-                    color: field.missing ? colors.neutralRamp[500] : colors.text,
+                    color: field.missing ? colors.neutralRamp[700] : colors.text,
                   }}
                 >
                   {field.display}

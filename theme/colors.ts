@@ -65,10 +65,15 @@ export const colors = {
   neutralRamp: neutral,
 } as const;
 
-/** Muted body text. The design derives this by mixing text into the ground. */
-export const textMuted = 'rgba(22,21,28,0.58)';
-/** Fainter still — metadata, timestamps. */
-export const textFaint = 'rgba(22,21,28,0.45)';
+/**
+ * Muted body text, made by mixing text into the ground as the design does.
+ * The design's 0.58 measured 4.1–4.45:1, just under WCAG AA (4.5:1) for small
+ * text, so it is raised to clear AA on every ground the app uses
+ * (tests/contrast.test.ts).
+ */
+export const textMuted = 'rgba(22,21,28,0.66)';
+/** Fainter still: metadata, timestamps. Raised from 0.45 (2.9:1) for AA. */
+export const textFaint = 'rgba(22,21,28,0.62)';
 
 /**
  * Money direction tints. Incoming reads lime, outgoing reads violet —

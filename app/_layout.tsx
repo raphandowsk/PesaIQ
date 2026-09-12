@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -20,6 +20,29 @@ import { colors, space } from '../theme';
 // Hold the native splash until fonts and the database are both ready, so the
 // first painted frame is the right screen in the right face.
 void SplashScreen.preventAutoHideAsync();
+
+/**
+ * Anything a screen throws while rendering lands here instead of a blank
+ * screen. The error's own text is not shown: it could quote a pasted message.
+ */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <SafeAreaProvider>
+      <Screen>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[3] }}>
+          <Text variant="h3" accessibilityRole="header">
+            Something went wrong
+          </Text>
+          <Text variant="small" tone="muted" style={{ textAlign: 'center' }}>
+            This screen hit a problem it could not recover from. Your saved records are not
+            affected.
+          </Text>
+          <Button label="Try again" onPress={() => void retry()} />
+        </View>
+      </Screen>
+    </SafeAreaProvider>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({

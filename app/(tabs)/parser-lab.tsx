@@ -100,7 +100,7 @@ export default function ParserLab() {
           onChangeText={setText}
           editable={!analyzing}
           placeholder="Paste an SMS here…"
-          placeholderTextColor={colors.neutralRamp[500]}
+          placeholderTextColor={colors.neutralRamp[700]}
           accessibilityLabel="Message to analyze"
           autoCorrect={false}
           autoCapitalize="none"
