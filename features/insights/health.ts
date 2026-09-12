@@ -59,6 +59,10 @@ export interface Health {
   /** Share of income kept, 0-1. */
   savings: number;
   recordCount: number;
+  /** Records the user has confirmed. */
+  confirmed: number;
+  /** Records carrying a transaction reference. */
+  withReference: number;
 }
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -143,5 +147,7 @@ export function computeHealth(transactions: readonly Transaction[]): Health | nu
     net: received - sent,
     savings,
     recordCount: n,
+    confirmed,
+    withReference,
   };
 }

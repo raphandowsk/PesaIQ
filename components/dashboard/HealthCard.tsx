@@ -2,6 +2,7 @@ import { Easing, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import type { Health } from '../../features/insights';
+import { BAND_MEANINGS } from '../../features/insights/healthExplain';
 import { colors, fonts, radius, space } from '../../theme';
 import { formatAmount, formatTzs, MINUS } from '../../utils/format';
 import { Icon } from '../ui/Icon';
@@ -24,7 +25,10 @@ export interface HealthCardProps {
   replay: number;
 }
 
-/** The lime health card: score ring, band, streak, and received / sent / net. */
+/**
+ * The lime health card: score ring, band and what it means, streak, and
+ * received / spent / fees & taxes / net. Net is after fees and taxes.
+ */
 export function HealthCard({ health, streak, animate, replay }: HealthCardProps) {
   const progress = useProgress({
     animate,
@@ -47,7 +51,7 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
   return (
     <View
       accessible
-      accessibilityLabel={`Financial health ${health.score} out of 100, ${health.band}.${spokenStreak} Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}. Net ${net}.`}
+      accessibilityLabel={`Financial health ${health.score} out of 100, ${health.band}. ${BAND_MEANINGS[health.band]}${spokenStreak} Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}. Net ${net}.`}
       style={{
         backgroundColor: colors.accent2Ramp[200],
         borderRadius: radius.lg,
@@ -122,6 +126,9 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
           <Text variant="h2" style={{ color: colors.accent2Ramp[900] }}>
             {health.band}
           </Text>
+          <Text variant="small" style={{ color: colors.accent2Ramp[900], lineHeight: 17 }}>
+            {BAND_MEANINGS[health.band]}
+          </Text>
           {streak > 0 ? (
             <View
               style={{
@@ -145,23 +152,33 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
         </View>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: space[2], marginTop: space[4] }}>
-        <MiniStat
-          label="Received"
-          value={formatAmount(health.received)}
-          labelInk={colors.accent2Ramp[800]}
-        />
-        <MiniStat
-          label="Spent"
-          value={formatAmount(health.spent)}
-          labelInk={colors.accentRamp[700]}
-        />
-        <MiniStat
-          label="Net"
-          value={net}
-          labelInk={colors.neutralRamp[700]}
-          valueInk={positive ? colors.accent2Ramp[700] : colors.accentRamp[700]}
-        />
+      {/* Received − spent − fees & taxes = net: two rows so all four fit a phone. */}
+      <View style={{ gap: space[2], marginTop: space[4] }}>
+        <View style={{ flexDirection: 'row', gap: space[2] }}>
+          <MiniStat
+            label="Received"
+            value={formatAmount(health.received)}
+            labelInk={colors.accent2Ramp[800]}
+          />
+          <MiniStat
+            label="Spent"
+            value={formatAmount(health.spent)}
+            labelInk={colors.accentRamp[700]}
+          />
+        </View>
+        <View style={{ flexDirection: 'row', gap: space[2] }}>
+          <MiniStat
+            label="Fees & taxes"
+            value={formatAmount(health.charges)}
+            labelInk={colors.accentRamp[700]}
+          />
+          <MiniStat
+            label="Net"
+            value={net}
+            labelInk={colors.neutralRamp[700]}
+            valueInk={positive ? colors.accent2Ramp[800] : colors.accentRamp[700]}
+          />
+        </View>
       </View>
     </View>
   );
