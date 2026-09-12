@@ -16,7 +16,7 @@ Must run in Expo Go. No native modules. No Android Studio.
 | **1G** | Records + Detail: search, filters, date groups, masking, confirm/edit/incorrect/delete           | **Done** — 2026-09-12 |
 | **1H** | Review queue: progress ring, streak, type chips, low-field inputs, confirm/ignore                | **Done** — 2026-09-12 |
 | **1I** | Settings + Export + Privacy: toggles, actions, CSV/JSON export, delete-all                       | **Done** — 2026-09-12 |
-| **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint            | Next                  |
+| **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint            | **Done** — 2026-09-12 |
 
 ### Definition of done
 
@@ -25,6 +25,28 @@ Parser Lab works · normalization, classification, generic parsing and confidenc
 scoring work · transactions persist, can be edited, reviewed and deleted · data
 exports · settings work · tests pass · no secrets committed · docs exist ·
 TypeScript clean · ESLint clean.
+
+### Stage 1 against the definition of done
+
+Checked 2026-09-12, at the end of 1J.
+
+| Item                                                       | Status                                                         | How it was checked                                                                                                                                                        |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App launches in Expo Go                                    | **Not yet confirmed on a phone**                               | The Android bundle exports cleanly (`expo export --platform android`) and the same app runs in the web preview. Opening it in Expo Go on a device is the remaining check. |
+| Onboarding                                                 | Works                                                          | Web preview walkthrough; onboarding suite                                                                                                                                 |
+| Dashboard                                                  | Works                                                          | Web preview; insights suite                                                                                                                                               |
+| Demo data                                                  | Works                                                          | Seed and removal suites; web preview                                                                                                                                      |
+| Parser Lab                                                 | Works                                                          | Web preview; Lab suite                                                                                                                                                    |
+| Normalization, classification, generic parsing, confidence | Works                                                          | Parser suites, plus the robustness suite (27 hostile inputs, 500 generated)                                                                                               |
+| Local persistence                                          | Works                                                          | Database and store suites against real SQLite                                                                                                                             |
+| Edit, review, delete                                       | Works                                                          | Record, review and data-management suites; web preview                                                                                                                    |
+| Export                                                     | Works on web; Android folder picker covered by unit tests only | Export and save suites; web preview                                                                                                                                       |
+| Settings                                                   | Works                                                          | Web preview; store suites                                                                                                                                                 |
+| Tests pass                                                 | 28 suites, 538 tests                                           | `npm test`                                                                                                                                                                |
+| No secrets committed                                       | None found                                                     | Scan of tracked files for key and token patterns                                                                                                                          |
+| Docs exist                                                 | Yes                                                            | README and `docs/`                                                                                                                                                        |
+| TypeScript clean                                           | Yes                                                            | `npm run typecheck`                                                                                                                                                       |
+| ESLint clean                                               | Yes, zero warnings                                             | `npm run lint`                                                                                                                                                            |
 
 ## Stage 2 — Expo Development Build
 

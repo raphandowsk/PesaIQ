@@ -563,3 +563,66 @@ Both were found while verifying 1I in the browser:
 - **Toast hidden behind pushed screens.** The toast had no z-order, so on web the
   Export screen painted over it and "Saved …" was never seen. It now sits on its own
   layer above every screen.
+
+## Phase 1J — Hardening
+
+### Accessibility
+
+- **Contrast.** Every text-on-background pair the app draws was measured against
+  WCAG AA (4.5:1 for small text); `tests/contrast.test.ts` now pins them. What
+  failed, and the fix:
+
+  | Pair                                            | Before   | Fix               | After  |
+  | ----------------------------------------------- | -------- | ----------------- | ------ |
+  | Muted text (`tone="muted"`)                     | 4.1–4.45 | alpha 0.58 → 0.66 | ≥ 5.26 |
+  | Faint text                                      | 2.9      | alpha 0.45 → 0.62 | ≥ 4.63 |
+  | "Not found" values, placeholders (`neutral500`) | 2.4      | `neutral700`      | ≈ 6    |
+  | Selected type chip (white on lime-500)          | 1.9      | `accent2-900` ink | 6.2    |
+  | `tone="positive"` on the page ground            | 4.3      | `accent2-800`     | 6.9    |
+
+  The design's own values were the ones below AA; each change is the smallest step
+  that clears it.
+
+- **Text size.** All text follows the phone's font-size setting. Only the tab
+  labels (1.4×) and the tab badge (1.2×) are capped, because their containers are
+  fixed-size and would clip.
+- **Touch targets and names.** An audit of all 23 pressables found each with a role
+  and an accessible name, and none under 44 px without hit slop to reach 48 px.
+- **Keyboard.** Scrolling a form puts the keyboard away; taps still land while it is
+  open.
+
+### Errors
+
+- **Root error boundary.** A screen that throws while rendering shows "Something
+  went wrong" with **Try again**, instead of a blank screen. It never shows the
+  error's text, which could quote a pasted message.
+- **Parser robustness.** `tests/robustness.test.ts` feeds the parser 27 hostile
+  inputs (emoji, right-to-left text, control and zero-width characters, markup,
+  SQL, absurd or negative amounts, 500-character references) and 500 generated
+  messages from a fixed seed. Each must give a valid result with finite numbers,
+  masked identifiers and real dates. The same inputs also go through the store and
+  SQLite and come back intact.
+- **Bugs it found, now fixed.** The date extractor formatted whatever matched
+  `dd/mm/yy`: month 99 became "12 ? 2026", 31/02 became "31 Feb 2026", "25:61" was
+  kept as a time, and a four-digit "1999" became "2099". It now takes the first
+  real date and the first possible time; anything else is null with a "not a real
+  date" warning, and the record's date falls back to when it was saved.
+
+### Empty, loading and error states
+
+| Screen            | Empty                                                        | Loading           | Error                                                                   |
+| ----------------- | ------------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------- |
+| Launch            | —                                                            | "Opening PesaIQ"  | "Could not open your records" + Try again (and the one-tab note on web) |
+| Home              | "No score yet" + Analyze an SMS                              | —                 | Toast if demo removal fails                                             |
+| Records           | "No records match" / nothing saved                           | —                 | —                                                                       |
+| Lab / Result      | "Paste a message before analyzing"; "Nothing to show"        | Pipeline progress | Too long, could not analyze, could not save                             |
+| Review            | "The queue is clear"                                         | Button spinners   | "Nothing was changed"                                                   |
+| Detail            | "Record not found"; "no longer stored" for a deleted message | "Loading…" source | Save and delete failures                                                |
+| Settings / Export | Delete disabled with no records; "Nothing to export"         | Button spinners   | "Nothing was changed"; "could not be saved"                             |
+| Any screen        | —                                                            | —                 | Root error boundary                                                     |
+
+### Test runner note
+
+Jest now and then prints "a worker process has failed to exit gracefully" under
+parallel load. A full in-band run with `--detectOpenHandles` reports no open handles,
+so this is slow worker teardown, not a leak in the code under test.
