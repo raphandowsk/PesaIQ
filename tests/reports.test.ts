@@ -174,7 +174,7 @@ describe('buildReport', () => {
     });
   });
 
-  it('splits fees & taxes into agent/operator fees (fees less their VAT) and taxes', () => {
+  it('splits fees & taxes into operator fees (fees less their VAT) and taxes', () => {
     // Mixx: fee 450 with VAT 69 inside it, so the operator charged 381.
     expect(r.totals.operatorFees).toBe(381);
     expect(r.totals.operatorFees + r.totals.taxes).toBeCloseTo(r.totals.charges, 2);
@@ -205,9 +205,8 @@ describe('buildReport', () => {
     expect(r.fees.map((l) => [l.key, l.amount, l.previous])).toEqual([
       ['VAT', 2798.5, 229],
       ['REA', 454.92, 0],
-      ['FEE', 381, 0],
+      ['OPERATOR_FEE', 381, 1271],
       ['EWURA', 151.64, 0],
-      ['AGENT_FEE', 0, 1271],
     ]);
     expect(r.fees.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(r.totals.charges, 2);
   });
@@ -256,7 +255,7 @@ describe('reportHtml', () => {
     expect(html).toContain('+TZS 73,550');
     expect(html).toContain('Electricity &amp; water');
     expect(html).toContain('Fees &amp; taxes by type');
-    expect(html).toContain('<td>Agent/operator fees</td><td class="num">TZS 381</td>');
+    expect(html).toContain('<td>Operator fees</td><td class="num">TZS 381</td>');
     expect(html).toContain('<td>Taxes</td><td class="num">TZS 3,405.06</td>');
   });
 

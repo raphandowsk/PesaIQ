@@ -89,7 +89,7 @@ export function recordFields(t: Transaction): RecordField[] {
     row('provider', 'Provider', t.provider),
     row('moneyCategory', 'Category', MONEY_CATEGORY_LABELS[moneyCategoryOf(t)]),
     row('amount', 'Amount', t.amount == null ? null : formatTzs(t.amount), 'Missing'),
-    row('fee', 'Fee', t.fee == null ? null : formatTzs(t.fee), 'None stated'),
+    row('fee', 'Fee as stated', t.fee == null ? null : formatTzs(t.fee), 'None stated'),
     row('counterparty', 'Counterparty', t.counterparty),
     row('masked', 'Account / phone', t.maskedAccountOrPhone),
     row('reference', 'Reference', t.transactionReference),

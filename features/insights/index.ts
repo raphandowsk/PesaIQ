@@ -3,6 +3,7 @@ export type { Health, HealthBand, HealthPart, HealthPartKey } from './health';
 export { categoryOf, categoryBreakdown, moneyCategoryOf } from './categories';
 export type { CategoryBreakdown, CategoryMode, CategoryRow } from './categories';
 export { feesSummary, chargeLines, feePeriodRange, FEE_PERIODS } from './fees';
+export { splitCharges, chargesEquation, OPERATOR_FEES_LABEL, type ChargeSplit } from './fees';
 export type { FeePeriod, FeesSummary, ChargeLine, ChargeRow } from './fees';
 export { spendTips, earnTips, TIP_THRESHOLDS } from './tips';
 export type { Tip } from './tips';

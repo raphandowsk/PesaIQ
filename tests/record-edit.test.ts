@@ -25,7 +25,7 @@ describe('recordFields', () => {
       ['Provider', 'Demo Bank'],
       ['Category', 'Cash withdrawal'],
       ['Amount', 'TZS 120,000'],
-      ['Fee', 'None stated'],
+      ['Fee as stated', 'None stated'],
       ['Counterparty', 'ATM withdrawal'],
       ['Account / phone', '**** 4312'],
       ['Reference', 'BK7741902'],

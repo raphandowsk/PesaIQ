@@ -94,13 +94,13 @@ ${notes}
 ${totalsRow('Money in', t.received, p.received)}
 ${totalsRow('Spent', t.spent, p.spent)}
 ${totalsRow('Fees &amp; taxes', t.charges, p.charges)}
-${partRow('Agent/operator fees', t.operatorFees, p.operatorFees)}
+${partRow('Operator fees', t.operatorFees, p.operatorFees)}
 ${partRow('Taxes', t.taxes, p.taxes)}
 ${totalsRow('Net', t.net, p.net, true)}
 </tbody></table>
 ${section('Spending by category', report.spending, prevLabel, 'Nothing spent in this period.')}
 ${section('Income by category', report.income, prevLabel, 'No income in this period.')}
 ${section('Fees & taxes by type', report.fees, prevLabel, 'No fees or taxes in this period.')}
-<footer>Made by PesaIQ on ${escape(formatLongDate(generatedAt))}, from messages saved on this phone. Net is money in minus spending, fees and taxes. Agent/operator fees are the fees less the VAT inside them. This is a personal summary, not a bank statement or a tax document.</footer>
+<footer>Made by PesaIQ on ${escape(formatLongDate(generatedAt))}, from messages saved on this phone. Net is money in minus spending, fees and taxes. Operator fees + taxes = fees and taxes; operator fees are what the provider or agent charged, less the VAT inside the fee. This is a personal summary, not a bank statement or a tax document.</footer>
 </body></html>`;
 }

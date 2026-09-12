@@ -210,7 +210,8 @@ export function parseNormalized(sms: NormalizedSms): ParseResult {
     ),
     buildField(
       'fee',
-      'Fee',
+      // The message's own figure: any VAT inside it is counted under taxes.
+      'Fee as stated',
       fee.value,
       fee.value == null ? 'None stated' : money(fee.value),
       fee.confidence,

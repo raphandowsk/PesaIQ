@@ -666,10 +666,11 @@ Fees are shown apart, as the user chose:
 
 - **Home:** a "Fees & taxes this month" card opens `app/fees.tsx`. That screen
   shows a period (this month, last month, all time), the total, and the total
-  split by type and by provider. The types are transaction fees, agent fees on
-  withdrawals, VAT, EWURA, REA and levies. It also lists the records. The lines
+  split by type and by provider. The types are operator fees (agent fees on
+  withdrawals included), VAT, EWURA, REA and levies. It also lists the records. The lines
   always add up to the total (`chargeLines`).
-- **Result:** a "Fees & taxes · Total out" line; Category, Fee and Taxes rows;
+- **Result:** an "Operator fees + Taxes = Fees & taxes · Total out" line;
+  Category, Fee as stated and Taxes rows;
   LUKU Units, Meter and Token, with the token masked.
 - **Detail:** Category and Fee rows, Receipt and "Sent to" rows, a Fees & taxes
   card, and an Electricity card with **Show token**.
@@ -678,7 +679,7 @@ Fees are shown apart, as the user chose:
 - **Settings:** Remembered categories, with **Forget**. Delete all transactions
   forgets them too, because they hold recipient names.
 - **Export:**
-  - CSV gains Category, Fee, Taxes and Total out.
+  - CSV gains Category, Operator fees, Taxes, Fees & taxes and Total out.
   - JSON gains the category, the fee, the tax lines, the totals, the receipt,
     the network and the LUKU details.
   - Neither ever includes the token.
@@ -710,7 +711,7 @@ records are left out, as they are everywhere else.
 
 - **Totals:** money in, spent, fees & taxes, and net (money in − spent − fees &
   taxes).
-- **Fees & taxes, split:** agent/operator fees (each fee less the VAT inside it,
+- **Fees & taxes, split:** operator fees (each fee less the VAT inside it,
   `feeBeforeTaxOf`) and taxes (every tax line). The two add up to fees & taxes,
   on screen and in the PDF.
 - **Breakdowns:** spending and income by category, and fees & taxes by type
@@ -750,3 +751,29 @@ or account numbers, references or message text. Labels are HTML-escaped.
   - has a pause button (WCAG 2.2.2).
 
   The paging arithmetic is in `utils/carousel.ts`.
+
+## Operator fees + taxes = fees & taxes (2026-09-12)
+
+Everywhere fees and taxes appear, they are shown as one sum. It is worked out by
+`splitCharges` and written out by `chargesEquation`, both in
+`features/insights/fees.ts`.
+
+- **Operator fees:** what the provider or agent charged, less any VAT inside the
+  fee (`feeBeforeTaxOf`). A cash withdrawal's agent fee counts as one.
+- **Taxes:** every tax line: VAT, excise, levies, EWURA, REA.
+- **Fees & taxes:** the two added up. This always equals `chargesOf`.
+
+Where it appears:
+
+- **Detail card and Fees & taxes screen:** as rows (`ChargesBreakdown`). Several
+  taxes are listed under Taxes; a single one is named beside it.
+- **Home:** the Fees & taxes card, and a line under the health card's figure.
+- **Result screen:** its summary line.
+- **Fees & taxes screen:** each record's line.
+- **Report:** on screen and in the PDF.
+- **Export:**
+  - CSV: `Operator fees,Taxes,Fees & taxes` columns.
+  - JSON: `operatorFees`, `taxesTotal` and `feesAndTaxes`.
+
+The fee field is labelled **Fee as stated**. It is the message's own figure,
+with any VAT inside it.

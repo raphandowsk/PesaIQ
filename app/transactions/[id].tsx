@@ -6,9 +6,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FieldRow } from '../../components/parser/FieldRow';
 import { BackButton } from '../../components/ui/BackButton';
 import { Button, Card, Icon, Screen, Text, toast } from '../../components/ui';
-import { chargeLines } from '../../features/insights';
+import { ChargesBreakdown } from '../../components/fees/ChargesBreakdown';
+import { splitCharges } from '../../features/insights';
 import { confidenceLabel } from '../../features/review/queue';
-import { chargesOf, totalOutOf, useAppStore, type Transaction } from '../../features/transactions';
+import { totalOutOf, useAppStore, type Transaction } from '../../features/transactions';
 import {
   buildRecordPatch,
   canConfirm,
@@ -547,38 +548,26 @@ export default function RecordDetail() {
 }
 
 /**
- * What the record cost in fees and taxes, line by line, and what left the
- * balance. The lines always add up to the total (see features/insights/fees).
+ * What the record cost, as operator fees + taxes = fees & taxes, and what
+ * left the balance (see features/insights/fees).
  */
 function ChargesCard({ t }: { t: Transaction }) {
-  const lines = chargeLines(t);
+  const split = splitCharges([t]);
   const debt = t.details.debtCollected;
-  if (lines.length === 0 && debt == null) return null;
+  if (split.total === 0 && debt == null) return null;
 
   return (
     <Card style={{ marginBottom: space[3], gap: space[1] }}>
       <Text variant="kicker" tone="muted" accessibilityRole="header">
         Fees & taxes
       </Text>
-      {lines.map((line, i) => (
-        <ChargeRow key={`${line.key}-${i}`} label={line.label} value={formatTzs(line.amount)} />
-      ))}
+      <ChargesBreakdown split={split} />
+      {isOutgoing(t.type) ? (
+        <ChargeRow label="Total out" value={formatTzs(totalOutOf(t))} strong />
+      ) : null}
       {debt != null ? (
         <ChargeRow label="Debt collected (not a tax)" value={formatTzs(debt)} />
       ) : null}
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: colors.divider,
-          marginTop: space[1],
-          paddingTop: space[1],
-        }}
-      >
-        <ChargeRow label="Fees & taxes" value={formatTzs(chargesOf(t))} strong />
-        {isOutgoing(t.type) ? (
-          <ChargeRow label="Total out" value={formatTzs(totalOutOf(t))} strong />
-        ) : null}
-      </View>
     </Card>
   );
 }

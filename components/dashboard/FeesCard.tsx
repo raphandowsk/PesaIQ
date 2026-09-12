@@ -1,21 +1,20 @@
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 
-import type { FeesSummary } from '../../features/insights';
+import { OPERATOR_FEES_LABEL, type FeesSummary } from '../../features/insights';
 import { colors, fonts, radius, shadow, space } from '../../theme';
 import { formatTzs } from '../../utils/format';
 import { Icon } from '../ui/Icon';
 import { Text } from '../ui/Text';
 
-const TOP_LINES = 3;
-
-/** This month's fees and taxes, with the largest lines, opening the full breakdown. */
+/** This month's fees and taxes, as operator fees + taxes, opening the full breakdown. */
 export function FeesCard({ summary }: { summary: FeesSummary }) {
   const count = summary.records.length;
+  const { split } = summary;
   const spoken =
     count === 0
       ? 'None recorded this month.'
-      : `${formatTzs(summary.total)} this month, across ${count} ${count === 1 ? 'transaction' : 'transactions'}.`;
+      : `${formatTzs(summary.total)} this month, across ${count} ${count === 1 ? 'transaction' : 'transactions'}: operator fees ${formatTzs(split.operatorFees)} plus taxes ${formatTzs(split.taxes)}.`;
 
   return (
     <Pressable
@@ -52,32 +51,37 @@ export function FeesCard({ summary }: { summary: FeesSummary }) {
           <Text variant="small" tone="muted">
             Across {count} {count === 1 ? 'transaction' : 'transactions'}
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
-            {summary.byType.slice(0, TOP_LINES).map((row) => (
-              <View
-                key={row.key}
-                style={{
-                  backgroundColor: colors.accentRamp[100],
-                  borderRadius: radius.pill,
-                  paddingHorizontal: space[3],
-                  paddingVertical: space[1],
-                }}
-              >
-                <Text
-                  variant="small"
-                  style={{
-                    fontFamily: fonts.semibold,
-                    fontSize: 12,
-                    color: colors.accentRamp[900],
-                  }}
-                >
-                  {row.label} {formatTzs(row.amount)}
-                </Text>
-              </View>
-            ))}
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2] }}
+          >
+            <Part text={`${OPERATOR_FEES_LABEL} ${formatTzs(split.operatorFees)}`} />
+            <Text variant="small" style={{ fontFamily: fonts.bold, color: colors.accentRamp[900] }}>
+              +
+            </Text>
+            <Part text={`Taxes ${formatTzs(split.taxes)}`} />
           </View>
         </>
       )}
     </Pressable>
+  );
+}
+
+function Part({ text }: { text: string }) {
+  return (
+    <View
+      style={{
+        backgroundColor: colors.accentRamp[100],
+        borderRadius: radius.pill,
+        paddingHorizontal: space[3],
+        paddingVertical: space[1],
+      }}
+    >
+      <Text
+        variant="small"
+        style={{ fontFamily: fonts.semibold, fontSize: 12, color: colors.accentRamp[900] }}
+      >
+        {text}
+      </Text>
+    </View>
   );
 }

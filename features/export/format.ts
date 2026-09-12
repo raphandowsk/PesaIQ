@@ -7,7 +7,7 @@
 import { parsedRecordDate, periodStart, recordDate } from '../transactions/records';
 import type { Transaction } from '../transactions/model';
 import { categoryOf, moneyCategoryOf } from '../insights/categories';
-import { chargesOf, totalOutOf } from '../transactions/money';
+import { chargesOf, feeBeforeTaxOf, totalOutOf } from '../transactions/money';
 import { isOutgoing, TYPE_LABELS } from '../../types/domain';
 
 export type ExportFormat = 'CSV' | 'JSON';
@@ -28,8 +28,8 @@ export const EXPORT_RANGES: readonly { key: ExportRange; label: string }[] = [
 
 /**
  * The brief's CSV header, in its order, then what fees and taxes added:
- * the category, the fee, the taxes and, for money going out, the total that
- * left the balance.
+ * the category, operator fees + taxes = fees & taxes, and, for money going
+ * out, the total that left the balance.
  */
 export const CSV_HEADER = [
   'Date',
@@ -41,8 +41,9 @@ export const CSV_HEADER = [
   'Reference',
   'Confidence',
   'Category',
-  'Fee',
+  'Operator fees',
   'Taxes',
+  'Fees & taxes',
   'Total out',
 ] as const;
 
@@ -117,8 +118,9 @@ export function csvRow(t: Transaction): string {
     csvText(t.transactionReference),
     t.confidence.toFixed(2),
     csvText(categoryOf(t)),
-    csvNumber(t.fee),
+    csvNumber(t.fee == null ? null : feeBeforeTaxOf(t)),
     csvNumber(t.taxes.length > 0 ? taxTotal(t) : null),
+    csvNumber(t.fee == null && t.taxes.length === 0 ? null : chargesOf(t)),
     csvNumber(isOutgoing(t.type) ? totalOutOf(t) : null),
   ].join(',');
 }
@@ -149,8 +151,12 @@ export function jsonRecord(t: Transaction) {
     confidence: Number(t.confidence.toFixed(2)),
     category: moneyCategoryOf(t),
     categoryLabel: categoryOf(t),
+    // The fee as the message states it; any VAT inside it is in taxes too.
     fee: t.fee,
+    // operatorFees + taxesTotal = feesAndTaxes
+    operatorFees: feeBeforeTaxOf(t),
     taxes: t.taxes,
+    taxesTotal: taxTotal(t),
     feesAndTaxes: chargesOf(t),
     totalOut: isOutgoing(t.type) ? totalOutOf(t) : null,
     receipt: t.details.receipt,

@@ -440,7 +440,7 @@ function Totals({ report }: { report: NonNullable<ReturnType<typeof buildReport>
   ];
   // Fees & taxes, split: they add up to the figure above.
   const split: Figure[] = [
-    { label: 'Agent/operator fees', now: t.operatorFees, before: p.operatorFees, shown: formatTzs },
+    { label: 'Operator fees', now: t.operatorFees, before: p.operatorFees, shown: formatTzs },
     { label: 'Taxes', now: t.taxes, before: p.taxes, shown: formatTzs },
   ];
 
@@ -459,7 +459,8 @@ function Totals({ report }: { report: NonNullable<ReturnType<typeof buildReport>
         }}
       >
         <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 17 }}>
-          Inside fees & taxes. Agent/operator fees are the fees less the VAT inside them.
+          Operator fees + Taxes = Fees & taxes. Operator fees are what the provider or agent
+          charged, less the VAT inside the fee.
         </Text>
         <Figures figures={split} />
       </View>

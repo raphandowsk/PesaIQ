@@ -1,4 +1,10 @@
-import { chargeLines, feePeriodRange, feesSummary } from '../features/insights/fees';
+import {
+  chargeLines,
+  chargesEquation,
+  feePeriodRange,
+  feesSummary,
+  splitCharges,
+} from '../features/insights/fees';
 import { UNRECOGNIZED_PROVIDER } from '../features/insights/providers';
 import type { TaxLine } from '../features/parser/schema';
 import { DEMO_RECORDS } from '../features/transactions/demoData';
@@ -89,17 +95,17 @@ describe('summarize', () => {
 });
 
 describe('chargeLines', () => {
-  it("splits a fee into the provider's part and the VAT inside it", () => {
+  it("splits a fee into the operator's part and the VAT inside it", () => {
     expect(chargeLines(mixx)).toEqual([
-      { key: 'FEE', label: 'Transaction fees', amount: 381 },
+      { key: 'OPERATOR_FEE', label: 'Operator fees', amount: 381 },
       { key: 'VAT', label: 'VAT', amount: 69 },
     ]);
   });
 
-  it('calls the fee on a cash withdrawal an agent fee', () => {
+  it("counts a cash withdrawal's agent fee as an operator fee", () => {
     expect(chargeLines(withdrawal)[0]).toEqual({
-      key: 'AGENT_FEE',
-      label: 'Agent fees',
+      key: 'OPERATOR_FEE',
+      label: 'Operator fees',
       amount: 1271,
     });
   });
@@ -132,10 +138,16 @@ describe('feesSummary', () => {
     expect(s.byType.map((r) => [r.key, r.amount])).toEqual([
       ['VAT', 2798.5],
       ['REA', 454.92],
-      ['FEE', 381],
+      ['OPERATOR_FEE', 381],
       ['EWURA', 151.64],
     ]);
     expect(sum(s.byType)).toBeCloseTo(s.total, 2);
+  });
+
+  it('gives the total as operator fees + taxes', () => {
+    const { split, total } = feesSummary(records, 'month', now);
+    expect([split.operatorFees, split.taxes, split.total]).toEqual([381, 3405.06, 3786.06]);
+    expect(split.total).toBe(total);
   });
 
   it('breaks it down by provider', () => {
@@ -149,6 +161,45 @@ describe('feesSummary', () => {
   it('reads last month and all time', () => {
     expect(feesSummary(records, 'lastMonth', now).records.map((r) => r.id)).toEqual(['withdrawal']);
     expect(feesSummary(records, 'all', now).records).toHaveLength(3);
+  });
+});
+
+describe('splitCharges', () => {
+  it('shows one record as operator fees + taxes = fees & taxes', () => {
+    expect(splitCharges([mixx])).toEqual({
+      operatorFees: 381,
+      taxes: 69,
+      total: 450,
+      taxLines: [{ key: 'VAT', label: 'VAT', amount: 69 }],
+    });
+  });
+
+  it('adds up many records, with each kind of tax largest first', () => {
+    const s = splitCharges([mixx, luku, withdrawal]);
+    expect([s.operatorFees, s.taxes, s.total]).toEqual([1652, 3634.06, 5286.06]);
+    expect(s.taxLines.map((l) => [l.key, l.amount])).toEqual([
+      ['VAT', 3027.5],
+      ['REA', 454.92],
+      ['EWURA', 151.64],
+    ]);
+  });
+
+  it("always equals the record's fees and taxes, wherever the VAT sits", () => {
+    const onTop = t({ amount: 1000, fee: 100, taxes: [tax('VAT', 18, 'extra')] });
+    for (const r of [mixx, luku, withdrawal, onTop]) {
+      expect(splitCharges([r]).total).toBeCloseTo(chargesOf(r), 2);
+    }
+    expect(splitCharges([onTop]).operatorFees).toBe(100);
+  });
+
+  it('is all zeros for records without fees or taxes', () => {
+    expect(splitCharges([t({})])).toEqual({ operatorFees: 0, taxes: 0, total: 0, taxLines: [] });
+  });
+
+  it('writes the sum out', () => {
+    expect(chargesEquation(splitCharges([mixx]))).toBe(
+      'Operator fees TZS 381 + Taxes TZS 69 = Fees & taxes TZS 450',
+    );
   });
 });
 

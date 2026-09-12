@@ -19,10 +19,12 @@ import {
   feesSummary,
   providerSummary,
   spendTips,
+  splitCharges,
   type CategoryMode,
 } from '../../features/insights';
 import { buildReport, monthOf } from '../../features/reports';
 import { needsReview, useAppStore } from '../../features/transactions';
+import { isCounted } from '../../features/transactions/selectors';
 import { colors, fonts, HIT_SLOP, MIN_TOUCH, radius, shadow, space } from '../../theme';
 import { formatLongDate, greetingFor } from '../../utils/format';
 import { useReduceMotion } from '../../utils/useReduceMotion';
@@ -67,6 +69,8 @@ export default function Dashboard() {
   const earn = useMemo(() => categoryBreakdown(transactions, 'earn'), [transactions]);
   const providers = useMemo(() => providerSummary(transactions), [transactions]);
   const fees = useMemo(() => feesSummary(transactions, 'month', now), [transactions, now]);
+  // The health card's fees & taxes, over the same records its total counts.
+  const chargeSplit = useMemo(() => splitCharges(transactions.filter(isCounted)), [transactions]);
   const monthReport = useMemo(() => buildReport(transactions, monthOf(now)), [transactions, now]);
 
   const spendList = health ? spendTips(health, spend) : [];
@@ -151,6 +155,7 @@ export default function Dashboard() {
             streak={streak}
             animate={animate}
             replay={visit}
+            chargeSplit={chargeSplit}
             onExplain={() => {
               setScoreInfoOpens((n) => n + 1);
               setScoreInfoOpen(true);

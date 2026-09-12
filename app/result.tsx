@@ -6,6 +6,7 @@ import { FieldRow } from '../components/parser/FieldRow';
 import { HowWeGotThis } from '../components/parser/HowWeGotThis';
 import { BackButton } from '../components/ui/BackButton';
 import { Button, Card, Screen, Text, toast } from '../components/ui';
+import { chargesEquation } from '../features/insights';
 import { isTextEditable, viewDraft, type DraftEdits } from '../features/lab/draft';
 import { useLabStore } from '../features/lab/store';
 import { confidenceLabel } from '../features/review/queue';
@@ -109,14 +110,22 @@ export default function Result() {
     : current.draft.category.replace(/_/g, ' ');
   const subLabel = `${view.counterparty ?? 'No counterparty'} · ${view.provider ?? 'sender not recognized'}`;
 
-  // The same arithmetic a saved record uses: spent + fees and taxes = total out.
-  const taxesWithin = (within: 'amount' | 'extra') =>
+  // The same arithmetic a saved record uses: spent + fees and taxes = total out,
+  // and operator fees + taxes = fees and taxes.
+  const cents = (n: number) => Math.round(n * 100) / 100;
+  const taxesWithin = (within: 'fee' | 'amount' | 'extra') =>
     current.draft.taxes.filter((t) => t.within === within).reduce((sum, t) => sum + t.amount, 0);
+  const allTaxes = current.draft.taxes.reduce((sum, t) => sum + t.amount, 0);
   const charges = (view.fee ?? 0) + taxesWithin('extra') + taxesWithin('amount');
   const totalOut = (view.amount ?? 0) + (view.fee ?? 0) + taxesWithin('extra');
+  const equation = chargesEquation({
+    operatorFees: cents(Math.max(0, (view.fee ?? 0) - taxesWithin('fee'))),
+    taxes: cents(allTaxes),
+    total: cents(charges),
+  });
   const chargesLabel =
     charges > 0
-      ? `Fees & taxes ${formatTzs(charges)}${view.direction === 'out' ? ` · Total out ${formatTzs(totalOut)}` : ''}`
+      ? `${equation}${view.direction === 'out' ? ` · Total out ${formatTzs(totalOut)}` : ''}`
       : null;
 
   const saveLabel = editing

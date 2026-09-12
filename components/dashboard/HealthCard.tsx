@@ -25,6 +25,8 @@ export interface HealthCardProps {
   replay: number;
   /** Opens what builds the score. The score and its info tag are the target. */
   onExplain?: () => void;
+  /** Fees & taxes as operator fees + taxes, shown under the figure. */
+  chargeSplit?: { operatorFees: number; taxes: number };
 }
 
 const INFO_TAG = 20;
@@ -33,7 +35,14 @@ const INFO_TAG = 20;
  * The lime health card: score ring, band and what it means, streak, and
  * received / spent / fees & taxes / net. Net is after fees and taxes.
  */
-export function HealthCard({ health, streak, animate, replay, onExplain }: HealthCardProps) {
+export function HealthCard({
+  health,
+  streak,
+  animate,
+  replay,
+  onExplain,
+  chargeSplit,
+}: HealthCardProps) {
   const progress = useProgress({
     animate,
     // A new score replays the count, as well as returning to the tab.
@@ -52,7 +61,7 @@ export function HealthCard({ health, streak, animate, replay, onExplain }: Healt
   const net = `${positive ? '+' : MINUS}${formatAmount(Math.abs(health.net))}`;
   const spokenStreak = streak > 0 ? ` ${streak}-day streak.` : '';
   const spokenScore = `Financial health ${health.score} out of 100, ${health.band}. ${BAND_MEANINGS[health.band]}${spokenStreak}`;
-  const spokenTotals = `Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}. Net ${net}.`;
+  const spokenTotals = `Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}${chargeSplit ? `: operator fees ${formatTzs(chargeSplit.operatorFees)} plus taxes ${formatTzs(chargeSplit.taxes)}` : ''}. Net ${net}.`;
 
   return (
     <View
@@ -214,6 +223,11 @@ export function HealthCard({ health, streak, animate, replay, onExplain }: Healt
             label="Fees & taxes"
             value={formatAmount(health.charges)}
             labelInk={colors.accentRamp[700]}
+            note={
+              chargeSplit
+                ? `Operator ${formatAmount(chargeSplit.operatorFees)} + Taxes ${formatAmount(chargeSplit.taxes)}`
+                : undefined
+            }
           />
           <MiniStat
             label="Net"
@@ -232,11 +246,14 @@ function MiniStat({
   value,
   labelInk,
   valueInk = colors.text,
+  note,
 }: {
   label: string;
   value: string;
   labelInk: string;
   valueInk?: string;
+  /** A smaller line under the value. */
+  note?: string;
 }) {
   return (
     <View
@@ -259,6 +276,16 @@ function MiniStat({
       >
         {value}
       </Text>
+      {note ? (
+        <Text
+          variant="small"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={{ fontSize: 10, color: colors.neutralRamp[700], marginTop: 1 }}
+        >
+          {note}
+        </Text>
+      ) : null}
     </View>
   );
 }

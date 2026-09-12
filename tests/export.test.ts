@@ -48,19 +48,19 @@ describe('csvText', () => {
 });
 
 describe('CSV', () => {
-  it('keeps the brief’s header, then adds category, fee, taxes and total out', () => {
+  it('keeps the brief’s header, then adds category, operator fees + taxes = fees & taxes, and total out', () => {
     expect(CSV_HEADER.join(',')).toBe(
-      'Date,Type,Provider,Amount,Currency,Sender,Reference,Confidence,Category,Fee,Taxes,Total out',
+      'Date,Type,Provider,Amount,Currency,Sender,Reference,Confidence,Category,Operator fees,Taxes,Fees & taxes,Total out',
     );
   });
 
   it('writes a record as an ISO date, plain number and two-place confidence', () => {
     expect(csvRow(mine())).toBe(
-      `2026-03-12,${TYPE_LABELS.RECEIVED},Wallet A (M-Pesa-like demo),250000,TZS,JOHN M.,QH42T8LM9P,0.96,Received from people,,,`,
+      `2026-03-12,${TYPE_LABELS.RECEIVED},Wallet A (M-Pesa-like demo),250000,TZS,JOHN M.,QH42T8LM9P,0.96,Received from people,,,,`,
     );
   });
 
-  it('writes the fee, the taxes and what left the balance for money going out', () => {
+  it('writes operator fees + taxes = fees & taxes, and what left the balance', () => {
     const row = csvRow(
       mine({
         type: 'SENT',
@@ -70,7 +70,8 @@ describe('CSV', () => {
         taxes: [{ code: 'VAT', amount: 69, ratePct: null, within: 'fee' }],
       }),
     );
-    expect(row.endsWith(',Food & shopping,450,69,5450')).toBe(true);
+    // The VAT sits inside the 450 fee: the operator's part is 381.
+    expect(row.endsWith(',Food & shopping,381,69,450,5450')).toBe(true);
   });
 
   it('leaves missing values empty rather than inventing them', () => {
@@ -82,7 +83,7 @@ describe('CSV', () => {
         transactionReference: null,
       }),
     );
-    expect(row).toBe(`,${TYPE_LABELS.RECEIVED},,250000,TZS,,,0.96,Received from people,,,`);
+    expect(row).toBe(`,${TYPE_LABELS.RECEIVED},,250000,TZS,,,0.96,Received from people,,,,`);
   });
 
   it('uses CRLF line endings and ends with one', () => {

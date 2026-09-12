@@ -2,11 +2,19 @@ import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 
+import { ChargesBreakdown } from '../components/fees/ChargesBreakdown';
 import { TransactionListItem } from '../components/transactions/TransactionListItem';
 import { BackButton } from '../components/ui/BackButton';
 import { Card, Screen, Text } from '../components/ui';
-import { FEE_PERIODS, feesSummary, type ChargeRow, type FeePeriod } from '../features/insights';
-import { chargesOf, useAppStore } from '../features/transactions';
+import {
+  chargesEquation,
+  FEE_PERIODS,
+  feesSummary,
+  splitCharges,
+  type ChargeRow,
+  type FeePeriod,
+} from '../features/insights';
+import { useAppStore } from '../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../theme';
 import { formatTzs } from '../utils/format';
 
@@ -103,6 +111,11 @@ export default function FeesAndTaxes() {
             ? 'No fees or taxes in this period.'
             : `Across ${count} ${count === 1 ? 'transaction' : 'transactions'}`}
         </Text>
+        {count > 0 ? (
+          <View style={{ marginTop: space[2] }}>
+            <ChargesBreakdown split={summary.split} />
+          </View>
+        ) : null}
       </Card>
 
       {count > 0 ? (
@@ -129,7 +142,7 @@ export default function FeesAndTaxes() {
                   }
                 />
                 <Text variant="small" tone="muted" style={{ paddingHorizontal: space[2] }}>
-                  Fees & taxes {formatTzs(chargesOf(t))}
+                  {chargesEquation(splitCharges([t]))}
                 </Text>
               </View>
             ))}
@@ -138,8 +151,8 @@ export default function FeesAndTaxes() {
       ) : null}
 
       <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
-        Worked out from what each message states. A VAT already inside a fee is counted once, under
-        VAT, so the lines add up to the total.
+        Operator fees + taxes = fees & taxes. Operator fees are what the provider or agent charged,
+        less any VAT inside the fee; that VAT is counted once, under taxes.
       </Text>
     </Screen>
   );
