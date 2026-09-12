@@ -6,6 +6,7 @@
  * delete exactly these and leave anything the user saved untouched, and so the
  * dashboard can warn that the figures are not real.
  */
+import { EMPTY_DETAILS } from '../parser/schema';
 import type { Transaction } from './model';
 
 /**
@@ -44,6 +45,10 @@ export const DEMO_RECORDS: DemoRecord[] = [
       transactionTime: '14:22',
       confidence: 0.96,
       lowFields: [],
+      moneyCategory: 'RECEIVED_FROM_PEOPLE',
+      fee: null,
+      taxes: [],
+      details: EMPTY_DETAILS,
       sourceMessageId: 'demo-m1',
       parseResultId: null,
       isDemo: true,
@@ -70,6 +75,11 @@ export const DEMO_RECORDS: DemoRecord[] = [
       transactionTime: '11:04',
       confidence: 0.88,
       lowFields: [],
+      moneyCategory: 'SENT_TO_PEOPLE',
+      // The message says "Ada TZS 1,000".
+      fee: 1000,
+      taxes: [],
+      details: EMPTY_DETAILS,
       sourceMessageId: 'demo-m2',
       parseResultId: null,
       isDemo: true,
@@ -96,6 +106,10 @@ export const DEMO_RECORDS: DemoRecord[] = [
       transactionTime: '09:07',
       confidence: 0.74,
       lowFields: ['counterparty'],
+      moneyCategory: 'CASH_WITHDRAWAL',
+      fee: null,
+      taxes: [],
+      details: EMPTY_DETAILS,
       sourceMessageId: 'demo-m3',
       parseResultId: null,
       isDemo: true,
@@ -122,6 +136,10 @@ export const DEMO_RECORDS: DemoRecord[] = [
       transactionTime: '18:40',
       confidence: 0.58,
       lowFields: ['counterparty', 'reference', 'amount'],
+      moneyCategory: 'AIRTIME_DATA',
+      fee: null,
+      taxes: [],
+      details: EMPTY_DETAILS,
       sourceMessageId: 'demo-m4',
       parseResultId: null,
       isDemo: true,
@@ -148,6 +166,10 @@ export const DEMO_RECORDS: DemoRecord[] = [
       transactionTime: '07:15',
       confidence: 0.93,
       lowFields: [],
+      moneyCategory: 'SALARY',
+      fee: null,
+      taxes: [],
+      details: EMPTY_DETAILS,
       sourceMessageId: 'demo-m5',
       parseResultId: null,
       isDemo: true,
@@ -174,6 +196,10 @@ export const DEMO_RECORDS: DemoRecord[] = [
       transactionTime: '20:12',
       confidence: 0.81,
       lowFields: [],
+      moneyCategory: 'ELECTRICITY_WATER',
+      fee: null,
+      taxes: [],
+      details: EMPTY_DETAILS,
       sourceMessageId: 'demo-m6',
       parseResultId: null,
       isDemo: true,

@@ -102,6 +102,8 @@ export default function RootLayout() {
           <Stack.Screen name="transactions/[id]" />
           {/* Pushed from Settings -> Export my data. */}
           <Stack.Screen name="export" />
+          {/* Pushed from Home's Fees & taxes card. */}
+          <Stack.Screen name="fees" />
         </Stack.Protected>
       </Stack>
       <Toast />

@@ -1,35 +1,38 @@
 /**
- * Spending and income grouped into everyday categories, from the design's
- * `catOf`. The keyword rules look only at the counterparty, and only for
- * Tanzanian terms the design names (LUKU and UMEME for electricity; PAYROLL,
- * MSHAHARA and SALARY for pay).
+ * Spending and income grouped by what the money was for.
+ *
+ * A record's category is the one saved on it (picked by the parser, corrected
+ * by the user). Records saved before categories existed are filed by the same
+ * rules, from their type and counterparty.
  */
+import { inferMoneyCategory } from '../parser/moneyCategory';
+import { spentOf } from '../transactions/money';
 import type { Transaction } from '../transactions/model';
 import { isCounted } from '../transactions/selectors';
-import { isIncoming, isOutgoing } from '../../types/domain';
+import {
+  isIncoming,
+  isOutgoing,
+  MONEY_CATEGORY_LABELS,
+  type MoneyCategory,
+} from '../../types/domain';
 
 export type CategoryMode = 'spend' | 'earn';
 
-export function categoryOf(t: Transaction): string {
-  const party = (t.counterparty ?? '').toUpperCase();
+/** The record's category, or the rules' pick for a record saved without one. */
+export function moneyCategoryOf(t: Transaction): MoneyCategory {
+  return (
+    t.moneyCategory ??
+    inferMoneyCategory({
+      type: t.type,
+      counterparty: t.counterparty,
+      merchant: t.details.merchant,
+    }) ??
+    (isIncoming(t.type) ? 'OTHER_INCOME' : 'OTHER_SPENDING')
+  );
+}
 
-  switch (t.type) {
-    case 'AIRTIME':
-      return 'Airtime & data';
-    case 'WITHDRAWAL':
-      return 'Cash withdrawals';
-    case 'BILL_PAYMENT':
-      return /LUKU|UMEME/.test(party) ? 'Electricity & LUKU' : 'Bills & fees';
-    case 'SENT':
-    case 'TRANSFER':
-      return 'Payments to people';
-    case 'DEPOSIT':
-      return 'Deposits';
-    case 'RECEIVED':
-      return /PAYROLL|MSHAHARA|SALARY/.test(party) ? 'Salary' : 'Payments in';
-    default:
-      return 'Other';
-  }
+export function categoryOf(t: Transaction): string {
+  return MONEY_CATEGORY_LABELS[moneyCategoryOf(t)];
 }
 
 export interface CategoryRow {
@@ -48,6 +51,10 @@ export interface CategoryBreakdown {
   rows: CategoryRow[];
 }
 
+/**
+ * Spending counts what the money bought; fees and taxes are shown on their own
+ * (Home's Fees & taxes card), not folded into a category.
+ */
 export function categoryBreakdown(
   transactions: readonly Transaction[],
   mode: CategoryMode,
@@ -59,17 +66,17 @@ export function categoryBreakdown(
     if (!isCounted(t) || !include(t.type)) continue;
     const name = categoryOf(t);
     const group = groups.get(name) ?? { amount: 0, count: 0 };
-    group.amount += t.amount ?? 0;
+    group.amount += mode === 'spend' ? spentOf(t) : (t.amount ?? 0);
     group.count += 1;
     groups.set(name, group);
   }
 
-  const total = [...groups.values()].reduce((sum, g) => sum + g.amount, 0);
+  const total = Math.round([...groups.values()].reduce((sum, g) => sum + g.amount, 0) * 100) / 100;
 
   const rows = [...groups.entries()]
     .map(([name, g]) => ({
       name,
-      amount: g.amount,
+      amount: Math.round(g.amount * 100) / 100,
       count: g.count,
       pct: total > 0 ? Math.round((g.amount / total) * 100) : 0,
     }))

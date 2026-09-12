@@ -95,6 +95,7 @@ export const transactionRepository = {
          counterparty = ?, masked_account_or_phone = ?, transaction_reference = ?,
          balance_after = ?, transaction_date = ?, transaction_time = ?, confidence = ?,
          low_fields = ?, source_message_id = ?, parse_result_id = ?, is_demo = ?,
+         money_category = ?, fee = ?, taxes = ?, details = ?,
          updated_at = ?
        WHERE id = ?`,
       [
@@ -115,6 +116,10 @@ export const transactionRepository = {
         merged.sourceMessageId,
         merged.parseResultId,
         merged.isDemo ? 1 : 0,
+        merged.moneyCategory,
+        merged.fee,
+        JSON.stringify(merged.taxes),
+        JSON.stringify(merged.details),
         merged.updatedAt,
         id,
       ],

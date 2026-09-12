@@ -80,10 +80,11 @@ describe('onboarding state in the store', () => {
     expect(useAppStore.getState().settings.onboardingComplete).toBe(false);
   });
 
-  it('loads the provider registry, every one at DEMO maturity', () => {
+  it('loads the provider registry: Mixx experimental, every other one a demo', () => {
     const { providers } = useAppStore.getState();
     expect(providers.length).toBeGreaterThanOrEqual(10);
-    expect(providers.every((p) => p.maturity === 'DEMO')).toBe(true);
+    expect(providers.find((p) => p.id === 'mixx')?.maturity).toBe('EXPERIMENTAL');
+    expect(providers.filter((p) => p.id !== 'mixx').every((p) => p.maturity === 'DEMO')).toBe(true);
   });
 
   it('remembers finishing onboarding across a restart', async () => {

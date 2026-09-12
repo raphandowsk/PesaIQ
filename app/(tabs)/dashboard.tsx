@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
 import { CategoryCard } from '../../components/dashboard/CategoryCard';
+import { FeesCard } from '../../components/dashboard/FeesCard';
 import { HealthCard } from '../../components/dashboard/HealthCard';
 import { ProviderSummary } from '../../components/dashboard/ProviderSummary';
 import { ScoreBreakdown } from '../../components/dashboard/ScoreBreakdown';
@@ -14,6 +15,7 @@ import {
   categoryBreakdown,
   computeHealth,
   earnTips,
+  feesSummary,
   providerSummary,
   spendTips,
   type CategoryMode,
@@ -59,6 +61,7 @@ export default function Dashboard() {
   const spend = useMemo(() => categoryBreakdown(transactions, 'spend'), [transactions]);
   const earn = useMemo(() => categoryBreakdown(transactions, 'earn'), [transactions]);
   const providers = useMemo(() => providerSummary(transactions), [transactions]);
+  const fees = useMemo(() => feesSummary(transactions, 'month', now), [transactions, now]);
 
   const spendList = health ? spendTips(health, spend) : [];
   const earnList = health ? earnTips(health, earn, transactions) : [];
@@ -156,6 +159,8 @@ export default function Dashboard() {
           replay={visit}
         />
       ) : null}
+
+      {health ? <FeesCard summary={fees} /> : null}
 
       {spendList.length > 0 ? (
         <Section title="Spend smarter" subtitle="Tips drawn from your own transactions">

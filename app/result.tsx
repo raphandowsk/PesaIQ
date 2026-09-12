@@ -30,6 +30,7 @@ export default function Result() {
   const setEditing = useLabStore((s) => s.setEditing);
   const editField = useLabStore((s) => s.editField);
   const setType = useLabStore((s) => s.setType);
+  const setMoneyCategory = useLabStore((s) => s.setMoneyCategory);
   const save = useLabStore((s) => s.save);
   const reject = useLabStore((s) => s.reject);
   const discard = useLabStore((s) => s.discard);
@@ -108,6 +109,16 @@ export default function Result() {
     : current.draft.category.replace(/_/g, ' ');
   const subLabel = `${view.counterparty ?? 'No counterparty'} · ${view.provider ?? 'sender not recognized'}`;
 
+  // The same arithmetic a saved record uses: spent + fees and taxes = total out.
+  const taxesWithin = (within: 'amount' | 'extra') =>
+    current.draft.taxes.filter((t) => t.within === within).reduce((sum, t) => sum + t.amount, 0);
+  const charges = (view.fee ?? 0) + taxesWithin('extra') + taxesWithin('amount');
+  const totalOut = (view.amount ?? 0) + (view.fee ?? 0) + taxesWithin('extra');
+  const chargesLabel =
+    charges > 0
+      ? `Fees & taxes ${formatTzs(charges)}${view.direction === 'out' ? ` · Total out ${formatTzs(totalOut)}` : ''}`
+      : null;
+
   const saveLabel = editing
     ? 'Save edits'
     : view.willNeedReview
@@ -144,7 +155,7 @@ export default function Result() {
 
       <View
         accessible
-        accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. ${amountLabel}. ${subLabel}.`}
+        accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. ${amountLabel}. ${subLabel}.${chargesLabel ? ` ${chargesLabel}.` : ''}`}
         style={{
           backgroundColor: hero.tint,
           borderRadius: radius.lg,
@@ -163,6 +174,11 @@ export default function Result() {
         <Text variant="small" style={{ color: hero.ink, opacity: 0.85 }}>
           {subLabel}
         </Text>
+        {chargesLabel ? (
+          <Text variant="small" style={{ color: hero.ink, fontFamily: fonts.semibold }}>
+            {chargesLabel}
+          </Text>
+        ) : null}
       </View>
 
       {current.draft.warnings.length > 0 ? (
@@ -198,6 +214,7 @@ export default function Result() {
               if (isTextEditable(field.key)) editField(field.key, value);
             }}
             onChangeType={setType}
+            onChangeCategory={setMoneyCategory}
           />
         ))}
       </Card>

@@ -9,7 +9,7 @@ import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
 
-type DataAction = 'transactions' | 'messages' | 'history' | 'demo';
+type DataAction = 'transactions' | 'messages' | 'history' | 'demo' | 'rules';
 type Busy = DataAction | 'replay' | null;
 
 const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
@@ -36,6 +36,8 @@ export default function Settings() {
   const deleteAllMessages = useAppStore((s) => s.deleteAllMessages);
   const clearProcessingHistory = useAppStore((s) => s.clearProcessingHistory);
   const clearDemoData = useAppStore((s) => s.clearDemoData);
+  const forgetCategoryRules = useAppStore((s) => s.forgetCategoryRules);
+  const ruleCount = useAppStore((s) => Object.keys(s.categoryRules).length);
   const resetOnboarding = useAppStore((s) => s.resetOnboarding);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
@@ -87,6 +89,14 @@ export default function Settings() {
       go: async () => {
         await clearDemoData();
         return 'Demo data removed.';
+      },
+    },
+    rules: {
+      ask: `Forget the categories you chose for ${ruleCount} ${ruleCount === 1 ? 'recipient' : 'recipients'}? Saved records keep their categories; new messages go back to the rules.`,
+      confirm: 'Forget',
+      go: async () => {
+        const n = await forgetCategoryRules();
+        return `${n} remembered ${n === 1 ? 'category' : 'categories'} forgotten.`;
       },
     },
   };
@@ -266,6 +276,15 @@ export default function Settings() {
             />
           }
         />
+        {actionRow(
+          'rules',
+          'Remembered categories',
+          ruleCount > 0
+            ? `${ruleCount} ${ruleCount === 1 ? 'recipient is' : 'recipients are'} filed the way you chose. Deleted along with all transactions.`
+            : 'None yet. Pick a category on a record and messages to that recipient get it too.',
+          'Forget',
+          { disabled: ruleCount === 0 },
+        )}
         <SettingRow
           label="Demo data"
           sub={
@@ -299,8 +318,9 @@ export default function Settings() {
           PesaIQ · Stage 1
         </Text>
         <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
-          Pasted messages only. No SMS is intercepted, uploaded or logged in full. Provider parsers
-          are demo rules until anonymized fixtures validate them.
+          Pasted messages only. No SMS is intercepted, uploaded or logged in full. Mixx rules are
+          experimental, built from real message layouts; other providers are demo rules until
+          anonymized fixtures validate them.
         </Text>
         <Pressable
           onPress={() => void replay()}

@@ -9,13 +9,14 @@
  */
 import type { SqlDatabase } from './client';
 
-interface Migration {
+export interface Migration {
   version: number;
   name: string;
   up: string;
 }
 
-const MIGRATIONS: Migration[] = [
+/** Exported so a test can build a database as an older version left it. */
+export const MIGRATIONS: Migration[] = [
   {
     version: 1,
     name: 'initial schema',
@@ -103,6 +104,30 @@ const MIGRATIONS: Migration[] = [
         value      TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
+    `,
+  },
+  {
+    version: 2,
+    name: 'fees, taxes and categories',
+    up: `
+      -- What the money was for, the fee on top of the amount, each itemised tax
+      -- (JSON) and receipt or LUKU details (JSON). Older records get none, and
+      -- their category is picked by the rules when shown.
+      ALTER TABLE transactions ADD COLUMN money_category TEXT;
+      ALTER TABLE transactions ADD COLUMN fee REAL;
+      ALTER TABLE transactions ADD COLUMN taxes TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE transactions ADD COLUMN details TEXT NOT NULL DEFAULT '{}';
+
+      -- The user's category choice per recipient. It holds recipient names, so
+      -- it is deleted along with the records.
+      CREATE TABLE category_rules (
+        party_key      TEXT PRIMARY KEY NOT NULL,
+        money_category TEXT NOT NULL,
+        updated_at     TEXT NOT NULL
+      );
+
+      -- Mixx rules are built from real layouts as of 2026-09-12.
+      UPDATE providers SET maturity = 'EXPERIMENTAL' WHERE id = 'mixx';
     `,
   },
 ];

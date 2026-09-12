@@ -8,4 +8,5 @@ export { settingsRepository, DEFAULT_SETTINGS } from './settingsRepository';
 export type { AppSettings } from './settingsRepository';
 export { providerRepository } from './providerRepository';
 export { processingEventRepository } from './processingEventRepository';
+export { categoryRuleRepository } from './categoryRuleRepository';
 export type { ProcessingEvent, ProcessingEventKind } from './processingEventRepository';

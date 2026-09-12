@@ -6,6 +6,7 @@
  * live here and nowhere else, so retuning is a one-line change, and the tests
  * pin them, so any change is deliberate.
  */
+import { chargesOf, spentOf } from '../transactions/money';
 import type { Transaction } from '../transactions/model';
 import { isCounted } from '../transactions/selectors';
 import { isIncoming, isOutgoing } from '../../types/domain';
@@ -46,6 +47,11 @@ export interface Health {
   band: HealthBand;
   parts: HealthPart[];
   received: number;
+  /** What outgoing money paid for. */
+  spent: number;
+  /** Fees and taxes. */
+  charges: number;
+  /** Everything that went out: `spent` plus `charges`. What "kept" is measured against. */
   sent: number;
   /** Of `sent`, the part withdrawn as cash. */
   cash: number;
@@ -75,20 +81,24 @@ export function computeHealth(transactions: readonly Transaction[]): Health | nu
   if (records.length === 0) return null;
 
   let received = 0;
-  let sent = 0;
+  let spent = 0;
+  let charges = 0;
   let cash = 0;
   let confirmed = 0;
   let withReference = 0;
 
   for (const t of records) {
     const amount = t.amount ?? 0;
+    charges += chargesOf(t);
     if (isIncoming(t.type)) received += amount;
-    else if (isOutgoing(t.type)) sent += amount;
+    else if (isOutgoing(t.type)) spent += spentOf(t);
     if (t.type === 'WITHDRAWAL') cash += amount;
     if (t.status === 'CONFIRMED') confirmed += 1;
     if (t.transactionReference) withReference += 1;
   }
 
+  // Fees and taxes left the balance too, so they count against what was kept.
+  const sent = spent + charges;
   const n = records.length;
   const savings = received > 0 ? clamp01((received - sent) / received) : 0;
 
@@ -126,6 +136,8 @@ export function computeHealth(transactions: readonly Transaction[]): Health | nu
     band: bandForScore(score),
     parts,
     received,
+    spent,
+    charges,
     sent,
     cash,
     net: received - sent,

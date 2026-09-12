@@ -23,7 +23,9 @@ describe('recordFields', () => {
   it('lists the design’s rows in order, formatted', () => {
     expect(recordFields(atm()).map((f) => [f.label, f.display])).toEqual([
       ['Provider', 'Demo Bank'],
+      ['Category', 'Cash withdrawal'],
       ['Amount', 'TZS 120,000'],
+      ['Fee', 'None stated'],
       ['Counterparty', 'ATM withdrawal'],
       ['Account / phone', '**** 4312'],
       ['Reference', 'BK7741902'],
@@ -69,6 +71,7 @@ describe('buildRecordPatch', () => {
       ok: true,
       patch: {},
       editedKeys: [],
+      categoryChosen: false,
     });
   });
 
@@ -83,6 +86,7 @@ describe('buildRecordPatch', () => {
       ok: true,
       patch: { counterparty: 'CITY ATM', amount: 130000, currency: 'TZS' },
       editedKeys: ['amount', 'counterparty'],
+      categoryChosen: false,
     });
   });
 
@@ -127,11 +131,36 @@ describe('buildRecordPatch', () => {
     });
   });
 
-  it('records a type change as an edit to the Type field', () => {
-    expect(buildRecordPatch(atm(), edits({}, 'TRANSFER'))).toMatchObject({
+  it('records a type change, and re-files the category to match the new direction', () => {
+    expect(buildRecordPatch(atm(), edits({}, 'TRANSFER'))).toEqual({
       ok: true,
-      patch: { type: 'TRANSFER' },
-      editedKeys: ['category'],
+      patch: { type: 'TRANSFER', moneyCategory: 'SENT_TO_PEOPLE' },
+      editedKeys: ['category', 'moneyCategory'],
+      // The rules picked it, so nothing is remembered for this recipient.
+      categoryChosen: false,
+    });
+  });
+
+  it('marks a category the user picked, so it can be remembered', () => {
+    expect(
+      buildRecordPatch(atm(), { ...NO_RECORD_EDITS, moneyCategory: 'FUEL_TRANSPORT' }),
+    ).toEqual({
+      ok: true,
+      patch: { moneyCategory: 'FUEL_TRANSPORT' },
+      editedKeys: ['moneyCategory'],
+      categoryChosen: true,
+    });
+  });
+
+  it('reads a corrected fee like any other amount', () => {
+    expect(buildRecordPatch(atm(), edits({ fee: '1,500' }))).toMatchObject({
+      ok: true,
+      patch: { fee: 1500 },
+      editedKeys: ['fee'],
+    });
+    expect(buildRecordPatch(atm(), edits({ fee: 'abc' }))).toMatchObject({
+      ok: false,
+      error: LAB_SAVE_ERRORS.badFee,
     });
   });
 });

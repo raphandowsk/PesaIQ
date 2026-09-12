@@ -12,6 +12,7 @@ import {
 import { removeDemoData, seedDatabase } from '../database/seed';
 import { parseMessage, SAMPLES } from '../features/parser';
 import { DEMO_RECORDS } from '../features/transactions/demoData';
+import { EMPTY_DETAILS } from '../features/parser/schema';
 import { transactionFromParseResult, type Transaction } from '../features/transactions/model';
 import { createMigratedDatabase, createTestDatabase } from './support/nodeSqlite';
 
@@ -31,6 +32,10 @@ const draft = (over: Partial<Transaction> = {}): Transaction => ({
   balanceAfter: 100000,
   transactionDate: '12 Mar 2026',
   transactionTime: '10:00',
+  moneyCategory: 'RECEIVED_FROM_PEOPLE',
+  fee: null,
+  taxes: [],
+  details: EMPTY_DETAILS,
   confidence: 0.9,
   lowFields: [],
   sourceMessageId: null,
@@ -48,6 +53,7 @@ describe('migrations', () => {
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
     );
     expect(rows.map((r) => r.name).sort()).toEqual([
+      'category_rules',
       'messages',
       'parse_results',
       'processing_events',
@@ -344,14 +350,16 @@ describe('settingsRepository', () => {
 });
 
 describe('providerRepository', () => {
-  it('seeds every provider as DEMO maturity', async () => {
+  it('seeds Mixx as experimental and every other provider as a demo', async () => {
     const db = await createMigratedDatabase();
     await providerRepository.seed(db);
 
     const providers = await providerRepository.list(db);
     expect(providers.length).toBeGreaterThanOrEqual(10);
-    // Nothing may claim support until fixtures prove it.
-    expect(providers.every((p) => p.maturity === 'DEMO')).toBe(true);
+    // Nothing may claim support until fixtures prove it. Mixx has fixtures from
+    // real layouts, so it is experimental; none is "supported".
+    expect(providers.find((p) => p.id === 'mixx')?.maturity).toBe('EXPERIMENTAL');
+    expect(providers.filter((p) => p.id !== 'mixx').every((p) => p.maturity === 'DEMO')).toBe(true);
     await db.closeAsync();
   });
 

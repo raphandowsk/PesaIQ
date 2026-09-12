@@ -1,3 +1,4 @@
+import { EMPTY_DETAILS } from '../features/parser/schema';
 import { isCounted, needsReview, summarize } from '../features/transactions/selectors';
 import type { Transaction } from '../features/transactions/model';
 
@@ -15,6 +16,10 @@ const t = (over: Partial<Transaction>): Transaction => ({
   balanceAfter: null,
   transactionDate: null,
   transactionTime: null,
+  moneyCategory: null,
+  fee: null,
+  taxes: [],
+  details: EMPTY_DETAILS,
   confidence: 0.9,
   lowFields: [],
   sourceMessageId: null,
@@ -69,7 +74,15 @@ describe('summarize', () => {
   });
 
   it('is all zeros for an empty list', () => {
-    expect(summarize([])).toEqual({ received: 0, sent: 0, net: 0, count: 0, needsReview: 0 });
+    expect(summarize([])).toEqual({
+      received: 0,
+      sent: 0,
+      charges: 0,
+      totalOut: 0,
+      net: 0,
+      count: 0,
+      needsReview: 0,
+    });
   });
 });
 

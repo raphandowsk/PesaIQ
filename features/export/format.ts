@@ -6,7 +6,9 @@
  */
 import { parsedRecordDate, periodStart, recordDate } from '../transactions/records';
 import type { Transaction } from '../transactions/model';
-import { TYPE_LABELS } from '../../types/domain';
+import { categoryOf, moneyCategoryOf } from '../insights/categories';
+import { chargesOf, totalOutOf } from '../transactions/money';
+import { isOutgoing, TYPE_LABELS } from '../../types/domain';
 
 export type ExportFormat = 'CSV' | 'JSON';
 export type ExportRange = '7d' | '30d' | 'all';
@@ -24,7 +26,11 @@ export const EXPORT_RANGES: readonly { key: ExportRange; label: string }[] = [
   { key: 'all', label: 'All' },
 ];
 
-/** The brief's CSV header, in its order. */
+/**
+ * The brief's CSV header, in its order, then what fees and taxes added:
+ * the category, the fee, the taxes and, for money going out, the total that
+ * left the balance.
+ */
 export const CSV_HEADER = [
   'Date',
   'Type',
@@ -34,6 +40,10 @@ export const CSV_HEADER = [
   'Sender',
   'Reference',
   'Confidence',
+  'Category',
+  'Fee',
+  'Taxes',
+  'Total out',
 ] as const;
 
 /** Said in every JSON file, so the file explains itself away from the app. */
@@ -41,6 +51,7 @@ export const JSON_NOTES = [
   'Account and phone numbers are masked, as PesaIQ stores them.',
   'Source messages are not included.',
   'Demo sample records are not included.',
+  'LUKU tokens are not included.',
 ] as const;
 
 export interface ExportSelection {
@@ -105,8 +116,15 @@ export function csvRow(t: Transaction): string {
     csvText(t.counterparty),
     csvText(t.transactionReference),
     t.confidence.toFixed(2),
+    csvText(categoryOf(t)),
+    csvNumber(t.fee),
+    csvNumber(t.taxes.length > 0 ? taxTotal(t) : null),
+    csvNumber(isOutgoing(t.type) ? totalOutOf(t) : null),
   ].join(',');
 }
+
+const taxTotal = (t: Transaction) =>
+  Math.round(t.taxes.reduce((sum, x) => sum + x.amount, 0) * 100) / 100;
 
 /** RFC 4180: CRLF line endings, a header row, and a final line break. */
 export function toCsv(rows: readonly Transaction[]): string {
@@ -129,6 +147,23 @@ export function jsonRecord(t: Transaction) {
     reference: t.transactionReference,
     balanceAfter: t.balanceAfter,
     confidence: Number(t.confidence.toFixed(2)),
+    category: moneyCategoryOf(t),
+    categoryLabel: categoryOf(t),
+    fee: t.fee,
+    taxes: t.taxes,
+    feesAndTaxes: chargesOf(t),
+    totalOut: isOutgoing(t.type) ? totalOutOf(t) : null,
+    receipt: t.details.receipt,
+    network: t.details.network,
+    // Never the token: it is a spendable code until it is entered.
+    electricity: t.details.units
+      ? {
+          units: t.details.units,
+          meterNumber: t.details.meterNumber,
+          priceBeforeTax: t.details.netCost,
+          debtCollected: t.details.debtCollected,
+        }
+      : null,
     fieldsToCheck: t.lowFields,
     savedAt: t.createdAt,
   };

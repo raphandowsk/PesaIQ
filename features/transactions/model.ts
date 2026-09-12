@@ -9,12 +9,15 @@ import { z } from 'zod';
 
 import {
   DEFAULT_CURRENCY,
+  MONEY_CATEGORIES,
   TRANSACTION_STATUSES,
   TRANSACTION_TYPES,
+  type MoneyCategory,
   type TransactionStatus,
   type TransactionType,
 } from '../../types/domain';
 import type { ParseResult } from '../parser';
+import { chargeDetailsSchema, EMPTY_DETAILS, taxLineSchema } from '../parser/schema';
 
 export const transactionSchema = z.object({
   id: z.string(),
@@ -33,6 +36,15 @@ export const transactionSchema = z.object({
   balanceAfter: z.number().nullable(),
   transactionDate: z.string().nullable(),
   transactionTime: z.string().nullable(),
+
+  /** What the money was for. Null for a record that is not a transaction. */
+  moneyCategory: z.enum(MONEY_CATEGORIES).nullable(),
+  /** Charged on top of the amount, any VAT inside it included. */
+  fee: z.number().nullable(),
+  /** Each tax the message itemised, and where it sits (see `TaxLine`). */
+  taxes: z.array(taxLineSchema),
+  /** Receipt number, network, merchant flag and LUKU details. */
+  details: chargeDetailsSchema,
 
   confidence: z.number().min(0).max(1),
   /** Keys of fields the parser was unsure about; drives the review queue. */
@@ -71,6 +83,10 @@ export interface TransactionRow {
   is_demo: number;
   created_at: string;
   updated_at: string;
+  money_category: string | null;
+  fee: number | null;
+  taxes: string | null;
+  details: string | null;
 }
 
 /** Tolerates malformed JSON rather than throwing on a corrupt row. */
@@ -82,6 +98,20 @@ function parseLowFields(raw: string): string[] {
     return [];
   }
 }
+
+/** A JSON column read through its schema, with a safe fallback for a corrupt row. */
+function parseJsonColumn<T>(raw: string | null, schema: z.ZodType<T>, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    const parsed = schema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const isMoneyCategory = (v: string | null): v is MoneyCategory =>
+  v != null && (MONEY_CATEGORIES as readonly string[]).includes(v);
 
 export function rowToTransaction(row: TransactionRow): Transaction {
   return {
@@ -98,6 +128,10 @@ export function rowToTransaction(row: TransactionRow): Transaction {
     balanceAfter: row.balance_after,
     transactionDate: row.transaction_date,
     transactionTime: row.transaction_time,
+    moneyCategory: isMoneyCategory(row.money_category) ? row.money_category : null,
+    fee: row.fee,
+    taxes: parseJsonColumn(row.taxes, z.array(taxLineSchema), []),
+    details: parseJsonColumn(row.details, chargeDetailsSchema, EMPTY_DETAILS),
     confidence: row.confidence,
     lowFields: parseLowFields(row.low_fields),
     sourceMessageId: row.source_message_id,
@@ -130,6 +164,10 @@ export const TRANSACTION_COLUMNS = [
   'is_demo',
   'created_at',
   'updated_at',
+  'money_category',
+  'fee',
+  'taxes',
+  'details',
 ] as const;
 
 export function transactionToParams(t: Transaction): (string | number | null)[] {
@@ -154,6 +192,10 @@ export function transactionToParams(t: Transaction): (string | number | null)[] 
     t.isDemo ? 1 : 0,
     t.createdAt,
     t.updatedAt,
+    t.moneyCategory,
+    t.fee,
+    JSON.stringify(t.taxes),
+    JSON.stringify(t.details),
   ];
 }
 
@@ -198,6 +240,10 @@ export function transactionFromParseResult(
     balanceAfter: result.balanceAfter,
     transactionDate: result.transactionDate,
     transactionTime: result.transactionTime,
+    moneyCategory: result.moneyCategory,
+    fee: result.fee,
+    taxes: result.taxes,
+    details: result.details,
     confidence: result.confidence,
     lowFields: result.fields.filter((f) => f.low).map((f) => f.key),
     sourceMessageId: options.sourceMessageId ?? null,

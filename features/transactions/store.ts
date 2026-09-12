@@ -9,6 +9,7 @@ import { create } from 'zustand';
 
 import { describeOpenError, getDatabase, type SqlDatabase } from '../../database/client';
 import {
+  categoryRuleRepository,
   messageRepository,
   processingEventRepository,
   providerRepository,
@@ -19,10 +20,16 @@ import {
   type AppSettings,
 } from '../../database/repositories';
 import { removeDemoData, seedDatabase } from '../../database/seed';
-import { parseMessage, type ParseResult, type SmsProvider } from '../parser';
+import {
+  applyRememberedCategory,
+  parseMessage,
+  partyKey,
+  type ParseResult,
+  type SmsProvider,
+} from '../parser';
 import { ManualSmsSource } from '../../services/sms';
 import { transactionFromParseResult, type Transaction } from './model';
-import { DEFAULT_CURRENCY } from '../../types/domain';
+import { DEFAULT_CURRENCY, type MoneyCategory } from '../../types/domain';
 import type { LabSaveReady } from '../lab/draft';
 
 /** Overridable for tests; production uses the real clock and crypto. */
@@ -59,6 +66,8 @@ interface AppState {
   activity: string[];
   /** When the user confirmed, corrected or ignored a record: "cleared this week". */
   reviewedAt: string[];
+  /** The user's category choice per recipient (`partyKey` -> category). */
+  categoryRules: Record<string, MoneyCategory>;
 
   smsSource: ManualSmsSource;
 
@@ -87,7 +96,15 @@ interface AppState {
 
   confirm(id: string): Promise<void>;
   markIncorrect(id: string): Promise<void>;
-  correct(id: string, patch: Partial<Transaction>): Promise<void>;
+  /**
+   * Save the user's corrections. `rememberCategory` is set when the user picked
+   * the category themselves, so it is remembered for this recipient.
+   */
+  correct(
+    id: string,
+    patch: Partial<Transaction>,
+    options?: { rememberCategory?: boolean },
+  ): Promise<void>;
   ignore(id: string): Promise<void>;
   remove(id: string): Promise<void>;
 
@@ -106,6 +123,8 @@ interface AppState {
   /** Returns how many events went. */
   clearProcessingHistory(): Promise<number>;
   clearDemoData(): Promise<void>;
+  /** Forget every remembered category choice. Returns how many went. */
+  forgetCategoryRules(): Promise<number>;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -166,6 +185,18 @@ export const useAppStore = create<AppState>((set, get) => {
     });
   };
 
+  /** Remember the user's category for this recipient, for the next message to them. */
+  const learnCategory = async (
+    database: SqlDatabase,
+    counterparty: string | null,
+    category: MoneyCategory | null,
+  ) => {
+    const key = partyKey(counterparty);
+    if (!key || !category) return;
+    await categoryRuleRepository.set(database, key, category, now());
+    set({ categoryRules: { ...get().categoryRules, [key]: category } });
+  };
+
   return {
     ready: false,
     loading: false,
@@ -175,6 +206,7 @@ export const useAppStore = create<AppState>((set, get) => {
     providers: [],
     activity: [],
     reviewedAt: [],
+    categoryRules: {},
     smsSource: new ManualSmsSource(),
 
     async initialize(deps = {}) {
@@ -186,13 +218,15 @@ export const useAppStore = create<AppState>((set, get) => {
 
         await seedDatabase(db, now());
 
-        const [settings, transactions, providers, activity, reviewedAt] = await Promise.all([
-          settingsRepository.getAll(db),
-          transactionRepository.list(db),
-          providerRepository.list(db),
-          processingEventRepository.activityTimestamps(db),
-          processingEventRepository.reviewTimestamps(db),
-        ]);
+        const [settings, transactions, providers, activity, reviewedAt, categoryRules] =
+          await Promise.all([
+            settingsRepository.getAll(db),
+            transactionRepository.list(db),
+            providerRepository.list(db),
+            processingEventRepository.activityTimestamps(db),
+            processingEventRepository.reviewTimestamps(db),
+            categoryRuleRepository.list(db),
+          ]);
 
         await get().smsSource.start();
 
@@ -202,6 +236,7 @@ export const useAppStore = create<AppState>((set, get) => {
           providers,
           activity,
           reviewedAt,
+          categoryRules,
           ready: true,
           loading: false,
         });
@@ -219,13 +254,14 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     analyze(text, sender) {
-      return parseMessage(text, { sender });
+      // The parse, then the user's remembered category for this recipient.
+      return applyRememberedCategory(parseMessage(text, { sender }), get().categoryRules);
     },
 
     async analyzeAndSave(text, sender) {
       const database = requireDb();
       const timestamp = now();
-      const result = parseMessage(text, { sender });
+      const result = get().analyze(text, sender);
 
       const messageId = makeId('msg');
       const parseId = makeId('parse');
@@ -314,6 +350,10 @@ export const useAppStore = create<AppState>((set, get) => {
         });
       }
 
+      if (build.editedKeys.includes('moneyCategory')) {
+        await learnCategory(database, transaction.counterparty, transaction.moneyCategory);
+      }
+
       await reload();
 
       return duplicate ? { transaction, duplicateOf: duplicate } : { transaction };
@@ -362,9 +402,12 @@ export const useAppStore = create<AppState>((set, get) => {
       await reload();
     },
 
-    async correct(id, patch) {
+    async correct(id, patch, options = {}) {
       const database = requireDb();
       const timestamp = now();
+      const before = options.rememberCategory
+        ? await transactionRepository.findById(database, id)
+        : null;
 
       // A human has now checked it, so it is verified and nothing stays flagged.
       await transactionRepository.update(
@@ -382,6 +425,12 @@ export const useAppStore = create<AppState>((set, get) => {
         detail: Object.keys(patch).join(','),
         createdAt: timestamp,
       });
+
+      if (options.rememberCategory && patch.moneyCategory) {
+        const party =
+          patch.counterparty !== undefined ? patch.counterparty : (before?.counterparty ?? null);
+        await learnCategory(database, party, patch.moneyCategory);
+      }
 
       await reload();
     },
@@ -455,15 +504,17 @@ export const useAppStore = create<AppState>((set, get) => {
       let removed = 0;
 
       // Records and their source text go together or not at all: the single
-      // delete's rule, in bulk. Demo data is switched off too, or seeding would
-      // bring the samples back on the next launch.
+      // delete's rule, in bulk. Remembered categories hold recipient names, so
+      // they go too. Demo data is switched off, or seeding would bring the
+      // samples back on the next launch.
       await database.withTransactionAsync(async () => {
         await messageRepository.removeReferencedByTransactions(database);
         removed = await transactionRepository.removeAll(database);
+        await categoryRuleRepository.removeAll(database);
         await settingsRepository.set(database, 'demoDataEnabled', false, now());
       });
 
-      set({ settings: await settingsRepository.getAll(database) });
+      set({ settings: await settingsRepository.getAll(database), categoryRules: {} });
       await reload();
       return removed;
     },
@@ -489,6 +540,12 @@ export const useAppStore = create<AppState>((set, get) => {
       await removeDemoData(database, now());
       set({ settings: await settingsRepository.getAll(database) });
       await reload();
+    },
+
+    async forgetCategoryRules() {
+      const removed = await categoryRuleRepository.removeAll(requireDb());
+      set({ categoryRules: {} });
+      return removed;
     },
   };
 });

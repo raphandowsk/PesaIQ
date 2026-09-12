@@ -2,10 +2,16 @@ import { Pressable, TextInput, View } from 'react-native';
 
 import type { DraftFieldView } from '../../features/lab/draft';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
-import { TRANSACTION_TYPES, TYPE_LABELS, type TransactionType } from '../../types/domain';
+import {
+  TRANSACTION_TYPES,
+  TYPE_LABELS,
+  type MoneyCategory,
+  type TransactionType,
+} from '../../types/domain';
 import { Icon } from '../ui/Icon';
 import { Tag } from '../ui/Tag';
 import { Text } from '../ui/Text';
+import { CategoryPicker } from './CategoryPicker';
 
 export interface FieldRowProps {
   field: DraftFieldView;
@@ -14,6 +20,7 @@ export interface FieldRowProps {
   type: TransactionType;
   onChangeText: (value: string) => void;
   onChangeType: (type: TransactionType) => void;
+  onChangeCategory?: (category: MoneyCategory) => void;
   last?: boolean;
   /** Off for saved records, which carry no per-field score: the flag just says "Check". */
   showConfidence?: boolean;
@@ -33,6 +40,7 @@ export function FieldRow({
   type,
   onChangeText,
   onChangeType,
+  onChangeCategory,
   last = false,
   showConfidence = true,
 }: FieldRowProps) {
@@ -107,6 +115,12 @@ export function FieldRow({
             color: colors.text,
           }}
         />
+      ) : field.editMode === 'moneyCategory' ? (
+        <CategoryPicker
+          type={type}
+          value={(field.value || null) as MoneyCategory | null}
+          onChange={(category) => onChangeCategory?.(category)}
+        />
       ) : field.editMode === 'type' ? (
         <View
           accessibilityRole="radiogroup"
@@ -156,7 +170,9 @@ export function FieldRow({
             {field.display}
           </Text>
           <Text variant="small" tone="faint">
-            Masked for privacy, so it cannot be edited.
+            {field.key === 'masked'
+              ? 'Masked for privacy, so it cannot be edited.'
+              : 'Kept exactly as the message states it.'}
           </Text>
         </View>
       )}

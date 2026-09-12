@@ -21,6 +21,15 @@ export function maskNumber(raw: string): string {
   return `**** ${digits.slice(-4)}`;
 }
 
+/**
+ * A LUKU token, written in groups of four ("1111 2222 3333 4444 5555"). Its
+ * groups are too short for LONG_NUMBER, and until it is entered it is as good
+ * as money, so it is hidden like a phone number.
+ */
+const TOKEN = /\b\d{4}(?:[ -]\d{4}){4}\b/g;
+
 export function maskIdentifiersInText(text: string): string {
-  return text.replace(LONG_NUMBER, maskNumber);
+  return text
+    .replace(TOKEN, (token) => `**** **** **** **** ${token.replace(/\D/g, '').slice(-4)}`)
+    .replace(LONG_NUMBER, maskNumber);
 }

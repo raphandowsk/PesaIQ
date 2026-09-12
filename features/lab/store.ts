@@ -11,9 +11,15 @@ import { create } from 'zustand';
 
 import { MAX_MESSAGE_LENGTH, type ParseResult, type SmsSample } from '../parser';
 import { useAppStore, type SaveOutcome } from '../transactions/store';
-import type { TransactionType } from '../../types/domain';
+import type { MoneyCategory, TransactionType } from '../../types/domain';
 import { formatAmount } from '../../utils/format';
-import { buildLabSave, EMPTY_EDITS, type DraftEdits, type TextEditableKey } from './draft';
+import {
+  buildLabSave,
+  draftCategory,
+  EMPTY_EDITS,
+  type DraftEdits,
+  type TextEditableKey,
+} from './draft';
 
 export const LAB_ERRORS = {
   empty: 'Paste a message before analyzing.',
@@ -43,6 +49,7 @@ interface LabState {
   setEditing(editing: boolean): void;
   editField(key: TextEditableKey, value: string): void;
   setType(type: TransactionType): void;
+  setMoneyCategory(category: MoneyCategory): void;
   save(): Promise<LabSaveResult>;
   /** "Not correct": record it, drop the draft, keep the text to try again. */
   reject(): Promise<void>;
@@ -117,6 +124,15 @@ export const useLabStore = create<LabState>((set, get) => ({
     const { draft, edits } = get();
     if (!draft) return;
     set({ edits: { ...edits, type: type === draft.type ? undefined : type } });
+  },
+
+  setMoneyCategory(category) {
+    const { draft, edits } = get();
+    if (!draft) return;
+    // Picking what would be chosen anyway is not a correction, so nothing is
+    // remembered for it.
+    const automatic = draftCategory(draft, { ...edits, moneyCategory: undefined });
+    set({ edits: { ...edits, moneyCategory: category === automatic ? undefined : category } });
   },
 
   async save() {

@@ -5,15 +5,23 @@ import { useAppStore, type Transaction } from '../../features/transactions';
 import {
   buildRecordPatch,
   NO_RECORD_EDITS,
+  recordCategory,
   recordValue,
   type RecordEditableKey,
   type RecordEdits,
 } from '../../features/transactions/editRecord';
 import { reviewFields, reviewTypeOptions } from '../../features/review/queue';
 import { colors, fonts, MIN_TOUCH, money, radius, space } from '../../theme';
-import { isIncoming, isOutgoing, TYPE_LABELS, type TransactionType } from '../../types/domain';
+import {
+  isIncoming,
+  isOutgoing,
+  TYPE_LABELS,
+  type MoneyCategory,
+  type TransactionType,
+} from '../../types/domain';
 import { formatAmount, initials } from '../../utils/format';
 import { Button } from '../ui/Button';
+import { CategoryPicker } from '../parser/CategoryPicker';
 import { Card } from '../ui/Card';
 import { Icon } from '../ui/Icon';
 import { Text } from '../ui/Text';
@@ -24,6 +32,7 @@ const FIELD_META: Record<
   { label: string; placeholder: string; numeric?: boolean; caps?: 'none' | 'words' | 'characters' }
 > = {
   amount: { label: 'Amount (TZS)', placeholder: 'e.g. 45,000', numeric: true },
+  fee: { label: 'Fee (TZS)', placeholder: 'e.g. 450', numeric: true },
   counterparty: {
     label: 'Counterparty',
     placeholder: 'Sender or recipient name',
@@ -84,6 +93,11 @@ export function ReviewCard({
     setEdits((e) => ({ ...e, type: next === t.type ? undefined : next }));
   };
 
+  const setCategory = (category: MoneyCategory) => {
+    setError(null);
+    setEdits((e) => ({ ...e, moneyCategory: category }));
+  };
+
   const onSave = async () => {
     const built = buildRecordPatch(t, edits);
     if (!built.ok) {
@@ -97,7 +111,7 @@ export function ReviewCard({
         await confirm(t.id);
         toast('Confirmed.');
       } else {
-        await correct(t.id, built.patch);
+        await correct(t.id, built.patch, { rememberCategory: built.categoryChosen });
         toast('Confirmed, with your corrections saved.');
       }
     } catch {
@@ -215,6 +229,11 @@ export function ReviewCard({
             );
           })}
         </View>
+      </View>
+
+      <View style={{ gap: space[2] }}>
+        <FieldLabel label="Category" flagged={false} />
+        <CategoryPicker type={type} value={recordCategory(t, edits)} onChange={setCategory} />
       </View>
 
       {reviewFields(t).map((key) => {

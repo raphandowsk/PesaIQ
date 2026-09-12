@@ -22,6 +22,8 @@ const t = (over: Partial<Transaction>): Transaction => ({
   id: `t-${Math.random()}`,
   status: 'CONFIRMED',
   isDemo: false,
+  // Filed by the rules unless a test says otherwise; the demo record carries its own.
+  moneyCategory: null,
   ...over,
 });
 
@@ -65,11 +67,16 @@ describe('computeHealth', () => {
     const h = computeHealth(demo())!;
 
     // The canvas thumbnail shows: received 1,450,000 · sent 208,500 ·
-    // net +1,241,500 · parts 86% / 50% / 42% / 83% · "Steady".
+    // net +1,241,500 · parts 86% / 50% / 42% / 83% · "Steady". The canvas
+    // ignored fees. The demo transfer's own message says "Ada TZS 1,000", and
+    // that fee left the balance too, so what went out is 209,500, the net is
+    // 1,000 lower, and low cash-out rounds to 43%. The score is still 68.
     expect(h.received).toBe(1450000);
-    expect(h.sent).toBe(208500);
-    expect(h.net).toBe(1241500);
-    expect(h.parts.map((p) => Math.round(p.value * 100))).toEqual([86, 50, 42, 83]);
+    expect(h.spent).toBe(208500);
+    expect(h.charges).toBe(1000);
+    expect(h.sent).toBe(209500);
+    expect(h.net).toBe(1240500);
+    expect(h.parts.map((p) => Math.round(p.value * 100))).toEqual([86, 50, 43, 83]);
     expect(h.score).toBe(68);
     expect(h.band).toBe('Steady');
   });
@@ -113,29 +120,35 @@ describe('computeHealth', () => {
 
 describe('categories', () => {
   it.each<[Partial<Transaction>, string]>([
+    // Records saved before categories existed are filed by the same rules.
     [{ type: 'AIRTIME' }, 'Airtime & data'],
-    [{ type: 'WITHDRAWAL' }, 'Cash withdrawals'],
-    [{ type: 'BILL_PAYMENT', counterparty: 'LUKU TOKEN' }, 'Electricity & LUKU'],
-    [{ type: 'BILL_PAYMENT', counterparty: 'TANESCO UMEME' }, 'Electricity & LUKU'],
-    [{ type: 'BILL_PAYMENT', counterparty: 'DAWASA' }, 'Bills & fees'],
-    [{ type: 'SENT' }, 'Payments to people'],
-    [{ type: 'TRANSFER' }, 'Payments to people'],
-    [{ type: 'DEPOSIT' }, 'Deposits'],
+    [{ type: 'WITHDRAWAL' }, 'Cash withdrawal'],
+    [{ type: 'BILL_PAYMENT', counterparty: 'LUKU TOKEN' }, 'Electricity & water'],
+    [{ type: 'BILL_PAYMENT', counterparty: 'TANESCO UMEME' }, 'Electricity & water'],
+    [{ type: 'BILL_PAYMENT', counterparty: 'DAWASA' }, 'Electricity & water'],
+    [{ type: 'BILL_PAYMENT', counterparty: 'DSTV' }, 'Bills & services'],
+    [{ type: 'SENT', counterparty: 'GRACE K.' }, 'Sent to people'],
+    [{ type: 'TRANSFER', counterparty: 'GRACE K.' }, 'Sent to people'],
+    [{ type: 'DEPOSIT' }, 'Other income'],
     [{ type: 'RECEIVED', counterparty: 'PAYROLL BATCH' }, 'Salary'],
     [{ type: 'RECEIVED', counterparty: 'MSHAHARA JULAI' }, 'Salary'],
-    [{ type: 'RECEIVED', counterparty: 'GRACE K.' }, 'Payments in'],
-    [{ type: 'UNKNOWN' }, 'Other'],
+    [{ type: 'RECEIVED', counterparty: 'GRACE K.' }, 'Received from people'],
+    [{ type: 'UNKNOWN' }, 'Other spending'],
   ])('%j is %p', (over, name) => {
-    expect(categoryOf(t(over))).toBe(name);
+    expect(categoryOf(t({ moneyCategory: null, ...over }))).toBe(name);
+  });
+
+  it('uses the category saved on a record over the rules', () => {
+    expect(categoryOf(t({ type: 'SENT', moneyCategory: 'BETTING' }))).toBe('Betting');
   });
 
   it('breaks the demo spending down largest first', () => {
     const spend = categoryBreakdown(demo(), 'spend');
     expect(spend.total).toBe(208500);
     expect(spend.rows.map((r) => [r.name, r.amount, r.pct])).toEqual([
-      ['Cash withdrawals', 120000, 58],
-      ['Payments to people', 45000, 22],
-      ['Electricity & LUKU', 38500, 18],
+      ['Cash withdrawal', 120000, 58],
+      ['Sent to people', 45000, 22],
+      ['Electricity & water', 38500, 18],
       ['Airtime & data', 5000, 2],
     ]);
   });
@@ -145,7 +158,7 @@ describe('categories', () => {
     expect(earn.total).toBe(1450000);
     expect(earn.rows.map((r) => [r.name, r.pct])).toEqual([
       ['Salary', 83],
-      ['Payments in', 17],
+      ['Received from people', 17],
     ]);
   });
 
@@ -168,7 +181,7 @@ describe('tips', () => {
 
   it('caps the next biggest category when cash already has a tip', () => {
     const cap = spendTips(h, spend)[1];
-    expect(cap.body).toMatch(/^Payments to people is 22% of your spending/);
+    expect(cap.body).toMatch(/^Sent to people is 22% of your spending/);
   });
 
   it('counts one transaction as one, not "1 transactions"', () => {

@@ -47,7 +47,7 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
   return (
     <View
       accessible
-      accessibilityLabel={`Financial health ${health.score} out of 100, ${health.band}.${spokenStreak} Received ${formatTzs(health.received)}. Sent ${formatTzs(health.sent)}. Net ${net}.`}
+      accessibilityLabel={`Financial health ${health.score} out of 100, ${health.band}.${spokenStreak} Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}. Net ${net}.`}
       style={{
         backgroundColor: colors.accent2Ramp[200],
         borderRadius: radius.lg,
@@ -152,8 +152,8 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
           labelInk={colors.accent2Ramp[800]}
         />
         <MiniStat
-          label="Sent"
-          value={formatAmount(health.sent)}
+          label="Spent"
+          value={formatAmount(health.spent)}
           labelInk={colors.accentRamp[700]}
         />
         <MiniStat

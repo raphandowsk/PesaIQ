@@ -6,8 +6,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FieldRow } from '../../components/parser/FieldRow';
 import { BackButton } from '../../components/ui/BackButton';
 import { Button, Card, Icon, Screen, Text, toast } from '../../components/ui';
+import { chargeLines } from '../../features/insights';
 import { confidenceLabel } from '../../features/review/queue';
-import { useAppStore, type Transaction } from '../../features/transactions';
+import { chargesOf, totalOutOf, useAppStore, type Transaction } from '../../features/transactions';
 import {
   buildRecordPatch,
   canConfirm,
@@ -22,6 +23,7 @@ import {
   isIncoming,
   isOutgoing,
   TYPE_LABELS,
+  type MoneyCategory,
   type TransactionStatus,
   type TransactionType,
 } from '../../types/domain';
@@ -157,11 +159,15 @@ export default function RecordDetail() {
     }
     void run(
       'save',
-      () => correct(t.id, built.patch),
+      () => correct(t.id, built.patch, { rememberCategory: built.categoryChosen }),
       () => {
         setEditing(false);
         setEdits(NO_RECORD_EDITS);
-        toast('Saved. The record is now confirmed.');
+        toast(
+          built.categoryChosen && t.counterparty
+            ? 'Saved and confirmed. Messages to this recipient will get the same category.'
+            : 'Saved. The record is now confirmed.',
+        );
       },
     );
   };
@@ -187,6 +193,8 @@ export default function RecordDetail() {
   };
   const editType = (type: TransactionType) =>
     setEdits((e) => ({ ...e, type: type === t.type ? undefined : type }));
+  const editCategory = (category: MoneyCategory) =>
+    setEdits((e) => ({ ...e, moneyCategory: category }));
 
   const masked = source ? maskIdentifiersInText(source.text) : '';
   const hasHiddenNumbers = !!source && masked !== source.text;
@@ -294,10 +302,33 @@ export default function RecordDetail() {
                 last={i === all.length - 1}
                 onChangeText={(value) => editText(field.key, value)}
                 onChangeType={editType}
+                onChangeCategory={editCategory}
               />
             ))
           : [
               ...recordFields(t),
+              ...(t.details.receipt
+                ? [
+                    {
+                      key: 'receipt',
+                      label: 'Receipt',
+                      display: t.details.receipt,
+                      low: false,
+                      missing: false,
+                    },
+                  ]
+                : []),
+              ...(t.details.network
+                ? [
+                    {
+                      key: 'network',
+                      label: 'Sent to',
+                      display: `${t.details.network}${t.details.merchant ? ' · Lipa merchant' : ''}`,
+                      low: false,
+                      missing: false,
+                    },
+                  ]
+                : []),
               {
                 key: 'source',
                 label: 'Source',
@@ -346,6 +377,13 @@ export default function RecordDetail() {
               </View>
             ))}
       </Card>
+
+      {editing ? null : (
+        <>
+          <ChargesCard t={t} />
+          <ElectricityCard t={t} />
+        </>
+      )}
 
       <View
         style={{
@@ -505,6 +543,130 @@ export default function RecordDetail() {
         </View>
       )}
     </Screen>
+  );
+}
+
+/**
+ * What the record cost in fees and taxes, line by line, and what left the
+ * balance. The lines always add up to the total (see features/insights/fees).
+ */
+function ChargesCard({ t }: { t: Transaction }) {
+  const lines = chargeLines(t);
+  const debt = t.details.debtCollected;
+  if (lines.length === 0 && debt == null) return null;
+
+  const vatInsideFee = t.taxes.some((x) => x.within === 'fee');
+
+  return (
+    <Card style={{ marginBottom: space[3], gap: space[1] }}>
+      <Text variant="kicker" tone="muted" accessibilityRole="header">
+        Fees & taxes
+      </Text>
+      {lines.map((line, i) => (
+        <ChargeRow key={`${line.key}-${i}`} label={line.label} value={formatTzs(line.amount)} />
+      ))}
+      {debt != null ? (
+        <ChargeRow label="Debt collected (not a tax)" value={formatTzs(debt)} />
+      ) : null}
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: colors.divider,
+          marginTop: space[1],
+          paddingTop: space[1],
+        }}
+      >
+        <ChargeRow label="Fees & taxes" value={formatTzs(chargesOf(t))} strong />
+        {isOutgoing(t.type) ? (
+          <ChargeRow label="Total out" value={formatTzs(totalOutOf(t))} strong />
+        ) : null}
+      </View>
+      {vatInsideFee ? (
+        <Text variant="small" tone="muted" style={{ fontSize: 12 }}>
+          The VAT is already inside the fee, as the message states it.
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
+/** A LUKU purchase: units, meter, and the token, hidden until asked for. */
+function ElectricityCard({ t }: { t: Transaction }) {
+  const [shown, setShown] = useState(false);
+  const { units, meterNumber, token, netCost } = t.details;
+  if (!units && !meterNumber && !token) return null;
+
+  return (
+    <Card style={{ marginBottom: space[3], gap: space[1] }}>
+      <Text variant="kicker" tone="muted" accessibilityRole="header">
+        Electricity (LUKU)
+      </Text>
+      {units ? <ChargeRow label="Units" value={units} /> : null}
+      {netCost != null ? <ChargeRow label="Price before tax" value={formatTzs(netCost)} /> : null}
+      {meterNumber ? <ChargeRow label="Meter" value={meterNumber} /> : null}
+      {token ? (
+        <View style={{ gap: space[1], marginTop: space[1] }}>
+          <Text variant="small" tone="muted">
+            Token
+          </Text>
+          <Text
+            variant="mono"
+            selectable={shown}
+            accessibilityLabel={shown ? `Token ${token}` : 'Token hidden'}
+            style={{ fontSize: 17, letterSpacing: 1, color: colors.text }}
+          >
+            {shown ? token : `•••• •••• •••• •••• ${token.slice(-4)}`}
+          </Text>
+          <Button
+            label={shown ? 'Hide token' : 'Show token'}
+            variant="ghost"
+            onPress={() => setShown((s) => !s)}
+            style={{ alignSelf: 'flex-start' }}
+          />
+        </View>
+      ) : null}
+    </Card>
+  );
+}
+
+function ChargeRow({
+  label,
+  value,
+  strong = false,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${label}: ${value}`}
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        gap: space[3],
+        paddingVertical: 4,
+      }}
+    >
+      <Text
+        variant="small"
+        style={{
+          flex: 1,
+          fontFamily: strong ? fonts.bold : fonts.semibold,
+          color: strong ? colors.text : colors.neutralRamp[700],
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        variant="bodyMedium"
+        style={{ fontFamily: strong ? fonts.heading : fonts.semibold, fontSize: 14 }}
+      >
+        {value}
+      </Text>
+    </View>
   );
 }
 

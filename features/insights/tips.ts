@@ -6,6 +6,7 @@
  */
 import type { Transaction } from '../transactions/model';
 import { isCounted } from '../transactions/selectors';
+import { MONEY_CATEGORY_LABELS } from '../../types/domain';
 import { formatAmount } from '../../utils/format';
 import type { CategoryBreakdown } from './categories';
 import type { Health } from './health';
@@ -38,7 +39,9 @@ export function spendTips(health: Health, spend: CategoryBreakdown): Tip[] {
   if (spend.rows.length === 0) return [];
 
   const tips: Tip[] = [];
-  const cashShare = health.sent > 0 ? health.cash / health.sent : 0;
+  // Against what was spent, like the category breakdown beside it. Fees and
+  // taxes are shown on their own card.
+  const cashShare = health.spent > 0 ? health.cash / health.spent : 0;
   const cashTip = cashShare > TIP_THRESHOLDS.cashShare;
 
   if (cashTip) {
@@ -50,7 +53,9 @@ export function spendTips(health: Health, spend: CategoryBreakdown): Tip[] {
   }
 
   // Cash already has its own tip, so the cap goes on the next biggest category.
-  const capTarget = spend.rows.find((r) => r.name !== 'Cash withdrawals' || !cashTip);
+  const capTarget = spend.rows.find(
+    (r) => r.name !== MONEY_CATEGORY_LABELS.CASH_WITHDRAWAL || !cashTip,
+  );
   if (capTarget) {
     tips.push({
       title: 'Set a weekly cap',
@@ -73,7 +78,7 @@ export function spendTips(health: Health, spend: CategoryBreakdown): Tip[] {
     tips.push({
       title: 'Your spending is steady',
       body: 'No single category dominates your spending. Keep saving every message so the trend stays visible.',
-      why: `${tzs(health.sent)} spent`,
+      why: `${tzs(health.spent)} spent`,
     });
   }
 
