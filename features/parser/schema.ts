@@ -9,7 +9,12 @@
  */
 import { z } from 'zod';
 
-import { MESSAGE_CATEGORIES, TRANSACTION_TYPES } from '../../types/domain';
+import {
+  MESSAGE_CATEGORIES,
+  MONEY_CATEGORIES,
+  TAX_CODES,
+  TRANSACTION_TYPES,
+} from '../../types/domain';
 
 export const parsedFieldSchema = z.object({
   key: z.string(),
@@ -30,6 +35,41 @@ export const confidenceFactorSchema = z.object({
   hit: z.boolean(),
   weight: z.number().min(0).max(1),
 });
+
+export const taxLineSchema = z.object({
+  code: z.enum(TAX_CODES),
+  amount: z.number().min(0),
+  /** As stated in the message ("VAT 18%"), or null when none was given. */
+  ratePct: z.number().nullable(),
+  /**
+   * Where the tax sits. `fee`: already inside the fee ("Ada TSh 495. VAT TSh
+   * 76" - 495 left the balance, 76 of it VAT). `amount`: inside the amount paid
+   * (a LUKU receipt's VAT, EWURA and REA). `extra`: charged on top of both.
+   */
+  within: z.enum(['fee', 'amount', 'extra']),
+});
+
+/** Everything else a message itemised, beyond the core fields. */
+export const chargeDetailsSchema = z.object({
+  /** A second reference some wallets add ("Risiti: 503-..."). */
+  receipt: z.string().nullable().default(null),
+  /** The network the money went to ("Vodacom", "Halo Pesa"). */
+  network: z.string().nullable().default(null),
+  /** Paid to a merchant (a Lipa number or a named business) rather than a person. */
+  merchant: z.boolean().default(false),
+  /** LUKU: units bought, e.g. "51.9 kWh". */
+  units: z.string().nullable().default(null),
+  /** LUKU: the meter number, masked. */
+  meterNumber: z.string().nullable().default(null),
+  /** LUKU: the token to type into the meter. Kept, and shown only on request. */
+  token: z.string().nullable().default(null),
+  /** LUKU: the price of the units before tax. */
+  netCost: z.number().nullable().default(null),
+  /** LUKU: old electricity debt recovered from this payment. Not a tax. */
+  debtCollected: z.number().nullable().default(null),
+});
+
+export const EMPTY_DETAILS = chargeDetailsSchema.parse({});
 
 export const parseResultSchema = z.object({
   originalText: z.string(),
@@ -53,6 +93,14 @@ export const parseResultSchema = z.object({
   transactionDate: z.string().nullable(),
   transactionTime: z.string().nullable(),
 
+  // Added with fees, taxes and categories. Defaults keep results saved before
+  // then readable.
+  moneyCategory: z.enum(MONEY_CATEGORIES).nullable().default(null),
+  /** Charged on top of the amount, as the message states it (VAT inside it included). */
+  fee: z.number().nullable().default(null),
+  taxes: z.array(taxLineSchema).default([]),
+  details: chargeDetailsSchema.default(EMPTY_DETAILS),
+
   confidence: z.number().min(0).max(1),
   band: z.enum(['Very high', 'High', 'Medium', 'Needs review']),
   parserId: z.string(),
@@ -65,6 +113,8 @@ export const parseResultSchema = z.object({
 
 export type ParseResult = z.infer<typeof parseResultSchema>;
 export type ParsedField = z.infer<typeof parsedFieldSchema>;
+export type TaxLine = z.infer<typeof taxLineSchema>;
+export type ChargeDetails = z.infer<typeof chargeDetailsSchema>;
 
 export interface ParseValidation {
   ok: boolean;

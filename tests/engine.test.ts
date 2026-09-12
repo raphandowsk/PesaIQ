@@ -20,8 +20,8 @@ describe('demo samples are safe to ship', () => {
     }
   });
 
-  it('has four samples covering received, sent, bank and unknown', () => {
-    expect(SAMPLES.map((s) => s.id)).toEqual(['s1', 's2', 's3', 's4']);
+  it('has samples covering received, sent, bank, unknown, Mixx and LUKU', () => {
+    expect(SAMPLES.map((s) => s.id)).toEqual(['s1', 's2', 's3', 's4', 's5', 's6', 's7']);
   });
 });
 
@@ -225,8 +225,11 @@ describe('parseMessage - result shape', () => {
     const r = parseMessage(sample('s1').text);
     expect(r.fields.map((f) => f.key)).toEqual([
       'category',
+      'moneyCategory',
       'provider',
       'amount',
+      'fee',
+      'taxes',
       'counterparty',
       'masked',
       'reference',

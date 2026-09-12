@@ -11,8 +11,24 @@ export {
   extractCounterparty,
   extractMaskedIdentifier,
   extractDate,
+  maskIdentifier,
 } from './extractors';
 export type { Extracted, ExtractedDate } from './extractors';
+
+export { extractRecipient, extractReceiptNumber } from './recipient';
+export type { Recipient } from './recipient';
+
+export {
+  extractFee,
+  extractTaxes,
+  extractElectricityReceipt,
+  checkCharges,
+  VAT_RATE_PCT,
+} from './charges';
+export type { ChargeCheck, ElectricityReceipt, FeeMatch } from './charges';
+
+export { inferMoneyCategory, partyKey, applyRememberedCategory } from './moneyCategory';
+export type { CategoryClues } from './moneyCategory';
 
 export {
   scoreConfidence,
@@ -49,5 +65,12 @@ export {
   MessageTooLongError,
 } from './engine';
 
-export { parseResultSchema, parsedFieldSchema, validateParseResult } from './schema';
-export type { ParseResult, ParsedField, ParseValidation } from './schema';
+export {
+  parseResultSchema,
+  parsedFieldSchema,
+  taxLineSchema,
+  chargeDetailsSchema,
+  EMPTY_DETAILS,
+  validateParseResult,
+} from './schema';
+export type { ParseResult, ParsedField, ParseValidation, TaxLine, ChargeDetails } from './schema';

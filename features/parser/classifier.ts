@@ -41,9 +41,16 @@ const RULES: Rule[] = [
     confidence: 0.72,
     pattern: /\b(bonasi|bonus|offer|promo|karibu!|bofya|dial \*|win)\b/i,
     // A genuine transaction that happens to say "bonus" must not land here.
-    unless: /tzs\s?[\d,]+\.?\d*\s?(received|sent)?/i,
+    unless: /(?:tzs|tsh)\.?\s?[\d,]+\.?\d*\s?(received|sent)?/i,
     reason: 'Promotional wording (offer / dial code)',
     extraReason: 'No transaction verbs found',
+  },
+  {
+    // A LUKU receipt ("51.9KWH ... EWURA 1% ... TOTAL") names no verb at all.
+    category: 'BILL_PAYMENT',
+    confidence: 0.9,
+    pattern: /\d\s*kwh\b|\bEWURA\b/i,
+    reason: 'Electricity receipt wording',
   },
   {
     category: 'PAYMENT_RECEIVED',
@@ -72,7 +79,8 @@ const RULES: Rule[] = [
   {
     category: 'BILL_PAYMENT',
     confidence: 0.84,
-    pattern: /\b(luku|bili|bill|umelipa|paid to)\b/i,
+    // "Malipo yamekamilika" is a completed payment to a business or biller.
+    pattern: /\b(luku|bili|bill|umelipa|malipo|paid to)\b/i,
     reason: 'Bill-payment wording',
   },
   {
@@ -89,7 +97,8 @@ const RULES: Rule[] = [
   },
 ];
 
-const CURRENCY_TOKEN = /\bTZS\b/i;
+// Real wallets write "TSh" as often as "TZS".
+const CURRENCY_TOKEN = /\b(?:TZS|TSH)\b/i;
 const REFERENCE_TOKEN = /(ref|muamala|txnid|receipt)/i;
 
 /** Ceiling applied after the currency boost. */

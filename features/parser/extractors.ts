@@ -16,7 +16,7 @@ export interface Extracted<T> {
 }
 
 /** Strip thousands separators before Number(). */
-function toNumber(raw: string | null | undefined): number | null {
+export function toNumber(raw: string | null | undefined): number | null {
   if (raw == null) return null;
   const n = Number(String(raw).replace(/,/g, ''));
   return Number.isFinite(n) ? n : null;
@@ -56,7 +56,7 @@ export function extractAmount(text: string): Extracted<number> {
 /** Balance after the transaction, if the message reports one. */
 export function extractBalance(text: string): Extracted<number> {
   const m =
-    /(?:new balance|avail(?:able)?\.?\s?bal(?:ance)?|salio)[^\d]{0,14}([\d,]+(?:\.\d{1,2})?)/i.exec(
+    /(?:new balance|avail(?:able)?\.?\s?bal(?:ance)?|salio)[^\d]{0,20}([\d,]+(?:\.\d{1,2})?)/i.exec(
       text,
     );
   return m ? { value: toNumber(m[1]), confidence: 0.9 } : { value: null, confidence: 0 };
@@ -67,9 +67,10 @@ export function extractBalance(text: string): Extracted<number> {
  * missing reference is surfaced as a warning rather than passed over.
  */
 export function extractReference(text: string): Extracted<string> {
-  const m = /(?:ref|receipt|txn\s?id|txnid|muamala|transaction id)\s*[:.]?\s*([A-Z0-9]{6,})/i.exec(
-    text,
-  );
+  const m =
+    /(?:ref|receipt|txn\s?id|txnid|muamala|transaction id|kumbukumbu(?:\s*no)?)\s*[:.]?\s*([A-Z0-9]{6,})/i.exec(
+      text,
+    );
   return m
     ? { value: m[1], confidence: 0.93 }
     : {
@@ -119,19 +120,24 @@ export function extractCounterparty(text: string): Extracted<string> {
  * never exist downstream where it could be logged or exported by accident.
  */
 export function extractMaskedIdentifier(text: string): Extracted<string> {
-  const phone = /\b(0\d{9})\b/.exec(text);
-  if (phone) {
-    const digits = phone[1];
-    return {
-      value: `${digits.slice(0, 2)}** *** ${digits.slice(-3)}`,
-      confidence: 0.82,
-    };
-  }
+  const phone = /\b(0\d{9})\b/.exec(text) ?? /(?:\+|\b)(255\d{9})\b/.exec(text);
+  if (phone) return { value: maskIdentifier(phone[1]), confidence: 0.82 };
 
   const account = /\*{2,4}\s?(\d{4})\b/.exec(text);
   if (account) return { value: `**** ${account[1]}`, confidence: 0.82 };
 
   return { value: null, confidence: 0 };
+}
+
+/**
+ * A phone, till or account number, masked the way every screen shows it. An
+ * international 255 number reads the same as its local 0 form.
+ */
+export function maskIdentifier(raw: string): string {
+  let digits = raw.replace(/\D/g, '');
+  if (/^255\d{9}$/.test(digits)) digits = `0${digits.slice(3)}`;
+  if (/^0\d{9}$/.test(digits)) return `${digits.slice(0, 2)}** *** ${digits.slice(-3)}`;
+  return `**** ${digits.slice(-4)}`;
 }
 
 export interface ExtractedDate {

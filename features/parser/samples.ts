@@ -54,6 +54,32 @@ export const SAMPLES: SmsSample[] = [
     sender: 'DEMO-PROMO',
     text: `${DEMO_PREFIX}\nKaribu! Bonasi ya 20% kwa kila bando unalonunua wiki hii. Bofya *149*88# kujiunga.`,
   },
+  // The next three follow real Mixx and LUKU layouts (see
+  // tests/fixtures/tz-messages.ts); every name and number in them is invented.
+  {
+    id: 's5',
+    name: 'Mixx - sent, with fee and VAT',
+    badge: 'MX',
+    hint: 'Real Mixx layout: the VAT sits inside the fee',
+    sender: 'DEMO-MIXX',
+    text: `${DEMO_PREFIX}\nUmetuma TSh 10,000 kwenda kwa mpokeaji wa Halo Pesa NEEMA ALLY OMARI - 255620000456. Ada TSh 495. VAT TSh 76. Salio jipya ni TSh 243,000. Muamala: 26700000000004. 12/09/26 14:25. Tafadhali subiri.`,
+  },
+  {
+    id: 's6',
+    name: 'Mixx - Lipa payment',
+    badge: 'LP',
+    hint: 'A fuel station on a Lipa number',
+    sender: 'DEMO-MIXX',
+    text: `${DEMO_PREFIX}\nUmetuma TSh 15,000 kwenda kwa mpokeaji wa Vodacom LIPA TOTALENERGIES - KUNDUCHI SERVICE STATION - 60000789. Ada TSh 1,000. VAT TSh 153. Salio jipya ni TSh 5,000. Muamala: 26600000000006. 12/09/26 13:18.`,
+  },
+  {
+    id: 's7',
+    name: 'LUKU electricity receipt',
+    badge: 'LK',
+    hint: 'Units, token, and VAT, EWURA and REA lines',
+    sender: 'DEMO-LUKU',
+    text: `${DEMO_PREFIX}\nMalipo yamekamilika.14200000001\n9000000000000000001\n51.9KWH\n1111 2222 3333 4444 5555\nCost 15,163.94\nVAT 18% 2729.50\nEWURA 1% 151.64\nREA 3% 454.92\nDebt Collected 1500.00\nTOTAL 20,000.00 12/09/26 08:16`,
+  },
 ];
 
 export const getSample = (id: string): SmsSample | undefined => SAMPLES.find((s) => s.id === id);

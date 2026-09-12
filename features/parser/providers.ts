@@ -1,9 +1,11 @@
 /**
  * Provider recognition.
  *
- * IMPORTANT: every parser here is DEMO maturity. We do not know the live SMS
- * formats of M-Pesa, Airtel Money, Mixx by Yas, CRDB, NMB, NBC, Absa or
- * Stanbic, and nothing in this file claims otherwise. The hints below match
+ * IMPORTANT: every parser here is DEMO maturity except Mixx by Yas, which is
+ * EXPERIMENTAL: its rules come from three real Mixx layouts the user supplied
+ * on 2026-09-12 (anonymized in tests/fixtures/tz-messages.ts). We do not know
+ * the live SMS formats of M-Pesa, Airtel Money, CRDB, NMB, NBC, Absa or
+ * Stanbic, and nothing in this file claims otherwise. The other hints match
  * invented demo senders plus a few generic tokens ("acct", bank names) that are
  * safe to look for.
  *
@@ -24,7 +26,7 @@ export interface SmsProvider {
 export const PROVIDERS: SmsProvider[] = [
   { id: 'mpesa', name: 'M-Pesa', country: 'TZ', enabled: true, maturity: 'DEMO' },
   { id: 'airtel', name: 'Airtel Money', country: 'TZ', enabled: true, maturity: 'DEMO' },
-  { id: 'mixx', name: 'Mixx by Yas', country: 'TZ', enabled: true, maturity: 'DEMO' },
+  { id: 'mixx', name: 'Mixx by Yas', country: 'TZ', enabled: true, maturity: 'EXPERIMENTAL' },
   { id: 'crdb', name: 'CRDB', country: 'TZ', enabled: true, maturity: 'DEMO' },
   { id: 'nmb', name: 'NMB', country: 'TZ', enabled: true, maturity: 'DEMO' },
   { id: 'nbc', name: 'NBC', country: 'TZ', enabled: true, maturity: 'DEMO' },
@@ -51,6 +53,14 @@ interface ProviderHint {
 
 /** Checked against the sender first, then the message body. */
 const PROVIDER_HINTS: ProviderHint[] = [
+  // First: Mixx messages name other networks ("kwenda kwa Vodacom ...") as the
+  // destination, which must not be read as the sender. Each phrase is a
+  // signature of one of the three Mixx layouts seen so far.
+  {
+    id: 'mixx',
+    match: /\bmixx\b|jumla ya makato|bao la ushindi|kumbukumbu no\b/i,
+    name: 'Mixx by Yas',
+  },
   { id: 'mpesa', match: /wallet-a|m-?pesa/i, name: 'Wallet A (M-Pesa-like demo)' },
   { id: 'airtel', match: /wallet-b|airtel/i, name: 'Wallet B (Airtel-like demo)' },
   {

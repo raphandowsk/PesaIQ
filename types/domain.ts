@@ -94,3 +94,56 @@ export const isOutgoing = (t: TransactionType): boolean => OUT_TYPES.includes(t)
 
 /** The only currency Stage 1 handles. */
 export const DEFAULT_CURRENCY = 'TZS';
+
+/**
+ * What the money was for, as a person thinks of it. Picked by rules, corrected
+ * by the user, and remembered per recipient. Spending first, then income.
+ */
+export const MONEY_CATEGORIES = [
+  'FOOD_SHOPPING',
+  'FUEL_TRANSPORT',
+  'ELECTRICITY_WATER',
+  'AIRTIME_DATA',
+  'BETTING',
+  'SENT_TO_PEOPLE',
+  'BILLS_SERVICES',
+  'CASH_WITHDRAWAL',
+  'OTHER_SPENDING',
+  'SALARY',
+  'BUSINESS',
+  'RECEIVED_FROM_PEOPLE',
+  'OTHER_INCOME',
+] as const;
+export type MoneyCategory = (typeof MONEY_CATEGORIES)[number];
+
+export const MONEY_CATEGORY_LABELS: Record<MoneyCategory, string> = {
+  FOOD_SHOPPING: 'Food & shopping',
+  FUEL_TRANSPORT: 'Fuel & transport',
+  ELECTRICITY_WATER: 'Electricity & water',
+  AIRTIME_DATA: 'Airtime & data',
+  BETTING: 'Betting',
+  SENT_TO_PEOPLE: 'Sent to people',
+  BILLS_SERVICES: 'Bills & services',
+  CASH_WITHDRAWAL: 'Cash withdrawal',
+  OTHER_SPENDING: 'Other spending',
+  SALARY: 'Salary',
+  BUSINESS: 'Business',
+  RECEIVED_FROM_PEOPLE: 'Received from people',
+  OTHER_INCOME: 'Other income',
+};
+
+export const SPENDING_CATEGORIES: readonly MoneyCategory[] = MONEY_CATEGORIES.slice(0, 9);
+export const INCOME_CATEGORIES: readonly MoneyCategory[] = MONEY_CATEGORIES.slice(9);
+
+/** Taxes a Tanzanian money message can itemise. */
+export const TAX_CODES = ['VAT', 'EXCISE', 'LEVY', 'EWURA', 'REA', 'OTHER'] as const;
+export type TaxCode = (typeof TAX_CODES)[number];
+
+export const TAX_LABELS: Record<TaxCode, string> = {
+  VAT: 'VAT',
+  EXCISE: 'Excise duty',
+  LEVY: 'Government levy',
+  EWURA: 'EWURA',
+  REA: 'REA',
+  OTHER: 'Other tax',
+};
