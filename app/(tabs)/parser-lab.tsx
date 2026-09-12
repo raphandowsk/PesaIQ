@@ -171,6 +171,23 @@ export default function ParserLab() {
         </View>
       ) : null}
 
+      {/* Right under the message box, so it is in reach without scrolling past the samples. */}
+      <View style={{ marginBottom: space[6] }}>
+        <Button
+          label="Analyze message"
+          size="lg"
+          onPress={run}
+          disabled={analyzing}
+          style={shadow.md}
+        />
+
+        {completed !== null ? (
+          <View style={{ marginTop: space[4] }}>
+            <PipelineProgress completed={completed} />
+          </View>
+        ) : null}
+      </View>
+
       <View
         style={{
           flexDirection: 'row',
@@ -233,20 +250,6 @@ export default function ParserLab() {
           );
         })}
       </View>
-
-      <Button
-        label="Analyze message"
-        size="lg"
-        onPress={run}
-        disabled={analyzing}
-        style={shadow.md}
-      />
-
-      {completed !== null ? (
-        <View style={{ marginTop: space[4] }}>
-          <PipelineProgress completed={completed} />
-        </View>
-      ) : null}
     </Screen>
   );
 }
