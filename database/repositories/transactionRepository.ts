@@ -128,6 +128,15 @@ export const transactionRepository = {
     return r.changes > 0;
   },
 
+  /** How many records point at a source message, so it is only deleted when none do. */
+  async countBySourceMessage(db: SqlDatabase, messageId: string): Promise<number> {
+    const row = await db.getFirstAsync<{ n: number }>(
+      'SELECT COUNT(*) AS n FROM transactions WHERE source_message_id = ?',
+      [messageId],
+    );
+    return row?.n ?? 0;
+  },
+
   async removeAll(db: SqlDatabase): Promise<number> {
     const r = await db.runAsync('DELETE FROM transactions');
     return r.changes;

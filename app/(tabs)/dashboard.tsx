@@ -204,7 +204,13 @@ export default function Dashboard() {
           </View>
           <View style={{ gap: space[2] }}>
             {recent.map((t) => (
-              <TransactionListItem key={t.id} transaction={t} />
+              <TransactionListItem
+                key={t.id}
+                transaction={t}
+                onPress={() =>
+                  router.push({ pathname: '/transactions/[id]', params: { id: t.id } })
+                }
+              />
             ))}
           </View>
         </View>

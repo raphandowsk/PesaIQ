@@ -76,6 +76,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           {/* Pushed over the tabs from the Parser Lab; no tab bar. */}
           <Stack.Screen name="result" />
+          <Stack.Screen name="transactions/[id]" />
         </Stack.Protected>
       </Stack>
       <Toast />

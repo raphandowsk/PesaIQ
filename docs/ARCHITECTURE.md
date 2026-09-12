@@ -399,6 +399,52 @@ ten providers), ending back on Home with the onboarding flag restored. The app
 fills the viewport exactly: the root and the tab bar end at 812 of 812 px. The unfiltered dev-server log showed no errors or warnings once the
 fixes above were in.
 
+## Phase 1G — Records and transaction detail
+
+### Records
+
+The design's search box and chips (All · Received · Sent · Cash out · Bills ·
+Review) over every record, grouped by day. Order and grouping follow **when the
+transaction happened**, as the message states it, not when it was saved. An old
+message pasted today files under its own date. Dates the parser cannot read fall
+back to the save time. The list is a `SectionList`, so a long history stays fast.
+
+Search matches the counterparty, reference, provider, masked number and amount
+("45,000" and "45000" both work), ignoring case.
+
+**Beyond the design:** the brief also asks for provider and date filters. They sit
+behind a "More filters" chip, which shows how many are active, so the design's own
+layout is unchanged by default. The empty state tells "no records yet" (with
+Analyze an SMS) apart from "no records match" (with Clear filters).
+
+### Detail
+
+The design's layout: type and status pills, amount, a small confidence ring with
+"Rules · no AI", the fields with a caution mark on unsure ones, and the source
+message. `PARSED` reads "Unconfirmed", since "parsed" means nothing to a person. The
+"Rules · no AI" tag is there because the brief asks for AI-made records to be
+marked; none exist yet.
+
+### Departures from the design, and why
+
+| Design | PesaIQ | Why |
+|---|---|---|
+| Edit shows "opens the field-by-field form" | A real editor; saving confirms the record | Reuses the Lab's `FieldRow` and money parsing, so "45,000" means the same everywhere |
+| Delete removes the record on one tap | Asks first, in-app | It cannot be undone; `Alert.alert` does nothing on web |
+| Delete leaves the source message | Deletes the message and its parse result too | Otherwise the SMS text, the most sensitive part, stays behind |
+| Source message shown raw, full phone number included | Phone and account numbers masked, "Show full numbers" on request | The brief: never expose full numbers unnecessarily |
+| — | Confirm needs an amount | Confirming says the record is right; one with no amount is not |
+
+The stored message is never altered: masking is display-only
+(`utils/privacy.ts`), in the same format the extractor uses (`07** *** 678`,
+`**** 1234`). A delete removes the record and its message in one database
+transaction, and keeps a message that another record still points at.
+
+`TRANSACTION_CORRECTED` records which fields an edit changed, never the values, as
+in the Lab.
+
+Home's recent rows now open the record's detail too.
+
 ## Dependency note — Expo 57.0.22 and `expo-modules-core`
 
 `npx expo install --fix` (run 2026-09-11) moved the project to Expo 57.0.22: twenty

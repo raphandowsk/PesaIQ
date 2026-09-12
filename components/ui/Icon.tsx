@@ -29,7 +29,11 @@ export type IconName =
   | 'bell'
   | 'flame'
   | 'arrowIn'
-  | 'arrowOut';
+  | 'arrowOut'
+  | 'trash'
+  | 'search'
+  | 'message'
+  | 'close';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   back: (
@@ -122,6 +126,27 @@ const GLYPHS: Record<IconName, ReactNode> = {
     <>
       <Path d="M7 17L17 7" />
       <Path d="M11 7h6v6" />
+    </>
+  ),
+  trash: (
+    <>
+      <Path d="M4 7h16" />
+      <Path d="M9 7V4h6v3" />
+      <Path d="M6 7l1 13h10l1-13" />
+    </>
+  ),
+  search: (
+    <>
+      <Circle cx="11" cy="11" r="7" />
+      <Path d="M20 20l-4-4" />
+    </>
+  ),
+  // The empty-state speech bubble.
+  message: <Path d="M4 5h16v10H8l-4 4z" />,
+  close: (
+    <>
+      <Path d="M6 6l12 12" />
+      <Path d="M18 6L6 18" />
     </>
   ),
 };

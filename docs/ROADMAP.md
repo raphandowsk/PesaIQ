@@ -13,8 +13,8 @@ Must run in Expo Go. No native modules. No Android Studio.
 | **1D** | Onboarding: welcome, how it works, privacy, senders picker, setup | **Done** — 2026-09-11 |
 | **1E** | Parser Lab + Result: paste, samples, pipeline, per-field edit, "How we got this", save | **Done** — 2026-09-11 |
 | **1F** | Dashboard: health ring, factor bars, in/out/net, category toggle, tips, providers, recent | **Done** — 2026-09-11 |
-| **1G** | Records + Detail: search, filters, date groups, masking, confirm/edit/incorrect/delete | Next |
-| **1H** | Review queue: progress ring, streak, type chips, low-field inputs, confirm/ignore | |
+| **1G** | Records + Detail: search, filters, date groups, masking, confirm/edit/incorrect/delete | **Done** — 2026-09-12 |
+| **1H** | Review queue: progress ring, streak, type chips, low-field inputs, confirm/ignore | Next |
 | **1I** | Settings + Export + Privacy: toggles, actions, CSV/JSON export, delete-all | |
 | **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint | |
 

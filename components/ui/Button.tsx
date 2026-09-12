@@ -11,7 +11,7 @@ import {
 import { colors, MIN_TOUCH, radius, space } from '../../theme';
 import { Text } from './Text';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'positive';
 type Size = 'md' | 'lg';
 
 export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
@@ -89,6 +89,10 @@ function surfaceFor(variant: Variant, pressed: boolean): ViewStyle {
       return {
         backgroundColor: pressed ? colors.accentRamp[700] : colors.accent,
       };
+    case 'positive':
+      return {
+        backgroundColor: pressed ? colors.accent2Ramp[800] : colors.accent2Ramp[700],
+      };
     case 'danger':
       return {
         backgroundColor: pressed ? colors.accentRamp[200] : 'transparent',
@@ -107,7 +111,7 @@ function surfaceFor(variant: Variant, pressed: boolean): ViewStyle {
 }
 
 function inkFor(variant: Variant): string {
-  if (variant === 'primary') return colors.surface;
+  if (variant === 'primary' || variant === 'positive') return colors.surface;
   if (variant === 'danger' || variant === 'ghost') return colors.accentRamp[700];
   // The design sets secondary labels in neutral-700, a step softer than body text.
   return colors.neutralRamp[700];

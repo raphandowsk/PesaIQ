@@ -7,21 +7,34 @@ import { formatAmount, formatSignedAmount } from '../../utils/format';
 import { Icon } from '../ui/Icon';
 import { Text } from '../ui/Text';
 
-const TILE = 38;
+export type TransactionListItemVariant = 'recent' | 'record';
+
+// Geometry from the design. Home's recent rows are compact; the Records list's
+// rows are a little larger.
+const GEOMETRY = {
+  recent: { tile: 38, corner: radius.md, amountSize: 15 },
+  record: { tile: 40, corner: radius.lg, amountSize: 16 },
+} as const;
 const TILE_RADIUS = 14;
 
 /**
- * The design's compact record row: direction tile, counterparty, type and
- * time, amount and confidence. Used for recent records on Home; the Records
- * list reuses it in 1G.
+ * One record as a row: direction tile, counterparty, a detail line, amount and
+ * confidence.
+ *
+ * `recent` (Home) reads "Received · 14:22". `record` (Records) reads
+ * "Received · 07** *** 678" and flags a record that needs review or was
+ * ignored, as the design's list does.
  */
 export function TransactionListItem({
   transaction: t,
   onPress,
+  variant = 'recent',
 }: {
   transaction: Transaction;
   onPress?: () => void;
+  variant?: TransactionListItemVariant;
 }) {
+  const g = GEOMETRY[variant];
   const incoming = isIncoming(t.type);
   const outgoing = isOutgoing(t.type);
   const tone =
@@ -35,10 +48,27 @@ export function TransactionListItem({
       : incoming || outgoing
         ? formatSignedAmount(t.amount, incoming)
         : formatAmount(t.amount);
+
   const when = t.transactionTime ?? t.transactionDate;
-  const meta = when ? `${TYPE_LABELS[t.type]} · ${when}` : TYPE_LABELS[t.type];
-  const review = t.status === 'NEEDS_REVIEW' ? ', needs review' : '';
-  const label = `${TYPE_LABELS[t.type]}, ${amount} ${incoming ? 'from' : 'to'} ${name}${review}`;
+  const detail =
+    variant === 'record'
+      ? `${TYPE_LABELS[t.type]} · ${t.maskedAccountOrPhone ?? 'no number'}`
+      : when
+        ? `${TYPE_LABELS[t.type]} · ${when}`
+        : TYPE_LABELS[t.type];
+
+  const flag =
+    variant !== 'record'
+      ? null
+      : t.status === 'NEEDS_REVIEW'
+        ? { label: 'Needs review', tint: colors.accentRamp[200], ink: colors.accentRamp[800] }
+        : t.status === 'IGNORED'
+          ? { label: 'Ignored', tint: colors.neutralRamp[200], ink: colors.neutralRamp[700] }
+          : null;
+
+  const spokenStatus =
+    t.status === 'NEEDS_REVIEW' ? ', needs review' : t.status === 'IGNORED' ? ', ignored' : '';
+  const label = `${TYPE_LABELS[t.type]}, ${amount} ${incoming ? 'from' : 'to'} ${name}${spokenStatus}`;
 
   const row = (pressed: boolean) => (
     <View
@@ -48,7 +78,7 @@ export function TransactionListItem({
           alignItems: 'center',
           gap: space[3],
           backgroundColor: pressed ? colors.neutralRamp[200] : colors.surface,
-          borderRadius: radius.md,
+          borderRadius: g.corner,
           padding: space[3],
         },
         shadow.sm,
@@ -56,8 +86,8 @@ export function TransactionListItem({
     >
       <View
         style={{
-          width: TILE,
-          height: TILE,
+          width: g.tile,
+          height: g.tile,
           borderRadius: TILE_RADIUS,
           backgroundColor: tone.tint,
           alignItems: 'center',
@@ -66,10 +96,11 @@ export function TransactionListItem({
       >
         <Icon
           name={incoming ? 'arrowIn' : outgoing ? 'arrowOut' : 'records'}
-          size={19}
+          size={variant === 'record' ? 20 : 19}
           color={tone.ink}
         />
       </View>
+
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text
           variant="bodyMedium"
@@ -79,15 +110,32 @@ export function TransactionListItem({
           {name}
         </Text>
         <Text variant="small" tone="muted" numberOfLines={1}>
-          {meta}
+          {detail}
         </Text>
+        {flag ? (
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              marginTop: space[1],
+              backgroundColor: flag.tint,
+              borderRadius: radius.pill,
+              paddingHorizontal: space[2],
+              paddingVertical: 2,
+            }}
+          >
+            <Text variant="kicker" style={{ fontSize: 10, color: flag.ink }}>
+              {flag.label}
+            </Text>
+          </View>
+        ) : null}
       </View>
+
       <View style={{ alignItems: 'flex-end' }}>
         <Text
           variant="bodyMedium"
           style={{
             fontFamily: fonts.heading,
-            fontSize: 15,
+            fontSize: g.amountSize,
             color: incoming ? colors.accent2Ramp[700] : colors.text,
           }}
         >

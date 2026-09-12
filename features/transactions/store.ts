@@ -78,6 +78,11 @@ interface AppState {
   /** The user said a Lab result was wrong. Recorded without message content. */
   recordParseRejected(result: ParseResult): Promise<void>;
 
+  /** The message a record came from, for its detail screen. Null once deleted. */
+  getRecordSource(
+    messageId: string | null,
+  ): Promise<{ text: string; sender: string | null } | null>;
+
   confirm(id: string): Promise<void>;
   markIncorrect(id: string): Promise<void>;
   correct(id: string, patch: Partial<Transaction>): Promise<void>;
@@ -329,6 +334,12 @@ export const useAppStore = create<AppState>((set, get) => {
       await reload();
     },
 
+    async getRecordSource(messageId) {
+      if (!messageId) return null;
+      const message = await messageRepository.findById(requireDb(), messageId);
+      return message ? { text: message.originalText, sender: message.sender } : null;
+    },
+
     async markIncorrect(id) {
       const database = requireDb();
       await transactionRepository.update(database, id, { status: 'NEEDS_REVIEW' }, now());
@@ -368,7 +379,21 @@ export const useAppStore = create<AppState>((set, get) => {
     async remove(id) {
       const database = requireDb();
       const timestamp = now();
-      await transactionRepository.remove(database, id);
+      const existing = await transactionRepository.findById(database, id);
+
+      // The source message goes with its record: leaving the SMS text behind
+      // would keep the most sensitive part of what the user deleted. Its parse
+      // result cascades with it.
+      await database.withTransactionAsync(async () => {
+        await transactionRepository.remove(database, id);
+        const messageId = existing?.sourceMessageId;
+        if (
+          messageId &&
+          (await transactionRepository.countBySourceMessage(database, messageId)) === 0
+        ) {
+          await messageRepository.remove(database, messageId);
+        }
+      });
       await processingEventRepository.record(database, {
         id: makeId('evt'),
         kind: 'TRANSACTION_DELETED',

@@ -75,3 +75,23 @@ export function greetingFor(d: Date): string {
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
+
+const SHORT_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/** "05 Mar 2026": the Records date headings, written the way the parser writes dates. */
+export function formatShortDate(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')} ${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}

@@ -15,6 +15,8 @@ export interface FieldRowProps {
   onChangeText: (value: string) => void;
   onChangeType: (type: TransactionType) => void;
   last?: boolean;
+  /** Off for saved records, which carry no per-field score: the flag just says "Check". */
+  showConfidence?: boolean;
 }
 
 const CAPITALIZE: Record<string, 'none' | 'words' | 'characters'> = {
@@ -32,6 +34,7 @@ export function FieldRow({
   onChangeText,
   onChangeType,
   last = false,
+  showConfidence = true,
 }: FieldRowProps) {
   const pct = `${Math.round(field.confidence * 100)}%`;
   const ink = field.low
@@ -56,7 +59,9 @@ export function FieldRow({
         {field.low ? (
           <View
             accessible
-            accessibilityLabel={`${pct} confidence. Check this field.`}
+            accessibilityLabel={
+              showConfidence ? `${pct} confidence. Check this field.` : 'Check this field.'
+            }
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -69,7 +74,7 @@ export function FieldRow({
           >
             <Icon name="caution" size={11} strokeWidth={3} color={colors.accentRamp[800]} />
             <Text variant="kicker" style={{ color: colors.accentRamp[800], fontSize: 10 }}>
-              {pct} · check
+              {showConfidence ? `${pct} · check` : 'Check'}
             </Text>
           </View>
         ) : null}
