@@ -398,3 +398,26 @@ works, Privacy with its disclaimer, Setup with the "should watch" copy and all
 ten providers), ending back on Home with the onboarding flag restored. The app
 fills the viewport exactly: the root and the tab bar end at 812 of 812 px. The unfiltered dev-server log showed no errors or warnings once the
 fixes above were in.
+
+## Dependency note — Expo 57.0.22 and `expo-modules-core`
+
+`npx expo install --fix` (run 2026-09-11) moved the project to Expo 57.0.22: twenty
+patch-level updates across the `expo` family, nothing else.
+
+With it, npm places `expo-modules-core` 57.0.18 **nested under `node_modules/expo`**
+rather than at the top level. The installed `react-native-worklets` 0.12.2 (pulled
+in by `expo-router` → `@expo/ui` and by `react-native-reanimated`) is outside
+`expo-modules-core`'s optional peer range, `^0.7.4 || ^0.8.0 || ^0.9.0 || ^0.10.0`,
+so npm isolates it. `npm ci` and `npm dedupe` both keep it there: this is the
+lockfile's resolution, not a broken install.
+
+- **The app is unaffected.** Metro resolves it for both bundles; the Android and
+  web exports both succeed.
+- **Jest was affected.** jest-expo's setup requires `expo-modules-core` by bare
+  name, and plain Node resolution only looks at the top level. `jest.config.js`
+  now maps it to wherever `expo` itself resolves it, so the tests work whether npm
+  nests or hoists it.
+
+**On Windows, stop dev servers before installing.** The upgrade ran while a Metro
+dev server was watching `node_modules`. Metro then reported files as missing, and
+a clean `npm ci` was needed before everything resolved again.
