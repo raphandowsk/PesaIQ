@@ -73,3 +73,13 @@ storage model above would not change: still local, still no upload by default.
   transactions". Settings → Remembered categories → **Forget** clears them on
   their own.
 - Phone numbers written as 255... are masked like local ones.
+
+## Reports (2026-09-12)
+
+- **A report PDF is made only when Save PDF is tapped.** On Android the user
+  picks the folder; on the web the browser's print window saves it. PesaIQ sends
+  it nowhere.
+- **The PDF carries totals and categories only:** no names, phone or account
+  numbers, references, LUKU tokens or message text.
+- Demo records in the period are flagged in the PDF. Once saved, a PDF is
+  outside PesaIQ, like an export: deleting data in the app does not delete it.

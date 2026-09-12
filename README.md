@@ -25,6 +25,9 @@ saves it on the device. There is no native SMS reading, no account and no server
   (VAT, EWURA, REA, levies), and what the money was for. Home shows fees and
   taxes apart from spending, with a breakdown by type and provider. A category
   you pick is remembered for that recipient.
+- **Reports:** a monthly summary for any month or a custom range: money in,
+  spent, fees and taxes, and net, each broken down by category and compared with
+  the period before. Save it as a PDF to a folder you pick.
 
 Mixx by Yas rules are **experimental**, built from real message layouts. The
 other provider parsers are **demo rules**, checked only against invented, anonymized
@@ -70,18 +73,19 @@ invented sample messages only.
 
 ## Layout
 
-| Path                                                    | What lives there                                                                   |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `app/`                                                  | Screens, by route (Expo Router): onboarding, the five tabs, Result, Detail, Export |
-| `features/parser/`                                      | Normalizer, classifier, extractors, confidence, provider hints, samples            |
-| `features/transactions/`                                | Record model, the app store, Records filtering, editing rules                      |
-| `features/insights/`                                    | Health score, categories, tips, streak (pure functions)                            |
-| `features/review/`, `features/export/`, `features/lab/` | Review queue, export formats, the Lab's draft                                      |
-| `database/`                                             | SQLite schema, migrations, repositories, demo seed                                 |
-| `services/`                                             | The SMS source (`ManualSmsSource`) and saving exports                              |
-| `components/`, `theme/`                                 | UI building blocks and the design tokens                                           |
-| `tests/`                                                | Jest suites                                                                        |
-| `docs/`                                                 | Architecture, parser engine, privacy, roadmap                                      |
+| Path                                                    | What lives there                                                                                          |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `app/`                                                  | Screens, by route (Expo Router): onboarding, the five tabs, Result, Detail, Export, Fees & taxes, Reports |
+| `features/parser/`                                      | Normalizer, classifier, extractors, confidence, provider hints, samples                                   |
+| `features/transactions/`                                | Record model, the app store, Records filtering, editing rules                                             |
+| `features/insights/`                                    | Health score, categories, tips, streak (pure functions)                                                   |
+| `features/review/`, `features/export/`, `features/lab/` | Review queue, export formats, the Lab's draft                                                             |
+| `features/reports/`                                     | Monthly summary, report periods, the PDF page                                                             |
+| `database/`                                             | SQLite schema, migrations, repositories, demo seed                                                        |
+| `services/`                                             | The SMS source (`ManualSmsSource`), saving exports and report PDFs                                        |
+| `components/`, `theme/`                                 | UI building blocks and the design tokens                                                                  |
+| `tests/`                                                | Jest suites                                                                                               |
+| `docs/`                                                 | Architecture, parser engine, privacy, roadmap                                                             |
 
 Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Progress and the
 Stage 1 definition of done are in [docs/ROADMAP.md](docs/ROADMAP.md).

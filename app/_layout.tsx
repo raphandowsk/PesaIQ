@@ -104,6 +104,8 @@ export default function RootLayout() {
           <Stack.Screen name="export" />
           {/* Pushed from Home's Fees & taxes card. */}
           <Stack.Screen name="fees" />
+          {/* Pushed from Home's Monthly report card and the Records header. */}
+          <Stack.Screen name="reports" />
         </Stack.Protected>
       </Stack>
       <Toast />

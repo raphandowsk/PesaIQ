@@ -18,6 +18,7 @@ Must run in Expo Go. No native modules. No Android Studio.
 | **1I** | Settings + Export + Privacy: toggles, actions, CSV/JSON export, delete-all                                                          | **Done** — 2026-09-12 |
 | **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint                                               | **Done** — 2026-09-12 |
 | **1K** | Fees, taxes and categories: real Mixx and LUKU layouts, fee and tax lines, categories remembered per recipient, Fees & taxes screen | **Done** — 2026-09-12 |
+| **1L** | Reports: monthly summary for a month or a custom range, compared with the period before, saved as a PDF                             | **Done** — 2026-09-12 |
 
 ### Definition of done
 
@@ -29,7 +30,7 @@ TypeScript clean · ESLint clean.
 
 ### Stage 1 against the definition of done
 
-Checked 2026-09-12, at the end of 1J.
+Checked 2026-09-12, at the end of 1J; the Reports row and test counts added at the end of 1L.
 
 | Item                                                       | Status                                                         | How it was checked                                                                                                                                                        |
 | ---------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +44,7 @@ Checked 2026-09-12, at the end of 1J.
 | Edit, review, delete                                       | Works                                                          | Record, review and data-management suites; web preview                                                                                                                    |
 | Export                                                     | Works on web; Android folder picker covered by unit tests only | Export and save suites; web preview                                                                                                                                       |
 | Settings                                                   | Works                                                          | Web preview; store suites                                                                                                                                                 |
-| Tests pass                                                 | 34 suites, 616 tests                                           | `npm test`                                                                                                                                                                |
+| Tests pass                                                 | 36 suites, 645 tests                                           | `npm test`                                                                                                                                                                |
 | No secrets committed                                       | None found                                                     | Scan of tracked files for key and token patterns                                                                                                                          |
 | Docs exist                                                 | Yes                                                            | README and `docs/`                                                                                                                                                        |
 | TypeScript clean                                           | Yes                                                            | `npm run typecheck`                                                                                                                                                       |

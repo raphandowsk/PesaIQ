@@ -686,3 +686,48 @@ Fees are shown apart, as the user chose:
 
 Only an explicit pick is remembered, in the Lab, on the Detail screen or in
 Review. A category the rules pick again after a type change is not.
+
+## Reports (Stage 1 addition, 2026-09-12)
+
+A monthly summary, on screen and as a PDF. It opens from Home's **Monthly report**
+card and from the **Report** button on Records.
+
+### Period (`features/reports/period.ts`)
+
+- **Month:** step back through the months. Forward stops at the current month.
+- **Custom range:** type From and To as DD/MM/YYYY (day first, like the
+  messages), or pick a preset: last 7 days, last 30 days, this year. Both days
+  count in full.
+- Every period is compared with the one before it: the previous month for a
+  month, or the same number of days just before a range.
+
+### Summary (`features/reports/summary.ts`)
+
+The summary is pure. It uses the same per-record arithmetic as Home (`spentOf`,
+`chargesOf`), so a report never disagrees with the app. Ignored and failed
+records are left out, as they are everywhere else.
+
+- **Totals:** money in, spent, fees & taxes, and net (money in − spent − fees &
+  taxes).
+- **Breakdowns:** spending and income by category, and fees & taxes by type
+  (`chargeLines`). Each line has its share and the same line in the period before.
+  A line that has stopped since then is kept, at zero.
+- **Records still in review** are counted, with a note that the totals may change.
+- **Demo records** are counted and flagged, on screen and in the PDF.
+
+### PDF
+
+`features/reports/html.ts` builds a self-contained A4 page: inline styles, no
+fonts or images to fetch. It carries totals and categories only: no names, phone
+or account numbers, references or message text. Labels are HTML-escaped.
+
+- **Android** (`services/reports/saveReportPdf.ts`):
+  - The user picks a folder first. Backing out saves nothing.
+  - `expo-print` renders the page to a PDF in the app's cache.
+  - Its bytes are written into the folder, and the cache copy is deleted.
+- **Web** (`saveReportPdf.web.ts`):
+  - The page is printed from a hidden frame, where the browser offers "Save as
+    PDF". `expo-print`'s web build would print the whole app page instead.
+  - The browser does not say whether the file was saved.
+- **File name:** `pesaiq-summary-2026-09.pdf` for a month, or
+  `pesaiq-summary-2026-09-01-to-2026-09-15.pdf` for a range.

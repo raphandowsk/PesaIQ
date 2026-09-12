@@ -6,6 +6,7 @@ import { CategoryCard } from '../../components/dashboard/CategoryCard';
 import { FeesCard } from '../../components/dashboard/FeesCard';
 import { HealthCard } from '../../components/dashboard/HealthCard';
 import { ProviderSummary } from '../../components/dashboard/ProviderSummary';
+import { ReportCard } from '../../components/dashboard/ReportCard';
 import { ScoreBreakdown } from '../../components/dashboard/ScoreBreakdown';
 import { TipCard } from '../../components/dashboard/TipCard';
 import { TransactionListItem } from '../../components/transactions/TransactionListItem';
@@ -20,6 +21,7 @@ import {
   spendTips,
   type CategoryMode,
 } from '../../features/insights';
+import { buildReport, monthOf } from '../../features/reports';
 import { needsReview, useAppStore } from '../../features/transactions';
 import { colors, fonts, HIT_SLOP, MIN_TOUCH, radius, shadow, space } from '../../theme';
 import { formatLongDate, greetingFor } from '../../utils/format';
@@ -62,6 +64,7 @@ export default function Dashboard() {
   const earn = useMemo(() => categoryBreakdown(transactions, 'earn'), [transactions]);
   const providers = useMemo(() => providerSummary(transactions), [transactions]);
   const fees = useMemo(() => feesSummary(transactions, 'month', now), [transactions, now]);
+  const monthReport = useMemo(() => buildReport(transactions, monthOf(now)), [transactions, now]);
 
   const spendList = health ? spendTips(health, spend) : [];
   const earnList = health ? earnTips(health, earn, transactions) : [];
@@ -161,6 +164,8 @@ export default function Dashboard() {
       ) : null}
 
       {health ? <FeesCard summary={fees} /> : null}
+
+      {health ? <ReportCard report={monthReport} /> : null}
 
       {spendList.length > 0 ? (
         <Section title="Spend smarter" subtitle="Tips drawn from your own transactions">

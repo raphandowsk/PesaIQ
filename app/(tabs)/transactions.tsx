@@ -53,15 +53,35 @@ export default function Records() {
   // An element, not a component: re-rendering it keeps the search box focused.
   const header = (
     <View style={{ paddingTop: space[4], gap: space[3], marginBottom: space[1] }}>
-      <View
-        style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}
-      >
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text variant="h1" accessibilityRole="header" style={{ fontSize: 26 }}>
           Transactions
         </Text>
-        <Text variant="small" tone="muted">
-          {records.length} of {transactions.length}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+          <Text variant="small" tone="muted">
+            {records.length} of {transactions.length}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/reports')}
+            accessibilityRole="button"
+            accessibilityLabel="Monthly report"
+            hitSlop={HIT_SLOP}
+            style={({ pressed }) => ({
+              minHeight: 36,
+              paddingHorizontal: space[3],
+              borderRadius: radius.pill,
+              justifyContent: 'center',
+              backgroundColor: pressed ? colors.accentRamp[200] : colors.accentRamp[100],
+            })}
+          >
+            <Text
+              variant="small"
+              style={{ fontFamily: fonts.bold, fontSize: 13, color: colors.accentRamp[900] }}
+            >
+              Report
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <SearchBox value={query.search} onChange={(search) => update({ search })} />
