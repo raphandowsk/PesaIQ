@@ -33,15 +33,15 @@ Dashboard
 
 ## Layers
 
-| Layer | Holds | Rule |
-|---|---|---|
-| `app/` | Expo Router screens | No SQL, no regex. Reads through stores/selectors. |
-| `components/` | Presentational UI | No data fetching. |
-| `features/` | Domain logic (parser, transactions, insights) | Pure and unit-testable. |
-| `database/` | Schema, migrations, repositories | The only place SQL is written. |
-| `services/` | `SmsSource`, export, storage | Side effects live here. |
-| `theme/` | Design tokens | Ported from the canvas; no hard-coded colors elsewhere. |
-| `ai/` | Interfaces, schemas, prompts | Abstraction only in Stage 1. Not wired to a provider. |
+| Layer         | Holds                                         | Rule                                                    |
+| ------------- | --------------------------------------------- | ------------------------------------------------------- |
+| `app/`        | Expo Router screens                           | No SQL, no regex. Reads through stores/selectors.       |
+| `components/` | Presentational UI                             | No data fetching.                                       |
+| `features/`   | Domain logic (parser, transactions, insights) | Pure and unit-testable.                                 |
+| `database/`   | Schema, migrations, repositories              | The only place SQL is written.                          |
+| `services/`   | `SmsSource`, export, storage                  | Side effects live here.                                 |
+| `theme/`      | Design tokens                                 | Ported from the canvas; no hard-coded colors elsewhere. |
+| `ai/`         | Interfaces, schemas, prompts                  | Abstraction only in Stage 1. Not wired to a provider.   |
 
 **UI never touches SQLite directly.** Screens call repositories or selectors. This
 is what lets the prototype's in-memory state become real persistence without
@@ -79,7 +79,7 @@ and none is faked.**
 - **Zustand** for app state (the prototype is one reactive store; Zustand maps to it
   cleanly). Added in Phase 1C when there is state to hold.
 - **English-only UI.** The 2026-09-11 design revision removed Swahili from the
-  interface, so no i18n layer ships. SMS *content* is still Swahili and the parser
+  interface, so no i18n layer ships. SMS _content_ is still Swahili and the parser
   must match Swahili keywords.
 - **`react-dom` is pinned to 19.2.3** to match the React version Expo pins. A
   hoisted 19.3.0 otherwise breaks peer resolution.
@@ -183,15 +183,15 @@ strings go unchecked.
 ### Interim tab screens
 
 Onboarding is complete. The tabs are working shells over real data, each marked
-with a *Preview* tag naming the phase that finishes it:
+with a _Preview_ tag naming the phase that finishes it:
 
-| Tab | Real now | Arrives in |
-|---|---|---|
-| Home | totals, review count, recent records, demo notice and removal | health, categories, tips — 1F |
-| Records | full list from SQLite | search, filters, detail — 1G |
-| Lab | paste → analyze → save | pipeline, result card, field edit — 1E |
-| Review | queue, Confirm, Ignore | progress ring, field corrections — 1H |
-| Settings | Replay onboarding, remove demo data | toggles, providers, export — 1I |
+| Tab      | Real now                                                      | Arrives in                             |
+| -------- | ------------------------------------------------------------- | -------------------------------------- |
+| Home     | totals, review count, recent records, demo notice and removal | health, categories, tips — 1F          |
+| Records  | full list from SQLite                                         | search, filters, detail — 1G           |
+| Lab      | paste → analyze → save                                        | pipeline, result card, field edit — 1E |
+| Review   | queue, Confirm, Ignore                                        | progress ring, field corrections — 1H  |
+| Settings | Replay onboarding, remove demo data                           | toggles, providers, export — 1I        |
 
 ### Provider selection
 
@@ -243,11 +243,11 @@ status a save gets. Screens render its output; tests exercise it directly.
 
 ### Save status — a deliberate departure from the design
 
-| Situation | Design | PesaIQ |
-|---|---|---|
-| Confidence ≥ 0.6, nothing flagged | Confirmed | **Confirmed** |
-| Confidence ≥ 0.6, a field still flagged "check" and untouched | Confirmed | **Needs review** |
-| Confidence < 0.6 | Needs review | **Needs review** |
+| Situation                                                     | Design       | PesaIQ           |
+| ------------------------------------------------------------- | ------------ | ---------------- |
+| Confidence ≥ 0.6, nothing flagged                             | Confirmed    | **Confirmed**    |
+| Confidence ≥ 0.6, a field still flagged "check" and untouched | Confirmed    | **Needs review** |
+| Confidence < 0.6                                              | Needs review | **Needs review** |
 
 The brief says low-confidence data is never treated as verified, and in the second
 row nobody verified the flagged field. The button reads **"Save to review"** in that
@@ -304,20 +304,20 @@ score **68, Steady**.
 
 ### Departures from the prototype, and why
 
-| Prototype | PesaIQ | Why |
-|---|---|---|
-| Empty ledger scores 20, "Strained" | "No score yet" | A score built from no data misleads. |
-| Ignored records count toward everything | Left out of score, categories, providers | Same rule as every other total. |
-| "6-day streak", hard-coded | Consecutive local days with a save or review; hidden at 0 | It should be true. |
-| "Hello, Deo" | Time-of-day greeting | PesaIQ never asks for a name. |
-| Date line fixed at "Friday, 12 March 2026" (a Thursday) | Today's date | — |
-| Tip: "PesaIQ will tell you as you approach [a cap]" | No promise of an alert | There is no budget alert. |
-| Tip: "…ready for a loan or a tax filing" | "…ready when you need to show them" | No claim about lending or tax use. |
-| "One source carries N%" whenever there is income | Only when one source is a majority | "Most of your income" must be true. |
-| "1 records carry", lowercase sentence starts | Correct plurals and capitals | — |
-| Weight labelled "uzito" (Swahili leftover) | "weight" | English UI. |
-| Provider summary computed, never shown | Compact "By provider" card | The brief requires it. |
-| Review nudge and bell dot always shown | Only when something is waiting | "0 need review" is noise. |
+| Prototype                                               | PesaIQ                                                    | Why                                  |
+| ------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------ |
+| Empty ledger scores 20, "Strained"                      | "No score yet"                                            | A score built from no data misleads. |
+| Ignored records count toward everything                 | Left out of score, categories, providers                  | Same rule as every other total.      |
+| "6-day streak", hard-coded                              | Consecutive local days with a save or review; hidden at 0 | It should be true.                   |
+| "Hello, Deo"                                            | Time-of-day greeting                                      | PesaIQ never asks for a name.        |
+| Date line fixed at "Friday, 12 March 2026" (a Thursday) | Today's date                                              | —                                    |
+| Tip: "PesaIQ will tell you as you approach [a cap]"     | No promise of an alert                                    | There is no budget alert.            |
+| Tip: "…ready for a loan or a tax filing"                | "…ready when you need to show them"                       | No claim about lending or tax use.   |
+| "One source carries N%" whenever there is income        | Only when one source is a majority                        | "Most of your income" must be true.  |
+| "1 records carry", lowercase sentence starts            | Correct plurals and capitals                              | —                                    |
+| Weight labelled "uzito" (Swahili leftover)              | "weight"                                                  | English UI.                          |
+| Provider summary computed, never shown                  | Compact "By provider" card                                | The brief requires it.               |
+| Review nudge and bell dot always shown                  | Only when something is waiting                            | "0 need review" is noise.            |
 
 ### The streak
 
@@ -427,13 +427,13 @@ marked; none exist yet.
 
 ### Departures from the design, and why
 
-| Design | PesaIQ | Why |
-|---|---|---|
-| Edit shows "opens the field-by-field form" | A real editor; saving confirms the record | Reuses the Lab's `FieldRow` and money parsing, so "45,000" means the same everywhere |
-| Delete removes the record on one tap | Asks first, in-app | It cannot be undone; `Alert.alert` does nothing on web |
-| Delete leaves the source message | Deletes the message and its parse result too | Otherwise the SMS text, the most sensitive part, stays behind |
-| Source message shown raw, full phone number included | Phone and account numbers masked, "Show full numbers" on request | The brief: never expose full numbers unnecessarily |
-| — | Confirm needs an amount | Confirming says the record is right; one with no amount is not |
+| Design                                               | PesaIQ                                                           | Why                                                                                  |
+| ---------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Edit shows "opens the field-by-field form"           | A real editor; saving confirms the record                        | Reuses the Lab's `FieldRow` and money parsing, so "45,000" means the same everywhere |
+| Delete removes the record on one tap                 | Asks first, in-app                                               | It cannot be undone; `Alert.alert` does nothing on web                               |
+| Delete leaves the source message                     | Deletes the message and its parse result too                     | Otherwise the SMS text, the most sensitive part, stays behind                        |
+| Source message shown raw, full phone number included | Phone and account numbers masked, "Show full numbers" on request | The brief: never expose full numbers unnecessarily                                   |
+| —                                                    | Confirm needs an amount                                          | Confirming says the record is right; one with no amount is not                       |
 
 The stored message is never altered: masking is display-only
 (`utils/privacy.ts`), in the same format the extractor uses (`07** *** 678`,
@@ -467,3 +467,45 @@ lockfile's resolution, not a broken install.
 **On Windows, stop dev servers before installing.** The upgrade ran while a Metro
 dev server was watching `node_modules`. Metro then reported files as missing, and
 a clean `npm ci` was needed before everything resolved again.
+
+## Phase 1H — Review queue
+
+### Layout
+
+The design's screen: a "Cleared this week" ring beside the day streak, then one
+card per record that needs review. Each card has an initials tile, the amount, the
+provider and date, and a confidence pill. Below that come type chips, the fields to
+check as inputs (flagged ones outlined), and **Save & confirm** / **Ignore**. An
+empty queue shows "The queue is clear". Tapping a card's header opens the record's
+detail.
+
+### Real numbers, not the prototype's
+
+| Prototype                                 | PesaIQ                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| "2/7 cleared", hard-coded and capped at 7 | Confirm, correct and ignore actions since Monday 00:00 local, against the design's target of 7 (one constant) |
+| "6-day streak", hard-coded                | The same streak Home shows                                                                                    |
+
+Both are built from `processing_events`, so clearing processing history resets
+them.
+
+### Behaviour
+
+- **The fields asked** are the design's three (amount, counterparty, reference),
+  plus any other editable field the parser flagged, so nothing it was unsure about
+  goes unasked. The masked number is never an input; the type has chips (the
+  design's five, plus the record's own type if it is not one of them).
+- **Save & confirm** uses the detail editor's rules (`buildRecordPatch`): only real
+  changes count, money reads the same everywhere, and an amount is required. With
+  nothing changed, it simply confirms.
+- **Ignore** marks the record `IGNORED`: it stays in Records but leaves the queue,
+  the totals and the score. It is now logged as `TRANSACTION_IGNORED` (with no
+  content) and counts toward the streak, since reviewing is activity.
+
+### Resolved: "Very high" and yet "needs review"
+
+The overall score measures how much the parser **found**; a flag measures how sure
+it is about **one field**. A record could read "Very high · 98%" and still go to
+review. With fields flagged, the confidence now reads **"98% overall · 1 to
+check"**, in the check colour, on the Result and Detail screens. The scoring is
+unchanged, and with nothing flagged the label reads exactly as before.

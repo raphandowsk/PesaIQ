@@ -8,6 +8,7 @@ import { BackButton } from '../components/ui/BackButton';
 import { Button, Card, Screen, Text, toast } from '../components/ui';
 import { isTextEditable, viewDraft, type DraftEdits } from '../features/lab/draft';
 import { useLabStore } from '../features/lab/store';
+import { confidenceLabel } from '../features/review/queue';
 import type { ParseResult } from '../features/parser';
 import { colors, fonts, radius, shadow, space } from '../theme';
 import { TYPE_LABELS } from '../types/domain';
@@ -44,7 +45,6 @@ export default function Result() {
   if (!current) return <NothingToShow />;
 
   const view = viewDraft(current.draft, current.edits);
-  const pct = `${Math.round(view.confidence * 100)}%`;
 
   const onSave = async () => {
     if (!draft) return;
@@ -94,10 +94,12 @@ export default function Result() {
       : view.direction === 'in'
         ? { tint: colors.accent2Ramp[200], ink: colors.accent2Ramp[900] }
         : { tint: colors.accentRamp[200], ink: colors.accentRamp[900] };
-  const bandTone =
-    view.confidence >= 0.8
-      ? { tint: colors.accent2Ramp[300], ink: colors.accent2Ramp[900] }
-      : { tint: colors.accentRamp[300], ink: colors.accentRamp[900] };
+  // A record can score "Very high" overall and still have a field worth
+  // checking; the pill says so rather than reading as a contradiction.
+  const confidence = confidenceLabel(view.confidence, view.remainingLow.length, 'band-first');
+  const bandTone = confidence.needsCheck
+    ? { tint: colors.accentRamp[300], ink: colors.accentRamp[900] }
+    : { tint: colors.accent2Ramp[300], ink: colors.accent2Ramp[900] };
 
   const sign = view.direction === 'in' ? '+ ' : view.direction === 'out' ? `${MINUS} ` : '';
   const amountLabel = view.amount == null ? 'No amount' : `${sign}${formatTzs(view.amount)}`;
@@ -142,7 +144,7 @@ export default function Result() {
 
       <View
         accessible
-        accessibilityLabel={`${categoryLabel}. ${view.band} confidence, ${pct}. ${amountLabel}. ${subLabel}.`}
+        accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. ${amountLabel}. ${subLabel}.`}
         style={{
           backgroundColor: hero.tint,
           borderRadius: radius.lg,
@@ -153,7 +155,7 @@ export default function Result() {
       >
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           <Pill label={categoryLabel} tint={colors.surface} ink={hero.ink} />
-          <Pill label={`${view.band} · ${pct}`} tint={bandTone.tint} ink={bandTone.ink} />
+          <Pill label={confidence.text} tint={bandTone.tint} ink={bandTone.ink} />
         </View>
         <Text variant="display" numberOfLines={1} adjustsFontSizeToFit style={{ color: hero.ink }}>
           {amountLabel}

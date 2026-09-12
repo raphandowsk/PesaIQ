@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FieldRow } from '../../components/parser/FieldRow';
 import { BackButton } from '../../components/ui/BackButton';
 import { Button, Card, Icon, Screen, Text, toast } from '../../components/ui';
-import { bandFor } from '../../features/parser';
+import { confidenceLabel } from '../../features/review/queue';
 import { useAppStore, type Transaction } from '../../features/transactions';
 import {
   buildRecordPatch,
@@ -107,8 +107,10 @@ export default function RecordDetail() {
   const amountLabel = t.amount == null ? 'No amount' : `${sign}${formatTzs(t.amount)}`;
   const when = [t.transactionDate, t.transactionTime].filter(Boolean).join(' · ') || 'No date';
   const status = STATUS[t.status];
-  const pct = Math.round(t.confidence * 100);
-  const ringInk = t.confidence >= 0.8 ? colors.accent2Ramp[600] : colors.accentRamp[500];
+  // "74% overall · 1 to check" rather than a band that seems to contradict
+  // the record still needing review.
+  const confidence = confidenceLabel(t.confidence, t.lowFields.length, 'pct-first');
+  const ringInk = confidence.needsCheck ? colors.accentRamp[500] : colors.accent2Ramp[600];
 
   const run = async (key: Exclude<Busy, null>, action: () => Promise<void>, done: () => void) => {
     setBusy(key);
@@ -240,7 +242,7 @@ export default function RecordDetail() {
             marginBottom: space[2],
           }}
           accessible
-          accessibilityLabel={`Confidence ${pct}%, ${bandFor(t.confidence)}. Rules, no AI.`}
+          accessibilityLabel={`Confidence ${confidence.text}. Rules, no AI.`}
         >
           <View style={{ transform: [{ rotate: '-90deg' }] }}>
             <Svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`}>
@@ -267,7 +269,7 @@ export default function RecordDetail() {
           </View>
           <View style={{ flex: 1 }}>
             <Text variant="bodyMedium" style={{ fontFamily: fonts.heading }}>
-              {pct}% · {bandFor(t.confidence)}
+              {confidence.text}
             </Text>
             <Text variant="small" tone="muted">
               Confidence

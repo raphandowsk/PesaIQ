@@ -57,6 +57,8 @@ interface AppState {
   providers: SmsProvider[];
   /** When the user saved or reviewed something, newest first: the streak's source. */
   activity: string[];
+  /** When the user confirmed, corrected or ignored a record: "cleared this week". */
+  reviewedAt: string[];
 
   smsSource: ManualSmsSource;
 
@@ -118,11 +120,12 @@ export const useAppStore = create<AppState>((set, get) => {
   // streak's activity is refreshed alongside the records.
   const reload = async () => {
     const database = requireDb();
-    const [transactions, activity] = await Promise.all([
+    const [transactions, activity, reviewedAt] = await Promise.all([
       transactionRepository.list(database),
       processingEventRepository.activityTimestamps(database),
+      processingEventRepository.reviewTimestamps(database),
     ]);
-    set({ transactions, activity });
+    set({ transactions, activity, reviewedAt });
   };
 
   /** The message, its parse result and the transaction land together or not at all. */
@@ -168,6 +171,7 @@ export const useAppStore = create<AppState>((set, get) => {
     transactions: [],
     providers: [],
     activity: [],
+    reviewedAt: [],
     smsSource: new ManualSmsSource(),
 
     async initialize(deps = {}) {
@@ -179,16 +183,25 @@ export const useAppStore = create<AppState>((set, get) => {
 
         await seedDatabase(db, now());
 
-        const [settings, transactions, providers, activity] = await Promise.all([
+        const [settings, transactions, providers, activity, reviewedAt] = await Promise.all([
           settingsRepository.getAll(db),
           transactionRepository.list(db),
           providerRepository.list(db),
           processingEventRepository.activityTimestamps(db),
+          processingEventRepository.reviewTimestamps(db),
         ]);
 
         await get().smsSource.start();
 
-        set({ settings, transactions, providers, activity, ready: true, loading: false });
+        set({
+          settings,
+          transactions,
+          providers,
+          activity,
+          reviewedAt,
+          ready: true,
+          loading: false,
+        });
       } catch (e) {
         set({
           loading: false,
@@ -372,7 +385,16 @@ export const useAppStore = create<AppState>((set, get) => {
 
     async ignore(id) {
       const database = requireDb();
-      await transactionRepository.update(database, id, { status: 'IGNORED' }, now());
+      const timestamp = now();
+      await transactionRepository.update(database, id, { status: 'IGNORED' }, timestamp);
+      await processingEventRepository.record(database, {
+        id: makeId('evt'),
+        kind: 'TRANSACTION_IGNORED',
+        messageId: null,
+        transactionId: id,
+        detail: null,
+        createdAt: timestamp,
+      });
       await reload();
     },
 
@@ -436,8 +458,9 @@ export const useAppStore = create<AppState>((set, get) => {
 
     async clearProcessingHistory() {
       await processingEventRepository.removeAll(requireDb());
-      // The streak is built from that history, so it goes with it.
-      set({ activity: [] });
+      // The streak and "cleared this week" are built from that history, so
+      // they go with it.
+      set({ activity: [], reviewedAt: [] });
     },
 
     async clearDemoData() {

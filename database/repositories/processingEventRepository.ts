@@ -25,6 +25,14 @@ export const USER_ACTIVITY_KINDS: readonly ProcessingEventKind[] = [
   'DUPLICATE_DETECTED',
   'TRANSACTION_CONFIRMED',
   'TRANSACTION_CORRECTED',
+  'TRANSACTION_IGNORED',
+];
+
+/** Events that clear a record from the review queue: "cleared this week". */
+export const REVIEW_KINDS: readonly ProcessingEventKind[] = [
+  'TRANSACTION_CONFIRMED',
+  'TRANSACTION_CORRECTED',
+  'TRANSACTION_IGNORED',
 ];
 
 export interface ProcessingEvent {
@@ -44,6 +52,21 @@ interface EventRow {
   transaction_id: string | null;
   detail: string | null;
   created_at: string;
+}
+
+/** Timestamps of the given kinds, newest first. No content exists to return. */
+async function timestampsOf(
+  db: SqlDatabase,
+  kinds: readonly ProcessingEventKind[],
+  limit: number,
+): Promise<string[]> {
+  const marks = kinds.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<{ created_at: string }>(
+    `SELECT created_at FROM processing_events WHERE kind IN (${marks})
+     ORDER BY created_at DESC LIMIT ?`,
+    [...kinds, limit],
+  );
+  return rows.map((r) => r.created_at);
 }
 
 const toEvent = (row: EventRow): ProcessingEvent => ({
@@ -77,13 +100,12 @@ export const processingEventRepository = {
    * streak is built from these. Timestamps only; no content exists to return.
    */
   async activityTimestamps(db: SqlDatabase, limit = 500): Promise<string[]> {
-    const kinds = USER_ACTIVITY_KINDS.map(() => '?').join(', ');
-    const rows = await db.getAllAsync<{ created_at: string }>(
-      `SELECT created_at FROM processing_events WHERE kind IN (${kinds})
-       ORDER BY created_at DESC LIMIT ?`,
-      [...USER_ACTIVITY_KINDS, limit],
-    );
-    return rows.map((r) => r.created_at);
+    return timestampsOf(db, USER_ACTIVITY_KINDS, limit);
+  },
+
+  /** When the user confirmed, corrected or ignored a record, newest first. */
+  async reviewTimestamps(db: SqlDatabase, limit = 500): Promise<string[]> {
+    return timestampsOf(db, REVIEW_KINDS, limit);
   },
 
   async removeAll(db: SqlDatabase): Promise<number> {
