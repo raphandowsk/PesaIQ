@@ -143,3 +143,51 @@ input the difference is at most 0.003 and never changes a band.
   never treated as verified.
 - **No duplicate detection yet.** The reference is extracted for it; the check
   itself arrives with the repository in Phase 1C.
+
+## Real Mixx and LUKU layouts (2026-09-12)
+
+Built from messages the user supplied. Every name and number in the fixtures
+(`tests/fixtures/tz-messages.ts`) is invented; the fee and VAT figures are kept,
+because they are tariff amounts and the arithmetic checks rely on them.
+
+| Layout                                     | Signature                                                     | What is read                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Mixx "Umetuma kikamilifu ... kwenda kwa"   | "Jumla ya makato", "Risiti", "Kila Muamala ni Bao la Ushindi" | amount; recipient network, name and Lipa or phone number; total charges; VAT; balance; "Namba ya muamala"; receipt; date |
+| Mixx "Umetuma ... kwenda kwa mpokeaji wa"  | "Mixx" in the footer                                          | the same, with the fee as "Ada"                                                                                          |
+| Mixx "Malipo yamekamilika kwenda X, Kiasi" | "Kumbukumbu no."                                              | payee, amount, fee, VAT, reference                                                                                       |
+| LUKU receipt                               | "...KWH" and an itemised "TOTAL"                              | total, units, meter (masked), token, price before tax, VAT, EWURA and REA with their rates, debt collected, reference    |
+
+Mixx is now **EXPERIMENTAL**. The LUKU receipt's sender is left unrecognized
+until a message shows which wallet sent it.
+
+### Fees and taxes (`charges.ts`)
+
+- **Fee:** "Jumla ya makato", "Ada", "Ada ya kutoa" (a withdrawal), or "Fee",
+  "Charges", "Transaction cost".
+- **Taxes:** VAT, excise duty, government levy ("tozo"), EWURA and REA, each with
+  its rate when stated, and where it sits: inside the fee, inside the amount, or
+  on top of both.
+- **Checks:** a fee's VAT must be 18% of it. In every sample it is already inside
+  (fee × 18/118: 450 → 69, 495 → 76, 1,440 → 220); VAT on top (fee × 18%) is
+  also recognised. A receipt's lines must add up to its total, and each tax must
+  match its rate. A mismatch becomes a warning and flags the taxes for review.
+
+### Categories (`moneyCategory.ts`)
+
+`inferMoneyCategory` picks one of 13 spending and income categories from:
+
+- the type
+- the counterparty: HELABET → Betting; TOTALENERGIES or "service station" → Fuel
+  & transport; LUKU, TANESCO or DAWASA → Electricity & water
+- whether the recipient is a merchant: a Lipa number with no other clue → Food &
+  shopping
+
+A category the user picks is remembered for that recipient (`partyKey`: case,
+spacing and punctuation ignored) and applied to the next message.
+
+### Masking
+
+Numbers written as 255... are masked like local ones (`07** *** 123`). Lipa,
+till and meter numbers keep their last four digits. The LUKU token is kept on
+the record and shown only on request. It never appears in the parse fields (only
+its last four digits do), in the masked source-message view, or in an export.

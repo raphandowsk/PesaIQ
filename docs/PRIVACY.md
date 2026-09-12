@@ -62,3 +62,14 @@ Stage 2 would add Android SMS reading, which requires `READ_SMS` / `RECEIVE_SMS`
 sensitive permissions with their own Play Store review. That is a future decision
 with its own disclosure requirements; nothing here pre-approves it. The parsing and
 storage model above would not change: still local, still no upload by default.
+
+## Fees, taxes and categories (2026-09-12)
+
+- **LUKU tokens** are kept on the record so they can be entered again. They are
+  shown only after tapping **Show token**, are masked in the source-message view
+  until "Show full numbers", and are never exported.
+- **Remembered categories** store recipient names alongside the category chosen
+  for each. They stay on the device and are deleted with "Delete all
+  transactions". Settings → Remembered categories → **Forget** clears them on
+  their own.
+- Phone numbers written as 255... are masked like local ones.

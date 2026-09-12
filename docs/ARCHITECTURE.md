@@ -626,3 +626,63 @@ Both were found while verifying 1I in the browser:
 Jest now and then prints "a worker process has failed to exit gracefully" under
 parallel load. A full in-band run with `--detectOpenHandles` reports no open handles,
 so this is slow worker teardown, not a leak in the code under test.
+
+## Fees, taxes and categories (Stage 1 addition, 2026-09-12)
+
+Asked for after 1J, from real Mixx and LUKU messages. The parser side is
+documented in `PARSER_ENGINE.md`.
+
+### Data
+
+Migration v2 adds four columns to `transactions`:
+
+- `money_category`
+- `fee`
+- `taxes`: JSON tax lines
+- `details`: JSON holding the receipt, network, merchant flag, and LUKU units,
+  meter, token, price and debt
+
+It also adds a `category_rules` table (recipient → category) and marks Mixx
+EXPERIMENTAL. Older records keep working: when shown, their category comes from
+the same rules.
+
+### Money arithmetic (`features/transactions/money.ts`)
+
+Three figures always reconcile: **spent** (what the money bought) plus **fees &
+taxes** equals **total out** (what left the balance). For Mixx, 5,000 + 450 =
+5,450. For LUKU, whose taxes sit inside the total, 16,663.94 + 3,336.06 = 20,000.
+
+Fees are shown apart, as the user chose:
+
+- Home shows Received, **Spent** and Net. Net is after fees.
+- Category breakdowns count what was spent; fees and taxes have their own card.
+- The health score's "kept from income" uses total out, and the tips' cash share
+  uses spent. On the demo data the score stays 68. The demo transfer's own "Ada
+  TZS 1,000" now counts, so Net is 1,000 lower than the design canvas showed,
+  and low cash-out rounds to 43% instead of 42%.
+
+### Screens
+
+- **Home:** a "Fees & taxes this month" card opens `app/fees.tsx`. That screen
+  shows a period (this month, last month, all time), the total, and the total
+  split by type and by provider. The types are transaction fees, agent fees on
+  withdrawals, VAT, EWURA, REA and levies. It also lists the records. The lines
+  always add up to the total (`chargeLines`).
+- **Result:** a "Fees & taxes · Total out" line; Category, Fee and Taxes rows;
+  LUKU Units, Meter and Token, with the token masked.
+- **Detail:** Category and Fee rows, Receipt and "Sent to" rows, a Fees & taxes
+  card, and an Electricity card with **Show token**.
+- **Review and the editors:** a category picker (violet chips, so they read apart
+  from the lime type chips). The fee is editable.
+- **Settings:** Remembered categories, with **Forget**. Delete all transactions
+  forgets them too, because they hold recipient names.
+- **Export:**
+  - CSV gains Category, Fee, Taxes and Total out.
+  - JSON gains the category, the fee, the tax lines, the totals, the receipt,
+    the network and the LUKU details.
+  - Neither ever includes the token.
+
+### Remembered categories
+
+Only an explicit pick is remembered, in the Lab, on the Detail screen or in
+Review. A category the rules pick again after a type change is not.

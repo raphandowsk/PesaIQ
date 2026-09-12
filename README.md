@@ -21,7 +21,13 @@ saves it on the device. There is no native SMS reading, no account and no server
 - **Settings and Export:** delete all transactions, messages or processing history;
   export saved records as CSV or JSON to a folder you pick.
 
-Provider parsers are **demo rules**, checked only against invented, anonymized
+- **Fees, taxes and categories:** each record keeps its fee and every tax line
+  (VAT, EWURA, REA, levies), and what the money was for. Home shows fees and
+  taxes apart from spending, with a breakdown by type and provider. A category
+  you pick is remembered for that recipient.
+
+Mixx by Yas rules are **experimental**, built from real message layouts. The
+other provider parsers are **demo rules**, checked only against invented, anonymized
 sample messages. PesaIQ makes no claim of support for any real provider's
 messages, of app-store approval, or of regulatory compliance.
 
