@@ -34,7 +34,10 @@ export type IconName =
   | 'search'
   | 'message'
   | 'close'
-  | 'download';
+  | 'download'
+  | 'info'
+  | 'pause'
+  | 'play';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   back: (
@@ -157,6 +160,21 @@ const GLYPHS: Record<IconName, ReactNode> = {
       <Path d="M18 6L6 18" />
     </>
   ),
+  // The health card's "what builds it" tag.
+  info: (
+    <>
+      <Circle cx="12" cy="12" r="9" />
+      <Path d="M12 11v5" />
+      <Path d="M12 7.5h.01" />
+    </>
+  ),
+  pause: (
+    <>
+      <Path d="M9 6v12" />
+      <Path d="M15 6v12" />
+    </>
+  ),
+  play: <Path d="M8 5l11 7-11 7z" />,
 };
 
 export interface IconProps {

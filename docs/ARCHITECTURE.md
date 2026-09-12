@@ -286,9 +286,10 @@ toast is also announced to screen readers, since it is otherwise purely visual.
 
 ### Layout
 
-Greeting and date · health card (score ring, band, streak, received / sent / net) ·
-what builds the score · review nudge · spending / income by category · "Spend
-smarter" tips · "Earn more" tips · recent transactions · by provider · demo notice.
+Greeting and date · health card (score ring, band, streak, received / sent / net;
+tap the score for what builds it) · review nudge · spending / income by category ·
+"Spend smarter" tips · "Earn more" tips (one at a time, see the end of this file) ·
+recent transactions · by provider · demo notice.
 
 Every figure comes from pure functions in `features/insights/` over the saved
 records; the screen only lays them out.
@@ -709,6 +710,9 @@ records are left out, as they are everywhere else.
 
 - **Totals:** money in, spent, fees & taxes, and net (money in − spent − fees &
   taxes).
+- **Fees & taxes, split:** agent/operator fees (each fee less the VAT inside it,
+  `feeBeforeTaxOf`) and taxes (every tax line). The two add up to fees & taxes,
+  on screen and in the PDF.
 - **Breakdowns:** spending and income by category, and fees & taxes by type
   (`chargeLines`). Each line has its share and the same line in the period before.
   A line that has stopped since then is kept, at zero.
@@ -731,3 +735,18 @@ or account numbers, references or message text. Labels are HTML-escaped.
   - The browser does not say whether the file was saved.
 - **File name:** `pesaiq-summary-2026-09.pdf` for a month, or
   `pesaiq-summary-2026-09-01-to-2026-09-15.pdf` for a range.
+
+## Home: score info and tip carousels (2026-09-12)
+
+- **What builds your score** is no longer a card on Home. The score area of the
+  health card, marked with an info tag, opens it in a floating window
+  (`ScoreInfoModal`, a React Native `Modal`). A tap outside, the close button or
+  Android's back button closes it. The bars grow again on each opening.
+- **Tips** show one at a time in each section (`TipCarousel`). Swipe, tap a dot,
+  or let them move on every 6 seconds. Autoplay:
+  - stays off with reduce motion or a screen reader
+  - waits 12 seconds after the user moves the tips
+  - stops while Home is out of view
+  - has a pause button (WCAG 2.2.2).
+
+  The paging arithmetic is in `utils/carousel.ts`.

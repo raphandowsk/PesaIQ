@@ -8,7 +8,7 @@
  */
 import { categoryOf } from '../insights/categories';
 import { chargeLines } from '../insights/fees';
-import { chargesOf, spentOf } from '../transactions/money';
+import { chargesOf, feeBeforeTaxOf, spentOf } from '../transactions/money';
 import type { Transaction } from '../transactions/model';
 import { recordDate } from '../transactions/records';
 import { isCounted } from '../transactions/selectors';
@@ -19,8 +19,12 @@ export interface ReportTotals {
   received: number;
   /** What outgoing money paid for. */
   spent: number;
-  /** Fees and taxes. */
+  /** Fees and taxes: operatorFees + taxes. */
   charges: number;
+  /** What providers and agents charged: each fee less the VAT inside it. */
+  operatorFees: number;
+  /** Every tax line: VAT, excise, levies, EWURA, REA. */
+  taxes: number;
   /** received - spent - charges */
   net: number;
   /** Counted records in the period. */
@@ -71,8 +75,12 @@ function totalsOf(records: readonly Transaction[]): ReportTotals {
   let received = 0;
   let spent = 0;
   let charges = 0;
+  let operatorFees = 0;
+  let taxes = 0;
   for (const t of records) {
     charges += chargesOf(t);
+    operatorFees += feeBeforeTaxOf(t);
+    taxes += t.taxes.reduce((sum, x) => sum + x.amount, 0);
     if (t.amount == null) continue;
     if (isIncoming(t.type)) received += t.amount;
     else if (isOutgoing(t.type)) spent += spentOf(t);
@@ -81,6 +89,8 @@ function totalsOf(records: readonly Transaction[]): ReportTotals {
     received: cents(received),
     spent: cents(spent),
     charges: cents(charges),
+    operatorFees: cents(operatorFees),
+    taxes: cents(taxes),
     net: cents(received - spent - charges),
     count: records.length,
   };

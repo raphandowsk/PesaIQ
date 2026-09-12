@@ -56,6 +56,9 @@ export function reportHtml(report: MonthlyReport, generatedAt: Date): string {
     const shown = signed && now > 0 ? `+${tzs(now)}` : now < 0 ? `${MINUS}${tzs(-now)}` : tzs(now);
     return `<tr><td>${label}</td><td class="num strong">${shown}</td><td class="num muted">${tzs(before)}</td><td class="num">${changeText(now, before)}</td></tr>`;
   };
+  // A part of the row above it, set in.
+  const partRow = (label: string, now: number, before: number) =>
+    `<tr class="part"><td>${label}</td><td class="num">${tzs(now)}</td><td class="num muted">${tzs(before)}</td><td class="num">${changeText(now, before)}</td></tr>`;
 
   const notes = [
     report.demoCount > 0
@@ -81,6 +84,7 @@ export function reportHtml(report: MonthlyReport, generatedAt: Date): string {
   .muted { color: #605c72; }
   .banner { background: #eddffd; color: #33165a; padding: 8px 10px; border-radius: 8px; }
   .note { color: #4f2288; }
+  .part td:first-child { padding-left: 20px; color: #605c72; }
   footer { margin-top: 26px; color: #605c72; font-size: 10px; border-top: 1px solid #e6e4ef; padding-top: 8px; }
 </style></head><body>
 <h1>Monthly summary · ${escape(report.period.label)}</h1>
@@ -90,11 +94,13 @@ ${notes}
 ${totalsRow('Money in', t.received, p.received)}
 ${totalsRow('Spent', t.spent, p.spent)}
 ${totalsRow('Fees &amp; taxes', t.charges, p.charges)}
+${partRow('Agent/operator fees', t.operatorFees, p.operatorFees)}
+${partRow('Taxes', t.taxes, p.taxes)}
 ${totalsRow('Net', t.net, p.net, true)}
 </tbody></table>
 ${section('Spending by category', report.spending, prevLabel, 'Nothing spent in this period.')}
 ${section('Income by category', report.income, prevLabel, 'No income in this period.')}
 ${section('Fees & taxes by type', report.fees, prevLabel, 'No fees or taxes in this period.')}
-<footer>Made by PesaIQ on ${escape(formatLongDate(generatedAt))}, from messages saved on this phone. Net is money in minus spending, fees and taxes. This is a personal summary, not a bank statement or a tax document.</footer>
+<footer>Made by PesaIQ on ${escape(formatLongDate(generatedAt))}, from messages saved on this phone. Net is money in minus spending, fees and taxes. Agent/operator fees are the fees less the VAT inside them. This is a personal summary, not a bank statement or a tax document.</footer>
 </body></html>`;
 }

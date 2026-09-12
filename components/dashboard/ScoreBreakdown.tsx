@@ -3,7 +3,6 @@ import { Animated, View } from 'react-native';
 import type { Health } from '../../features/insights';
 import { explainHealth } from '../../features/insights/healthExplain';
 import { colors, fonts, radius, space } from '../../theme';
-import { Card } from '../ui/Card';
 import { Text } from '../ui/Text';
 import { useProgress } from './animation';
 
@@ -12,9 +11,10 @@ const BAR_HEIGHT = 9;
 const MIN_BAR_PCT = 3;
 
 /**
- * "What builds the score": each part's points out of its maximum, what it
+ * "What builds your score": each part's points out of its maximum, what it
  * measured in the user's own figures, then what the score means on the scale
- * and where the most points are still to be won.
+ * and where the most points are still to be won. Shown in `ScoreInfoModal`,
+ * which supplies the title.
  */
 export function ScoreBreakdown({
   health,
@@ -34,16 +34,11 @@ export function ScoreBreakdown({
   const explained = explainHealth(health);
 
   return (
-    <Card style={{ gap: space[3], marginBottom: space[3] }}>
-      <View style={{ gap: space[1] }}>
-        <Text variant="kicker" tone="muted" accessibilityRole="header">
-          What builds the score
-        </Text>
-        <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 17 }}>
-          Your {health.score} is these four parts added up. Each is scored from your saved records,
-          and counts for up to the points shown.
-        </Text>
-      </View>
+    <View style={{ gap: space[3] }}>
+      <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 17 }}>
+        Your {health.score} is these four parts added up. Each is scored from your saved records,
+        and counts for up to the points shown.
+      </Text>
 
       {explained.parts.map((part) => {
         const width = progress.interpolate({
@@ -172,6 +167,6 @@ export function ScoreBreakdown({
           A guide built from the records saved on this phone. It is not a credit score.
         </Text>
       </View>
-    </Card>
+    </View>
   );
 }

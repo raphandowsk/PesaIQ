@@ -422,14 +422,26 @@ function DayInput({
   );
 }
 
+interface Figure {
+  label: string;
+  now: number;
+  before: number;
+  shown: (n: number) => string;
+}
+
 function Totals({ report }: { report: NonNullable<ReturnType<typeof buildReport>> }) {
   const t = report.totals;
   const p = report.previousTotals;
-  const cells = [
+  const main: Figure[] = [
     { label: 'Money in', now: t.received, before: p.received, shown: formatTzs },
     { label: 'Spent', now: t.spent, before: p.spent, shown: formatTzs },
     { label: 'Fees & taxes', now: t.charges, before: p.charges, shown: formatTzs },
     { label: 'Net', now: t.net, before: p.net, shown: signedTzs },
+  ];
+  // Fees & taxes, split: they add up to the figure above.
+  const split: Figure[] = [
+    { label: 'Agent/operator fees', now: t.operatorFees, before: p.operatorFees, shown: formatTzs },
+    { label: 'Taxes', now: t.taxes, before: p.taxes, shown: formatTzs },
   ];
 
   return (
@@ -437,33 +449,52 @@ function Totals({ report }: { report: NonNullable<ReturnType<typeof buildReport>
       <Text variant="kicker" tone="muted">
         {t.count} {t.count === 1 ? 'record' : 'records'} · compared with {report.previous.label}
       </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: space[3] }}>
-        {cells.map((c) => {
-          const change =
-            c.now === 0 && c.before === 0
-              ? 'None in either period'
-              : `${changeText(c.now, c.before)} · was ${c.shown(c.before)}`;
-          return (
-            <View
-              key={c.label}
-              accessible
-              accessibilityLabel={`${c.label}: ${c.shown(c.now)}. ${change}.`}
-              style={{ width: '50%', paddingRight: space[2], gap: 2 }}
-            >
-              <Text variant="small" tone="muted">
-                {c.label}
-              </Text>
-              <Text variant="bodyMedium" style={{ fontFamily: fonts.heading, fontSize: 17 }}>
-                {c.shown(c.now)}
-              </Text>
-              <Text variant="small" tone="muted" style={{ fontSize: 12 }}>
-                {change}
-              </Text>
-            </View>
-          );
-        })}
+      <Figures figures={main} />
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: colors.divider,
+          paddingTop: space[3],
+          gap: space[2],
+        }}
+      >
+        <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 17 }}>
+          Inside fees & taxes. Agent/operator fees are the fees less the VAT inside them.
+        </Text>
+        <Figures figures={split} />
       </View>
     </Card>
+  );
+}
+
+function Figures({ figures }: { figures: Figure[] }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: space[3] }}>
+      {figures.map((c) => {
+        const change =
+          c.now === 0 && c.before === 0
+            ? 'None in either period'
+            : `${changeText(c.now, c.before)} · was ${c.shown(c.before)}`;
+        return (
+          <View
+            key={c.label}
+            accessible
+            accessibilityLabel={`${c.label}: ${c.shown(c.now)}. ${change}.`}
+            style={{ width: '50%', paddingRight: space[2], gap: 2 }}
+          >
+            <Text variant="small" tone="muted">
+              {c.label}
+            </Text>
+            <Text variant="bodyMedium" style={{ fontFamily: fonts.heading, fontSize: 17 }}>
+              {c.shown(c.now)}
+            </Text>
+            <Text variant="small" tone="muted" style={{ fontSize: 12 }}>
+              {change}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
   );
 }
 

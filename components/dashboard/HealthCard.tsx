@@ -1,4 +1,4 @@
-import { Easing, View } from 'react-native';
+import { Easing, Pressable, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import type { Health } from '../../features/insights';
@@ -23,13 +23,17 @@ export interface HealthCardProps {
   streak: number;
   animate: boolean;
   replay: number;
+  /** Opens what builds the score. The score and its info tag are the target. */
+  onExplain?: () => void;
 }
+
+const INFO_TAG = 20;
 
 /**
  * The lime health card: score ring, band and what it means, streak, and
  * received / spent / fees & taxes / net. Net is after fees and taxes.
  */
-export function HealthCard({ health, streak, animate, replay }: HealthCardProps) {
+export function HealthCard({ health, streak, animate, replay, onExplain }: HealthCardProps) {
   const progress = useProgress({
     animate,
     // A new score replays the count, as well as returning to the tab.
@@ -47,11 +51,11 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
   const positive = health.net >= 0;
   const net = `${positive ? '+' : MINUS}${formatAmount(Math.abs(health.net))}`;
   const spokenStreak = streak > 0 ? ` ${streak}-day streak.` : '';
+  const spokenScore = `Financial health ${health.score} out of 100, ${health.band}. ${BAND_MEANINGS[health.band]}${spokenStreak}`;
+  const spokenTotals = `Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}. Net ${net}.`;
 
   return (
     <View
-      accessible
-      accessibilityLabel={`Financial health ${health.score} out of 100, ${health.band}. ${BAND_MEANINGS[health.band]}${spokenStreak} Received ${formatTzs(health.received)}. Spent ${formatTzs(health.spent)}. Fees and taxes ${formatTzs(health.charges)}. Net ${net}.`}
       style={{
         backgroundColor: colors.accent2Ramp[200],
         borderRadius: radius.lg,
@@ -74,7 +78,21 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
         }}
       />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
+      <Pressable
+        onPress={onExplain}
+        disabled={!onExplain}
+        accessible
+        accessibilityRole={onExplain ? 'button' : undefined}
+        accessibilityLabel={
+          onExplain ? `${spokenScore} Opens what builds your score.` : spokenScore
+        }
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: space[4],
+          opacity: pressed ? 0.85 : 1,
+        })}
+      >
         <View style={{ width: RING, height: RING }}>
           <View style={{ transform: [{ rotate: '-90deg' }] }}>
             <Svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`}>
@@ -120,9 +138,30 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
         </View>
 
         <View style={{ flex: 1, minWidth: 0, gap: space[1] }}>
-          <Text variant="kicker" style={{ color: colors.accent2Ramp[800] }}>
-            Financial health
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[1] }}>
+            <Text variant="kicker" style={{ color: colors.accent2Ramp[800] }}>
+              Financial health
+            </Text>
+            {onExplain ? (
+              <View
+                style={{
+                  width: INFO_TAG,
+                  height: INFO_TAG,
+                  borderRadius: INFO_TAG / 2,
+                  backgroundColor: colors.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon
+                  name="info"
+                  size={INFO_TAG}
+                  color={colors.accent2Ramp[900]}
+                  strokeWidth={2.25}
+                />
+              </View>
+            ) : null}
+          </View>
           <Text variant="h2" style={{ color: colors.accent2Ramp[900] }}>
             {health.band}
           </Text>
@@ -150,10 +189,14 @@ export function HealthCard({ health, streak, animate, replay }: HealthCardProps)
             </View>
           ) : null}
         </View>
-      </View>
+      </Pressable>
 
       {/* Received − spent − fees & taxes = net: two rows so all four fit a phone. */}
-      <View style={{ gap: space[2], marginTop: space[4] }}>
+      <View
+        accessible
+        accessibilityLabel={spokenTotals}
+        style={{ gap: space[2], marginTop: space[4] }}
+      >
         <View style={{ flexDirection: 'row', gap: space[2] }}>
           <MiniStat
             label="Received"

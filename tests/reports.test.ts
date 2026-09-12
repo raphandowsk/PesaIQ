@@ -158,6 +158,8 @@ describe('buildReport', () => {
       received: 101000,
       spent: 23663.94,
       charges: 3786.06,
+      operatorFees: 381,
+      taxes: 3405.06,
       net: 73550,
       count: 5,
     });
@@ -165,9 +167,21 @@ describe('buildReport', () => {
       received: 0,
       spent: 58000,
       charges: 1500,
+      operatorFees: 1271,
+      taxes: 229,
       net: -59500,
       count: 2,
     });
+  });
+
+  it('splits fees & taxes into agent/operator fees (fees less their VAT) and taxes', () => {
+    // Mixx: fee 450 with VAT 69 inside it, so the operator charged 381.
+    expect(r.totals.operatorFees).toBe(381);
+    expect(r.totals.operatorFees + r.totals.taxes).toBeCloseTo(r.totals.charges, 2);
+    expect(r.previousTotals.operatorFees + r.previousTotals.taxes).toBeCloseTo(
+      r.previousTotals.charges,
+      2,
+    );
   });
 
   it('breaks spending down by category, with what stopped since last month', () => {
@@ -205,7 +219,15 @@ describe('buildReport', () => {
 
   it('is empty, not broken, for a period with nothing in it', () => {
     const empty = buildReport(RECORDS, { kind: 'month', year: 2026, month: 5 });
-    expect(empty.totals).toEqual({ received: 0, spent: 0, charges: 0, net: 0, count: 0 });
+    expect(empty.totals).toEqual({
+      received: 0,
+      spent: 0,
+      charges: 0,
+      operatorFees: 0,
+      taxes: 0,
+      net: 0,
+      count: 0,
+    });
     expect(empty.spending).toEqual([]);
   });
 });
@@ -234,6 +256,8 @@ describe('reportHtml', () => {
     expect(html).toContain('+TZS 73,550');
     expect(html).toContain('Electricity &amp; water');
     expect(html).toContain('Fees &amp; taxes by type');
+    expect(html).toContain('<td>Agent/operator fees</td><td class="num">TZS 381</td>');
+    expect(html).toContain('<td>Taxes</td><td class="num">TZS 3,405.06</td>');
   });
 
   it('says what it is not, and flags demo records and pending reviews', () => {

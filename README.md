@@ -11,8 +11,9 @@ saves it on the device. There is no native SMS reading, no account and no server
 
 - **Parser Lab:** paste an SMS, watch the pipeline run, see every extracted field
   with its confidence and "How we got this", correct anything, save.
-- **Home:** a financial health score built from your own records, what builds it,
-  spending and income by category, tips, recent records, providers.
+- **Home:** a financial health score built from your own records (tap it to see
+  what builds it), spending and income by category, tips that slide one at a
+  time, recent records, providers.
 - **Records:** search, filter by type, provider and period, grouped by day. Each
   record opens to its detail and source message (identifiers masked), where you can
   confirm, edit, send back to review or delete it.

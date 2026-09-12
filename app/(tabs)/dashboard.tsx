@@ -7,8 +7,8 @@ import { FeesCard } from '../../components/dashboard/FeesCard';
 import { HealthCard } from '../../components/dashboard/HealthCard';
 import { ProviderSummary } from '../../components/dashboard/ProviderSummary';
 import { ReportCard } from '../../components/dashboard/ReportCard';
-import { ScoreBreakdown } from '../../components/dashboard/ScoreBreakdown';
-import { TipCard } from '../../components/dashboard/TipCard';
+import { ScoreInfoModal } from '../../components/dashboard/ScoreInfoModal';
+import { TipCarousel } from '../../components/dashboard/TipCarousel';
 import { TransactionListItem } from '../../components/transactions/TransactionListItem';
 import { Button, Card, Icon, Screen, Text, toast, type IconName } from '../../components/ui';
 import {
@@ -48,6 +48,9 @@ export default function Dashboard() {
 
   const [mode, setMode] = useState<CategoryMode>('spend');
   const [removing, setRemoving] = useState(false);
+  const [scoreInfoOpen, setScoreInfoOpen] = useState(false);
+  // Counts openings, so the score bars grow again each time.
+  const [scoreInfoOpens, setScoreInfoOpens] = useState(0);
   // Each visit to Home replays the count-up and bars, as the design does, and
   // refreshes the clock that the greeting and the streak read.
   const [visit, setVisit] = useState(0);
@@ -143,8 +146,23 @@ export default function Dashboard() {
 
       {health ? (
         <>
-          <HealthCard health={health} streak={streak} animate={animate} replay={visit} />
-          <ScoreBreakdown health={health} animate={animate} replay={visit} />
+          <HealthCard
+            health={health}
+            streak={streak}
+            animate={animate}
+            replay={visit}
+            onExplain={() => {
+              setScoreInfoOpens((n) => n + 1);
+              setScoreInfoOpen(true);
+            }}
+          />
+          <ScoreInfoModal
+            visible={scoreInfoOpen}
+            onClose={() => setScoreInfoOpen(false)}
+            health={health}
+            animate={animate}
+            replay={scoreInfoOpens}
+          />
         </>
       ) : (
         <NoScoreYet />
@@ -169,17 +187,13 @@ export default function Dashboard() {
 
       {spendList.length > 0 ? (
         <Section title="Spend smarter" subtitle="Tips drawn from your own transactions">
-          {spendList.map((tip) => (
-            <TipCard key={tip.title} tip={tip} tone="spend" />
-          ))}
+          <TipCarousel tips={spendList} tone="spend" autoplay={animate} />
         </Section>
       ) : null}
 
       {earnList.length > 0 ? (
         <Section title="Earn more" subtitle="And keep it easy to trace">
-          {earnList.map((tip) => (
-            <TipCard key={tip.title} tip={tip} tone="earn" />
-          ))}
+          <TipCarousel tips={earnList} tone="earn" autoplay={animate} />
         </Section>
       ) : null}
 

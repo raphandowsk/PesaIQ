@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { Tip } from '../../features/insights';
 import { colors, fonts, radius, space } from '../../theme';
@@ -30,21 +30,32 @@ const TONES: Record<
 const ICON_CIRCLE = 36;
 
 /** One tip: violet for spending, lime for income, with the figure behind it. */
-export function TipCard({ tip, tone }: { tip: Tip; tone: 'spend' | 'earn' }) {
+export function TipCard({
+  tip,
+  tone,
+  style,
+}: {
+  tip: Tip;
+  tone: 'spend' | 'earn';
+  style?: StyleProp<ViewStyle>;
+}) {
   const t = TONES[tone];
 
   return (
     <View
       accessible
       accessibilityLabel={`${tip.title}. ${tip.body} ${tip.why}.`}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: space[3],
-        backgroundColor: t.bg,
-        borderRadius: radius.lg,
-        padding: space[4],
-      }}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: space[3],
+          backgroundColor: t.bg,
+          borderRadius: radius.lg,
+          padding: space[4],
+        },
+        style,
+      ]}
     >
       <View
         style={{
