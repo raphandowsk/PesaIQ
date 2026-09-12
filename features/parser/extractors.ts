@@ -149,22 +149,40 @@ export interface ExtractedDate {
  * Stage 1 limitation rather than an oversight.
  */
 export function extractDate(text: string): ExtractedDate {
-  const dateMatch = /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(text);
-  const timeMatch = /\b(\d{1,2}:\d{2})\b/.exec(text);
-  const time = timeMatch ? timeMatch[1] : null;
+  // The first clock reading that can exist. "25:61" is skipped, not passed on.
+  const time =
+    [...text.matchAll(/\b(\d{1,2}):(\d{2})\b/g)].find(
+      ([, h, m]) => Number(h) < 24 && Number(m) < 60,
+    )?.[0] ?? null;
 
-  if (!dateMatch) {
-    return {
-      date: null,
-      time,
-      confidence: 0,
-      warning: 'No date in the message - capture time will be used instead.',
-    };
+  let sawDate = false;
+  for (const [, day, month, year] of text.matchAll(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/g)) {
+    sawDate = true;
+    const date = realDate(day, month, year);
+    if (date) return { date, time, confidence: 0.88 };
   }
 
-  const day = String(dateMatch[1]).padStart(2, '0');
-  const month = MONTHS[Number(dateMatch[2]) - 1] ?? '?';
-  const year = `20${String(dateMatch[3]).slice(-2)}`;
+  return {
+    date: null,
+    time,
+    confidence: 0,
+    warning: sawDate
+      ? 'The date in the message is not a real date - capture time will be used instead.'
+      : 'No date in the message - capture time will be used instead.',
+  };
+}
 
-  return { date: `${day} ${month} ${year}`, time, confidence: 0.88 };
+/**
+ * "12 Mar 2026", or null for a date that cannot exist (31/02, 00/05, month 13)
+ * or a three-digit year. A two-digit year is this century; four digits are
+ * taken as written.
+ */
+function realDate(d: string, m: string, y: string): string | null {
+  if (y.length === 3) return null;
+  const year = y.length === 4 ? Number(y) : 2000 + Number(y);
+  const month = Number(m);
+  const day = Number(d);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth) return null;
+  return `${String(day).padStart(2, '0')} ${MONTHS[month - 1]} ${year}`;
 }

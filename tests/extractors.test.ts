@@ -165,8 +165,38 @@ describe('extractDate', () => {
     expect(extractDate('on 5/07/26').date).toBe('05 Jul 2026');
   });
 
-  it('marks an out-of-range month rather than inventing one', () => {
-    expect(extractDate('on 12/99/26').date).toBe('12 ? 2026');
+  it('rejects a date that cannot exist rather than inventing one', () => {
+    for (const text of [
+      'on 12/99/26',
+      'on 31/02/26',
+      'on 00/05/26',
+      'on 29/02/25',
+      'on 12/03/026',
+    ]) {
+      const r = extractDate(text);
+      expect(r.date).toBeNull();
+      expect(r.confidence).toBe(0);
+      expect(r.warning).toMatch(/not a real date/);
+    }
+  });
+
+  it('accepts 29 February in a leap year', () => {
+    expect(extractDate('on 29/02/28').date).toBe('29 Feb 2028');
+  });
+
+  it('keeps a four-digit year as written', () => {
+    expect(extractDate('on 12/03/2026').date).toBe('12 Mar 2026');
+    expect(extractDate('on 12/03/1999').date).toBe('12 Mar 1999');
+  });
+
+  it('skips an impossible date to find a real one', () => {
+    expect(extractDate('code 45/99/26 on 12/03/26').date).toBe('12 Mar 2026');
+  });
+
+  it('drops a clock reading that cannot exist', () => {
+    expect(extractDate('at 25:61').time).toBeNull();
+    expect(extractDate('at 99:99 then 14:22').time).toBe('14:22');
+    expect(extractDate('at 00:00').time).toBe('00:00');
   });
 
   it('returns the time even when there is no date', () => {
