@@ -103,6 +103,7 @@ function ProviderChip({
       onPress={onToggle}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
+      aria-checked={selected}
       accessibilityLabel={name}
       style={({ pressed }) => ({
         minHeight: MIN_TOUCH,

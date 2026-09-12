@@ -41,6 +41,7 @@ export const toast = (message: string) => useToastStore.getState().show(message)
 
 /** Keeps the toast clear of the tab bar. */
 const TAB_BAR_CLEARANCE = 72;
+const TOAST_LAYER = 1000;
 
 /** Rendered once, at the root. Never intercepts touches. */
 export function Toast() {
@@ -54,6 +55,9 @@ export function Toast() {
       style={{
         pointerEvents: 'none',
         position: 'absolute',
+        // Above any screen: without it, a pushed screen (Export, on web) can
+        // paint over the toast and the confirmation is never seen.
+        zIndex: TOAST_LAYER,
         left: space[4],
         right: space[4],
         bottom: insets.bottom + TAB_BAR_CLEARANCE,

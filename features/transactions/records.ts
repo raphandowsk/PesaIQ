@@ -62,6 +62,15 @@ const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', '
  * carried no date, or the user retyped it into something unreadable.
  */
 export function recordDate(t: Transaction): Date {
+  return parsedRecordDate(t) ?? new Date(t.createdAt);
+}
+
+/**
+ * Only the date read from the message: null when it carried none, or it was
+ * retyped into something unreadable. Export uses this, so a missing date stays
+ * an empty cell instead of quietly becoming the day it was saved.
+ */
+export function parsedRecordDate(t: Transaction): Date | null {
   const m = /^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\s+(\d{4})$/.exec((t.transactionDate ?? '').trim());
   if (m) {
     const day = Number(m[1]);
@@ -77,7 +86,7 @@ export function recordDate(t: Transaction): Date {
     // Rejects impossible dates, which Date would otherwise roll over (31 Feb).
     if (month >= 0 && !Number.isNaN(d.getTime()) && d.getDate() === day) return d;
   }
-  return new Date(t.createdAt);
+  return null;
 }
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());

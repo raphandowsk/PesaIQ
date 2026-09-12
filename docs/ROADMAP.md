@@ -5,18 +5,18 @@
 Paste a financial SMS, parse it, confirm or edit it, save it locally.
 Must run in Expo Go. No native modules. No Android Studio.
 
-| Phase | Scope | Status |
-|---|---|---|
-| **1A** | Foundation: Expo + Router + TS, theme tokens, fonts, UI primitives, lint/format/test, docs | **Done** — 2026-09-11 |
-| **1B** | Parser core: normalizer, classifier, generic parser, confidence, samples, Zod — tests first | **Done** — 2026-09-11 |
+| Phase  | Scope                                                                                            | Status                |
+| ------ | ------------------------------------------------------------------------------------------------ | --------------------- |
+| **1A** | Foundation: Expo + Router + TS, theme tokens, fonts, UI primitives, lint/format/test, docs       | **Done** — 2026-09-11 |
+| **1B** | Parser core: normalizer, classifier, generic parser, confidence, samples, Zod — tests first      | **Done** — 2026-09-11 |
 | **1C** | Data layer: SQLite schema, migrations, repositories, demo seed, `ManualSmsSource`, Zustand store | **Done** — 2026-09-11 |
-| **1D** | Onboarding: welcome, how it works, privacy, senders picker, setup | **Done** — 2026-09-11 |
-| **1E** | Parser Lab + Result: paste, samples, pipeline, per-field edit, "How we got this", save | **Done** — 2026-09-11 |
-| **1F** | Dashboard: health ring, factor bars, in/out/net, category toggle, tips, providers, recent | **Done** — 2026-09-11 |
-| **1G** | Records + Detail: search, filters, date groups, masking, confirm/edit/incorrect/delete | **Done** — 2026-09-12 |
-| **1H** | Review queue: progress ring, streak, type chips, low-field inputs, confirm/ignore | **Done** — 2026-09-12 |
-| **1I** | Settings + Export + Privacy: toggles, actions, CSV/JSON export, delete-all | Next |
-| **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint | |
+| **1D** | Onboarding: welcome, how it works, privacy, senders picker, setup                                | **Done** — 2026-09-11 |
+| **1E** | Parser Lab + Result: paste, samples, pipeline, per-field edit, "How we got this", save           | **Done** — 2026-09-11 |
+| **1F** | Dashboard: health ring, factor bars, in/out/net, category toggle, tips, providers, recent        | **Done** — 2026-09-11 |
+| **1G** | Records + Detail: search, filters, date groups, masking, confirm/edit/incorrect/delete           | **Done** — 2026-09-12 |
+| **1H** | Review queue: progress ring, streak, type chips, low-field inputs, confirm/ignore                | **Done** — 2026-09-12 |
+| **1I** | Settings + Export + Privacy: toggles, actions, CSV/JSON export, delete-all                       | **Done** — 2026-09-12 |
+| **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint            | Next                  |
 
 ### Definition of done
 

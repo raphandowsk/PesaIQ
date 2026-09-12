@@ -509,3 +509,57 @@ it is about **one field**. A record could read "Very high · 98%" and still go t
 review. With fields flagged, the confidence now reads **"98% overall · 1 to
 check"**, in the check colour, on the Result and Detail screens. The scoring is
 unchanged, and with nothing flagged the label reads exactly as before.
+
+## Phase 1I — Settings, export and privacy
+
+### Settings
+
+The design's groups, in order: Processing, Privacy, AI · fallback, Providers,
+Data, then the Stage 1 card with **Replay onboarding →**.
+
+| Row                                           | Behaviour                                                                                                                                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Automatic processing, Cloud sync, AI fallback | Switches shown **locked off**. None exists in Stage 1, so a switch that could be turned on would promise something that does not happen (a "Cloud sync: on" suggests a backup). Each says why.                  |
+| SMS source, On-device parsing, AI provider    | Status tags, as designed.                                                                                                                                                                                       |
+| Providers                                     | From the registry: maturity tag (Demo / Experimental / Supported) and whether the user watches it. Never labelled beyond its maturity.                                                                          |
+| Delete all transactions                       | Removes every record **and its source message** (the 1G rule, applied in bulk), in one database transaction. Also turns demo data off, since seeding would otherwise bring the samples back on the next launch. |
+| Delete all messages                           | Removes the source text; parse results cascade and records keep their data with no source.                                                                                                                      |
+| Clear processing history                      | As before; the streak and "cleared this week" reset with it.                                                                                                                                                    |
+| Remove demo data                              | As before. Shown only while demo data is on.                                                                                                                                                                    |
+
+Every destructive row asks first, in place ("Delete permanently" / "Keep"), and
+reports what happened in a toast.
+
+### Export
+
+`features/export/format.ts` is pure; `services/export/saveExport` writes.
+
+- **Format:** CSV (the brief's header: `Date,Type,Provider,Amount,Currency,Sender,Reference,Confidence`)
+  or JSON (every field worth keeping, plus notes saying what is not included).
+- **Range:** 7 days, 30 days or All, measured the same way as Records' periods.
+- **What goes out:** saved records only. Demo samples are left out and counted on
+  screen: a CSV has no column to mark them, so in a spreadsheet they would pass for
+  real. Source messages are never exported; identifiers stay masked.
+- **CSV safety:** RFC 4180 quoting with CRLF line endings, a UTF-8 BOM so Excel
+  reads names correctly, and cells starting with `= + - @` prefixed with `'`. Those
+  values come from SMS text anyone can send, and a spreadsheet would run them as
+  formulas.
+- **Dates:** ISO `YYYY-MM-DD`, and empty when the message carried no date, rather
+  than quietly using the day it was saved (`parsedRecordDate`).
+- **Saving:** on Android, `Directory.pickDirectoryAsync()` (the system folder
+  picker) and `createFile`, so the file lands where the user chose and nothing is
+  shared. On the web, a browser download. Cancelling the picker saves nothing.
+  `expo-file-system` became a direct dependency; it ships in Expo Go.
+
+### Fixed along the way
+
+Both were found while verifying 1I in the browser:
+
+- **Checked state on web.** react-native-web does not carry
+  `accessibilityState.checked` over to `aria-checked`, so a screen reader could not
+  tell which type chip, provider, format or range was selected, or whether a switch
+  was on. Every checkable control now sets `aria-checked` as well (Review chips, the
+  Lab's type picker, onboarding providers, Export, `Switch`).
+- **Toast hidden behind pushed screens.** The toast had no z-order, so on web the
+  Export screen painted over it and "Saved …" was never seen. It now sits on its own
+  layer above every screen.

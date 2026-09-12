@@ -99,9 +99,12 @@ interface AppState {
   /** Send the user back through onboarding: Settings -> Replay onboarding. */
   resetOnboarding(): Promise<void>;
 
-  deleteAllTransactions(): Promise<void>;
-  deleteAllMessages(): Promise<void>;
-  clearProcessingHistory(): Promise<void>;
+  /** Every record, with its source message. Returns how many records went. */
+  deleteAllTransactions(): Promise<number>;
+  /** Every stored source message; records are kept. Returns how many went. */
+  deleteAllMessages(): Promise<number>;
+  /** Returns how many events went. */
+  clearProcessingHistory(): Promise<number>;
   clearDemoData(): Promise<void>;
 }
 
@@ -448,19 +451,37 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async deleteAllTransactions() {
-      await transactionRepository.removeAll(requireDb());
+      const database = requireDb();
+      let removed = 0;
+
+      // Records and their source text go together or not at all: the single
+      // delete's rule, in bulk. Demo data is switched off too, or seeding would
+      // bring the samples back on the next launch.
+      await database.withTransactionAsync(async () => {
+        await messageRepository.removeReferencedByTransactions(database);
+        removed = await transactionRepository.removeAll(database);
+        await settingsRepository.set(database, 'demoDataEnabled', false, now());
+      });
+
+      set({ settings: await settingsRepository.getAll(database) });
       await reload();
+      return removed;
     },
 
     async deleteAllMessages() {
-      await messageRepository.removeAll(requireDb());
+      const removed = await messageRepository.removeAll(requireDb());
+      // Parse results cascade and records lose their link; reload so nothing in
+      // memory still points at a message that is gone.
+      await reload();
+      return removed;
     },
 
     async clearProcessingHistory() {
-      await processingEventRepository.removeAll(requireDb());
+      const removed = await processingEventRepository.removeAll(requireDb());
       // The streak and "cleared this week" are built from that history, so
       // they go with it.
       set({ activity: [], reviewedAt: [] });
+      return removed;
     },
 
     async clearDemoData() {

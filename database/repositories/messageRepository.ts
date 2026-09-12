@@ -88,4 +88,13 @@ export const messageRepository = {
     const r = await db.runAsync('DELETE FROM messages');
     return r.changes;
   },
+
+  /** Messages some record came from: they go when every record is deleted. */
+  async removeReferencedByTransactions(db: SqlDatabase): Promise<number> {
+    const r = await db.runAsync(
+      `DELETE FROM messages WHERE id IN
+         (SELECT source_message_id FROM transactions WHERE source_message_id IS NOT NULL)`,
+    );
+    return r.changes;
+  },
 };

@@ -33,7 +33,8 @@ export type IconName =
   | 'trash'
   | 'search'
   | 'message'
-  | 'close';
+  | 'close'
+  | 'download';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   back: (
@@ -43,6 +44,13 @@ const GLYPHS: Record<IconName, ReactNode> = {
     </>
   ),
   shield: <Path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />,
+  download: (
+    <>
+      <Path d="M12 4v11" />
+      <Path d="M7 11l5 5 5-5" />
+      <Path d="M5 20h14" />
+    </>
+  ),
   check: <Path d="M5 13l4 4 10-10" />,
   home: (
     <>

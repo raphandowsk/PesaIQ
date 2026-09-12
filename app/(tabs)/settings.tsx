@@ -1,106 +1,323 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 
-import { Button, Card, Screen, Tag, Text } from '../../components/ui';
+import { ConfirmPanel, SettingRow, SettingsGroup } from '../../components/settings/SettingsList';
+import { Button, Screen, Tag, Text, toast } from '../../components/ui';
+import { Switch } from '../../components/ui/Switch';
 import { useAppStore } from '../../features/transactions';
-import { space } from '../../theme';
+import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
+import type { ProviderMaturity } from '../../types/domain';
 
-type Busy = 'replay' | 'demo' | null;
+type DataAction = 'transactions' | 'messages' | 'history' | 'demo';
+type Busy = DataAction | 'replay' | null;
+
+const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
+
+// Never more than the registry says: a demo parser is labelled a demo.
+const MATURITY: Record<ProviderMaturity, { tag: string; rules: string }> = {
+  DEMO: { tag: 'Demo', rules: 'demo rules' },
+  EXPERIMENTAL: { tag: 'Experimental', rules: 'experimental rules' },
+  SUPPORTED: { tag: 'Supported', rules: 'validated rules' },
+};
+
+const FAILED = 'That could not be completed. Nothing was changed.';
 
 /**
- * Interim Settings. Replay onboarding and Remove demo data are real — the first
- * is what makes onboarding testable more than once on a device. Toggles,
- * providers, export and deletion arrive in 1I.
+ * Settings, grouped as in the design. Anything that deletes asks first, in
+ * place. Automatic processing, cloud sync and AI fallback do not exist in
+ * Stage 1, so their switches are shown locked off rather than pretending.
  */
 export default function Settings() {
-  const resetOnboarding = useAppStore((s) => s.resetOnboarding);
+  const settings = useAppStore((s) => s.settings);
+  const providers = useAppStore((s) => s.providers);
+  const recordCount = useAppStore((s) => s.transactions.length);
+  const deleteAllTransactions = useAppStore((s) => s.deleteAllTransactions);
+  const deleteAllMessages = useAppStore((s) => s.deleteAllMessages);
+  const clearProcessingHistory = useAppStore((s) => s.clearProcessingHistory);
   const clearDemoData = useAppStore((s) => s.clearDemoData);
-  const demoOn = useAppStore((s) => s.settings.demoDataEnabled);
+  const resetOnboarding = useAppStore((s) => s.resetOnboarding);
 
+  const [confirming, setConfirming] = useState<DataAction | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const run = async (key: Exclude<Busy, null>, action: () => Promise<void>) => {
+  const run = async (key: Exclude<Busy, null>, action: () => Promise<string | null>) => {
     setBusy(key);
     setError(null);
     try {
-      await action();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'That change could not be saved.');
+      const done = await action();
+      setConfirming(null);
+      if (done) toast(done);
+    } catch {
+      setError(FAILED);
     } finally {
       setBusy(null);
     }
   };
 
+  const ACTIONS: Record<DataAction, { ask: string; confirm: string; go: () => Promise<string> }> = {
+    transactions: {
+      ask: `Delete all ${recordCount} ${recordCount === 1 ? 'record' : 'records'}? Their source messages go with them. This cannot be undone.`,
+      confirm: 'Delete permanently',
+      go: async () => {
+        const n = await deleteAllTransactions();
+        return `${n} ${n === 1 ? 'record' : 'records'} deleted, with their messages.`;
+      },
+    },
+    messages: {
+      ask: 'Delete every stored source message? Your records stay, but their original text can no longer be shown. This cannot be undone.',
+      confirm: 'Delete permanently',
+      go: async () => {
+        await deleteAllMessages();
+        return 'Source messages deleted. Your records are kept.';
+      },
+    },
+    history: {
+      ask: 'Clear parse events and corrections? Your streak and "cleared this week" start again from zero.',
+      confirm: 'Clear history',
+      go: async () => {
+        await clearProcessingHistory();
+        return 'Processing history cleared.';
+      },
+    },
+    demo: {
+      ask: 'Remove the demo sample records? Records you saved are kept.',
+      confirm: 'Remove demo data',
+      go: async () => {
+        await clearDemoData();
+        return 'Demo data removed.';
+      },
+    },
+  };
+
+  const ask = (key: DataAction) => {
+    setError(null);
+    setConfirming(key);
+  };
+
+  /** The row's button, or its confirmation once tapped. */
+  const actionRow = (
+    key: DataAction,
+    label: string,
+    sub: string,
+    buttonLabel: string,
+    opts: { danger?: boolean; disabled?: boolean } = {},
+  ) => (
+    <SettingRow
+      label={label}
+      sub={sub}
+      right={
+        confirming === key ? null : (
+          <Button
+            label={buttonLabel}
+            accessibilityLabel={`${buttonLabel}: ${label}`}
+            variant={opts.danger ? 'danger' : 'secondary'}
+            disabled={busy !== null || opts.disabled}
+            onPress={() => ask(key)}
+          />
+        )
+      }
+    >
+      {confirming === key ? (
+        <ConfirmPanel
+          message={ACTIONS[key].ask}
+          confirmLabel={ACTIONS[key].confirm}
+          busy={busy === key}
+          onConfirm={() => void run(key, ACTIONS[key].go)}
+          onCancel={() => setConfirming(null)}
+        />
+      ) : null}
+    </SettingRow>
+  );
+
   const replay = () =>
     run('replay', async () => {
       await resetOnboarding();
       router.replace('/');
+      return null;
     });
 
   return (
     <Screen scroll>
-      <View style={{ paddingTop: space[6], gap: space[2] }}>
-        <Text variant="title">Settings</Text>
-        <Tag label="Preview · full settings in 1I" tone="neutral" />
+      <View style={{ paddingTop: space[4], marginBottom: space[4] }}>
+        <Text variant="h1" accessibilityRole="header" style={{ fontSize: 26 }}>
+          Settings
+        </Text>
       </View>
 
       {error ? (
         <Text
           variant="small"
           tone="accent"
-          style={{ marginTop: space[3] }}
+          style={{ marginBottom: space[3] }}
           accessibilityLiveRegion="polite"
         >
           {error}
         </Text>
       ) : null}
 
-      <View style={{ marginTop: space[4], gap: space[3] }}>
-        <Card style={{ gap: space[2] }}>
-          <Text variant="bodyMedium">Replay onboarding</Text>
-          <Text variant="small" tone="muted">
-            See the welcome, privacy and provider screens again. Your records are kept.
-          </Text>
-          <Button
-            label="Replay"
-            variant="secondary"
-            loading={busy === 'replay'}
-            disabled={busy !== null}
-            onPress={() => void replay()}
-            style={{ alignSelf: 'flex-start' }}
-          />
-        </Card>
-
-        <Card style={{ gap: space[2] }}>
-          <Text variant="bodyMedium">Demo data</Text>
-          <Text variant="small" tone="muted">
-            {demoOn
-              ? 'Sample records are included. They are invented, not real messages.'
-              : 'Removed. Only records you saved remain.'}
-          </Text>
-          {demoOn ? (
-            <Button
-              label="Remove demo data"
-              variant="danger"
-              loading={busy === 'demo'}
-              disabled={busy !== null}
-              onPress={() => void run('demo', clearDemoData)}
-              style={{ alignSelf: 'flex-start' }}
+      <SettingsGroup title="Processing">
+        <SettingRow
+          label="Automatic processing"
+          sub="Off in Stage 1. Messages are analyzed only when you paste them."
+          right={
+            <Switch
+              value={settings.automaticProcessing}
+              disabled
+              accessibilityLabel="Automatic processing. Not available in Stage 1."
             />
-          ) : null}
-        </Card>
+          }
+        />
+        <SettingRow
+          label="SMS source"
+          sub="Pasted messages only. No SMS is read from your phone."
+          right={<Tag label="Stage 1" />}
+        />
+        <SettingRow
+          label="Cloud sync"
+          sub="Not available. Records stay on this device only."
+          right={
+            <Switch
+              value={settings.cloudSync}
+              disabled
+              accessibilityLabel="Cloud sync. Not available; records stay on this device."
+            />
+          }
+        />
+      </SettingsGroup>
 
-        <Card style={{ gap: space[1] }}>
-          <Text variant="kicker" tone="muted">
-            PesaIQ · Stage 1
+      <SettingsGroup title="Privacy">
+        <SettingRow
+          label="On-device parsing"
+          sub="Rules run locally; full messages are never logged."
+          right={<Tag label="On" tone="positive" />}
+        />
+        {actionRow(
+          'transactions',
+          'Delete all transactions',
+          recordCount > 0
+            ? 'Removes every saved record, with its source message.'
+            : 'No records are saved.',
+          'Delete',
+          { danger: true, disabled: recordCount === 0 },
+        )}
+        {actionRow(
+          'messages',
+          'Delete all messages',
+          'Removes stored source messages. Records are kept.',
+          'Delete',
+          { danger: true },
+        )}
+        {actionRow(
+          'history',
+          'Clear processing history',
+          'Removes parse events and corrections.',
+          'Clear',
+        )}
+      </SettingsGroup>
+
+      <SettingsGroup title="AI · fallback">
+        <SettingRow
+          label="AI fallback parsing"
+          sub="Off. No AI provider is connected in Stage 1, so no message can be sent anywhere."
+          right={
+            <Switch
+              value={settings.aiFallback}
+              disabled
+              accessibilityLabel="AI fallback parsing. Off; no AI provider is connected."
+            />
+          }
+        />
+        <SettingRow
+          label="AI provider"
+          sub="None connected in Stage 1."
+          right={<Tag label="Not set" />}
+        />
+      </SettingsGroup>
+
+      <SettingsGroup title="Providers">
+        {providers.map((p) => (
+          <SettingRow
+            key={p.id}
+            label={p.name}
+            sub={`${COUNTRIES[p.country] ?? p.country} · ${MATURITY[p.maturity].rules} · ${p.enabled ? 'watching' : 'not watching'}`}
+            right={
+              <Tag
+                label={MATURITY[p.maturity].tag}
+                tone={p.maturity === 'SUPPORTED' ? 'positive' : 'neutral'}
+              />
+            }
+          />
+        ))}
+      </SettingsGroup>
+
+      <SettingsGroup title="Data">
+        <SettingRow
+          label="Export my data"
+          sub="CSV or JSON, on your action only."
+          right={
+            <Button
+              label="Export"
+              accessibilityLabel="Export my data"
+              variant="secondary"
+              disabled={busy !== null}
+              onPress={() => router.push('/export')}
+            />
+          }
+        />
+        <SettingRow
+          label="Demo data"
+          sub={
+            settings.demoDataEnabled
+              ? 'Sample records are included. They are invented, not real messages.'
+              : 'Removed. Only records you saved remain.'
+          }
+          right={
+            <Tag
+              label={settings.demoDataEnabled ? 'On' : 'Off'}
+              tone={settings.demoDataEnabled ? 'positive' : 'neutral'}
+            />
+          }
+        />
+        {settings.demoDataEnabled
+          ? actionRow('demo', 'Remove demo data', 'Deletes generated sample records.', 'Remove', {
+              danger: true,
+            })
+          : null}
+      </SettingsGroup>
+
+      <View
+        style={{
+          backgroundColor: colors.neutralRamp[200],
+          borderRadius: radius.lg,
+          padding: space[4],
+          gap: space[1],
+        }}
+      >
+        <Text variant="bodyMedium" style={{ fontFamily: fonts.heading, fontSize: 15 }}>
+          PesaIQ · Stage 1
+        </Text>
+        <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
+          Pasted messages only. No SMS is intercepted, uploaded or logged in full. Provider parsers
+          are demo rules until anonymized fixtures validate them.
+        </Text>
+        <Pressable
+          onPress={() => void replay()}
+          disabled={busy !== null}
+          accessibilityRole="button"
+          accessibilityLabel="Replay onboarding. Your records are kept."
+          style={({ pressed }) => ({
+            minHeight: MIN_TOUCH,
+            justifyContent: 'center',
+            alignSelf: 'flex-start',
+            opacity: pressed || busy === 'replay' ? 0.6 : 1,
+          })}
+        >
+          <Text variant="small" style={{ fontFamily: fonts.bold, color: colors.accentRamp[700] }}>
+            Replay onboarding →
           </Text>
-          <Text variant="small" tone="muted">
-            Pasted messages only. No SMS is intercepted, uploaded or logged in full. Provider
-            parsers are demo rules until anonymized fixtures validate them.
-          </Text>
-        </Card>
+        </Pressable>
       </View>
     </Screen>
   );

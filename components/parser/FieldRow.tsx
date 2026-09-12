@@ -120,6 +120,7 @@ export function FieldRow({
                 onPress={() => onChangeType(option)}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
+                aria-checked={on}
                 accessibilityLabel={TYPE_LABELS[option]}
                 style={({ pressed }) => ({
                   minHeight: MIN_TOUCH,

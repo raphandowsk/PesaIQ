@@ -1,6 +1,6 @@
 # PesaIQ — Privacy model
 
-Last updated 2026-09-11.
+Last updated 2026-09-12.
 
 > This document describes how the application behaves. **It is not a legal,
 > compliance, or app-store approval statement**, and it does not claim any
@@ -21,24 +21,30 @@ No SMS permission is requested, and no native SMS code exists in the build.
 - **AI is off by default.** The `ai/` layer is an interface with no provider wired
   in. If it is ever enabled, only low-confidence messages would be sent, and only
   after explicit opt-in.
-- **Full messages are never logged.** Diagnostics may record message *length*,
+- **Full messages are never logged.** Diagnostics may record message _length_,
   category and confidence — never content.
 - **Identifiers are masked** wherever displayed: `07** *** 678`, `**** 4312`.
 - **No analytics containing message content.**
-- **Export is user-initiated only.** Nothing is written or shared without a tap.
-- **The user can delete everything** — transactions, source messages, processing
-  history — from Settings.
+- **Export is user-initiated only.** Nothing is written without a tap. On Android
+  the user picks the folder; on the web the browser saves the file. PesaIQ itself
+  sends the file nowhere.
+- **Exports carry what the app shows, no more.** Masked identifiers only, never
+  source messages, and never the invented demo samples. Once saved, an export is
+  outside PesaIQ: deleting data in the app does not delete a file already exported.
+- **The user can delete everything** from Settings, each after an in-place
+  confirmation: all transactions (their source messages go with them), all source
+  messages (records are kept), and processing history.
 
 ## What is stored, and where
 
-| Table | Holds | Notes |
-|---|---|---|
-| `messages` | Pasted source text | Retained so a parse can be re-explained. Deletable. |
-| `transactions` | Structured records | Masked identifiers only. |
-| `parse_results` | Extraction + confidence | Explains how a record was derived. |
-| `processing_events` | Parse and correction events | No message content. |
-| `providers` | Provider registry + maturity | No user data. |
-| `settings` | Toggles | Local. |
+| Table               | Holds                        | Notes                                               |
+| ------------------- | ---------------------------- | --------------------------------------------------- |
+| `messages`          | Pasted source text           | Retained so a parse can be re-explained. Deletable. |
+| `transactions`      | Structured records           | Masked identifiers only.                            |
+| `parse_results`     | Extraction + confidence      | Explains how a record was derived.                  |
+| `processing_events` | Parse and correction events  | No message content.                                 |
+| `providers`         | Provider registry + maturity | No user data.                                       |
+| `settings`          | Toggles                      | Local.                                              |
 
 All of it lives in one on-device SQLite database. There is no server, no account,
 and no network call in the Stage 1 data path.
