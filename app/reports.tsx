@@ -455,13 +455,8 @@ function Totals({ report }: { report: NonNullable<ReturnType<typeof buildReport>
           borderTopWidth: 1,
           borderTopColor: colors.divider,
           paddingTop: space[3],
-          gap: space[2],
         }}
       >
-        <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 17 }}>
-          Operator fees + Taxes = Fees & taxes. Operator fees are what the provider or agent
-          charged, less the VAT inside the fee.
-        </Text>
         <Figures figures={split} />
       </View>
     </Card>
