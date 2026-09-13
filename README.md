@@ -86,7 +86,7 @@ invented sample messages only.
 | `services/`                                             | The SMS source (`ManualSmsSource`), saving exports and report PDFs                                        |
 | `components/`, `theme/`                                 | UI building blocks and the design tokens                                                                  |
 | `tests/`                                                | Jest suites                                                                                               |
-| `docs/`                                                 | Architecture, parser engine, privacy, roadmap                                                             |
+| `docs/`                                                 | Architecture, backend, parser engine, privacy, roadmap                                                    |
 
 Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Progress and the
 Stage 1 definition of done are in [docs/ROADMAP.md](docs/ROADMAP.md).
