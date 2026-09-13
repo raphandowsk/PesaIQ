@@ -46,3 +46,6 @@ yarn-error.*
 
 # Local desktop-app tooling (in-app preview config), not project code
 .claude/launch.json
+
+# Report PDFs saved while testing: they hold personal figures
+*.pdf
