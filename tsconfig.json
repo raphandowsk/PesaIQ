@@ -8,5 +8,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules", "Android app design questions"]
+  "exclude": ["node_modules", "Android app design questions", "supabase/functions/*/index.ts"]
 }

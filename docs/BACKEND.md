@@ -76,20 +76,55 @@ Rules the database enforces:
 `.env` (never committed; see `.env.example`) holds
 `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. The
 publishable key is meant to ship in the app: row-level security decides what it
-reaches. Service-role or secret keys and Twilio credentials never go into the
-repository or the app.
+reaches. Service-role or secret keys, the SMS provider's token and the hook
+secret never go into the repository or the app.
+
+## Sending codes: the `send-sms` hook
+
+Supabase makes each code. Its **Send SMS** hook passes the number and the code
+to the `send-sms` Edge Function (`supabase/functions/send-sms/`), which sends
+it through **messaging-service.co.tz** (Messaging Service API V2, Internet SMS).
+Deployed to `pesaiq-test` on 2026-09-13.
+
+- **Sender ID:** `NEXTSMS`.
+- **Message:** "PesaIQ: your code is 123456. Don't share it with anyone."
+- **Numbers:** Tanzanian mobiles only (`255`, then nine digits starting with 6
+  or 7). The `+255` and `07…` forms are accepted.
+- **Signature first:** every call is checked against the hook secret (Standard
+  Webhooks) before anything is sent. That is why the function is deployed with
+  JWT checks off.
+- **Test mode by default:** the provider's free test endpoint answers with
+  dummy data and sends nothing. Only `MESSAGING_SERVICE_MODE=live` sends real
+  SMS.
+- **Errors:** the person signing up is told what to do (try later, check the
+  number, wait a while), never the provider's reason; the reason goes to the
+  function's log.
+- **Logs:** never the code, never a whole number (`255******111`).
+- **Limits:** the provider accepts at most 20 messages per number per hour (6
+  identical). Supabase's own SMS rate limit should sit below that.
+- **Tests:** the rules above are in `logic.ts` and tested in
+  `tests/send-sms.test.ts`.
+
+Edge Function secrets, set by the owner:
+
+| Secret                    | What it is                                    | Status            |
+| ------------------------- | --------------------------------------------- | ----------------- |
+| `MESSAGING_SERVICE_TOKEN` | The provider's API token                      | Set 2026-09-13    |
+| `SEND_SMS_HOOK_SECRET`    | `v1,whsec_…`, made when the hook is turned on | Not yet           |
+| `MESSAGING_SERVICE_MODE`  | `live` to send real SMS                       | Unset (test mode) |
 
 ## Dashboard steps for the project owner
 
 These involve secrets or account settings, so the owner does them in the
-Supabase and Twilio dashboards.
+Supabase dashboard.
 
-1. **Phone sign-in:** in Authentication, enable the Phone provider and choose
-   Twilio. Enter the Twilio Account SID, Auth Token and Messaging Service SID.
-2. **Test number:** on the same page, add a test phone number with a fixed code,
-   for development and for store reviewers.
-3. **Email sign-up off:** PesaIQ signs people up by mobile number only.
-4. **Rate limits:** cap the number of SMS codes sent per hour.
-5. **SMS text:** short and clear, for example "Your PesaIQ code is {{ .Code }}".
-6. **Twilio:** allow sending to Tanzania only at first, and turn on its SMS
-   fraud protection.
+1. **Phone sign-in:** Authentication → Sign In / Providers → Phone: enable it,
+   and leave automatic phone confirmation off; with it on, no code is ever sent.
+2. **Send SMS hook:** Authentication → Hooks → Send SMS, as an HTTPS hook to
+   `https://livglqqqjcariusmgqsz.supabase.co/functions/v1/send-sms`. Save the
+   secret it generates as the Edge Function secret `SEND_SMS_HOOK_SECRET`.
+3. **Test number:** on the Phone page, add a test phone number with a fixed
+   code, for development and for store reviewers.
+4. **Email sign-up off:** PesaIQ signs people up by mobile number only.
+5. **Rate limits:** cap the number of SMS codes sent per hour.
+6. **Go live:** after a successful test, set `MESSAGING_SERVICE_MODE` to `live`.

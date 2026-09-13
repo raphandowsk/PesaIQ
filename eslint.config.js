@@ -16,6 +16,9 @@ module.exports = defineConfig([
       'android/**',
       'ios/**',
       'Android app design questions/**',
+      // Supabase Edge Function entry points run on Deno, with URL imports.
+      // Their rules live beside them in logic.ts, which is linted and tested.
+      'supabase/functions/*/index.ts',
     ],
   },
 ]);
