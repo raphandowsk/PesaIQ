@@ -5,7 +5,9 @@ Stage 1 (Expo Go). Last updated 2026-09-11, end of Phase 1A.
 ## Principle
 
 Local-first. A message is pasted, parsed on device, and written to a local SQLite
-database. Nothing leaves the phone unless the user exports it.
+database. Messages and records stay on the phone unless the user exports them.
+Since 2026-09-14 the app needs an account: the mobile number and the sign-in go
+through Supabase Auth (see "Sign-in with a mobile number" below).
 
 ## Data flow
 
@@ -143,9 +145,13 @@ de-duplicated at all, which is why the parser warns about it.
 app/
   _layout.tsx        root Stack; holds the splash until fonts AND the database are ready
   index.tsx          the one place a launch is routed from
-  (onboarding)/      welcome → how-it-works → privacy → setup      guard: !onboarded
-  (tabs)/            dashboard · transactions · parser-lab · review · settings   guard: onboarded
+  (onboarding)/      welcome → how-it-works → (sign-in) → privacy → setup
+  (auth)/            phone → code                                    guard: signed out
+  (tabs)/            dashboard · transactions · parser-lab · review · settings   guard: signed in and onboarded
 ```
+
+Since 2026-09-14 the guards come from one rule, `features/auth/routing.ts` (see
+"Sign-in with a mobile number" below).
 
 Both groups sit behind `Stack.Protected`, so the rule is structural: Back cannot
 return to onboarding once it is finished, and a deep link cannot reach the tabs
