@@ -247,6 +247,7 @@ async function insertHere(
   await transactionRepository.insert(db, {
     ...payload,
     ...(copyOf ? { transactionKey: null, duplicateOf: copyOf } : { duplicateOf: null }),
+    // The row's id, which marks it as received (syncRepository.receivedFromSync).
     id: syncId,
     sourceMessageId: null,
     parseResultId: null,

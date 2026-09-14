@@ -117,6 +117,18 @@ export const syncRepository = {
     await db.runAsync('UPDATE transactions SET sync_id = ? WHERE id = ?', [syncId, id]);
   },
 
+  /**
+   * Whether the record arrived from another phone. Such a record takes its
+   * server row's id as its own (engine.ts); a record saved here never does.
+   */
+  async receivedFromSync(db: SqlDatabase, id: string): Promise<boolean> {
+    const row = await db.getFirstAsync<{ n: number }>(
+      'SELECT COUNT(*) AS n FROM transactions WHERE id = ? AND sync_id = id',
+      [id],
+    );
+    return (row?.n ?? 0) > 0;
+  },
+
   async countSynced(db: SqlDatabase): Promise<number> {
     const row = await db.getFirstAsync<{ n: number }>(
       'SELECT COUNT(*) AS n FROM transactions WHERE sync_id IS NOT NULL',

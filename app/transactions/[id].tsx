@@ -73,6 +73,7 @@ export default function RecordDetail() {
   const correct = useAppStore((s) => s.correct);
   const remove = useAppStore((s) => s.remove);
   const getRecordSource = useAppStore((s) => s.getRecordSource);
+  const isFromOtherPhone = useAppStore((s) => s.isFromOtherPhone);
 
   // Held while deleting, so the screen does not flash "not found" as it leaves.
   const [frozen, setFrozen] = useState<Transaction | null>(null);
@@ -84,9 +85,27 @@ export default function RecordDetail() {
   /** undefined while loading; null when the message is no longer stored. */
   const [source, setSource] = useState<Source | undefined>(undefined);
   const [revealed, setRevealed] = useState(false);
+  /** Arrived through sync: its SMS stays on the phone it was pasted on. */
+  const [fromOtherPhone, setFromOtherPhone] = useState(false);
 
   const t = frozen ?? live;
   const sourceId = t?.sourceMessageId ?? null;
+  const recordId = t?.id ?? null;
+
+  useEffect(() => {
+    if (!recordId) return;
+    let alive = true;
+    isFromOtherPhone(recordId)
+      .then((yes) => {
+        if (alive) setFromOtherPhone(yes);
+      })
+      .catch(() => {
+        // Only changes wording; the record itself is unaffected.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [recordId, isFromOtherPhone]);
 
   useEffect(() => {
     let alive = true;
@@ -209,7 +228,11 @@ export default function RecordDetail() {
 
   const masked = source ? maskIdentifiersInText(source.text) : '';
   const hasHiddenNumbers = !!source && masked !== source.text;
-  const origin = t.isDemo ? 'Demo sample' : 'Pasted message';
+  const origin = t.isDemo
+    ? 'Demo sample'
+    : fromOtherPhone
+      ? 'Synced from another phone'
+      : 'Pasted message';
   const sender = source?.sender ?? 'unknown sender';
 
   return (
@@ -337,7 +360,8 @@ export default function RecordDetail() {
               {
                 key: 'source',
                 label: 'Source',
-                display: `${origin} · ${sender}`,
+                // The sender came with the SMS, which stayed on the other phone.
+                display: fromOtherPhone ? origin : `${origin} · ${sender}`,
                 low: false,
                 missing: false,
               },
@@ -403,7 +427,13 @@ export default function RecordDetail() {
           <Text variant="kicker" tone="muted" style={{ flex: 1 }}>
             Source message
           </Text>
-          <Pill label="Kept intact" tint={colors.accent2Ramp[200]} ink={colors.accent2Ramp[800]} />
+          {source ? (
+            <Pill
+              label="Kept intact"
+              tint={colors.accent2Ramp[200]}
+              ink={colors.accent2Ramp[800]}
+            />
+          ) : null}
         </View>
         <View style={{ backgroundColor: colors.bg, borderRadius: radius.md, padding: space[3] }}>
           <Text
@@ -414,7 +444,9 @@ export default function RecordDetail() {
             {source === undefined
               ? 'Loading…'
               : source === null
-                ? 'The original message is no longer stored on this device.'
+                ? fromOtherPhone
+                  ? 'Synced from another phone. The SMS stays on the phone it was pasted on.'
+                  : 'The original message is no longer stored on this device.'
                 : revealed
                   ? source.text
                   : masked}

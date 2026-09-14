@@ -16,6 +16,7 @@ import {
   settingsRepository,
   transactionRepository,
   parseResultRepository,
+  syncRepository,
   DEFAULT_SETTINGS,
   type AppSettings,
 } from '../../database/repositories';
@@ -121,6 +122,8 @@ interface AppState {
   getRecordSource(
     messageId: string | null,
   ): Promise<{ text: string; sender: string | null } | null>;
+  /** Whether a record arrived through sync from another phone, so its SMS is not here. */
+  isFromOtherPhone(id: string): Promise<boolean>;
 
   confirm(id: string): Promise<void>;
   markIncorrect(id: string): Promise<void>;
@@ -486,6 +489,10 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!messageId) return null;
       const message = await messageRepository.findById(requireDb(), messageId);
       return message ? { text: message.originalText, sender: message.sender } : null;
+    },
+
+    isFromOtherPhone(id) {
+      return syncRepository.receivedFromSync(requireDb(), id);
     },
 
     async markIncorrect(id) {
