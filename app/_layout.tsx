@@ -15,6 +15,7 @@ import {
 
 import { Button, Screen, Text, Toast } from '../components/ui';
 import { accessFor, useAuthStore } from '../features/auth';
+import { aiReader } from '../features/ai/instance';
 import { useDeviceCheckIn } from '../features/devices';
 import { useKeyCheck, usePinStore } from '../features/pin';
 import { useAutoSync } from '../features/sync';
@@ -76,7 +77,7 @@ export default function RootLayout() {
   useAutoSync();
 
   useEffect(() => {
-    void initialize();
+    void initialize({ ai: aiReader });
   }, [initialize]);
 
   useEffect(() => {
@@ -108,7 +109,7 @@ export default function RootLayout() {
   if (!ready || !authSettled || !pinSettled) {
     return (
       <SafeAreaProvider>
-        <Boot error={error} onRetry={() => void initialize()} />
+        <Boot error={error} onRetry={() => void initialize({ ai: aiReader })} />
       </SafeAreaProvider>
     );
   }

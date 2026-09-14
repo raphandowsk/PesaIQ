@@ -48,7 +48,7 @@ interface LabState {
   loadSample(sample: SmsSample): void;
   clear(): void;
   /** Validate and parse. Returns false, with `error` set, when it cannot. */
-  analyze(): boolean;
+  analyze(): Promise<boolean>;
   setEditing(editing: boolean): void;
   editField(key: TextEditableKey, value: string): void;
   setType(type: TransactionType): void;
@@ -84,7 +84,7 @@ export const useLabStore = create<LabState>((set, get) => ({
     set({ text: '', sender: undefined, error: null });
   },
 
-  analyze() {
+  async analyze() {
     const { text, sender } = get();
 
     // Checked here rather than by catching the engine's error classes, so the
@@ -99,7 +99,7 @@ export const useLabStore = create<LabState>((set, get) => ({
     }
 
     try {
-      const draft = useAppStore.getState().analyze(text, sender);
+      const draft = await useAppStore.getState().read(text, sender);
       set({ ...NO_DRAFT, draft, error: null });
       return true;
     } catch {

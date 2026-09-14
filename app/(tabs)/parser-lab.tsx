@@ -6,16 +6,20 @@ import { PIPELINE_STEPS, PipelineProgress } from '../../components/parser/Pipeli
 import { Button, Card, Icon, Screen, Tag, Text } from '../../components/ui';
 import { useLabStore } from '../../features/lab/store';
 import { MAX_MESSAGE_LENGTH, SAMPLES } from '../../features/parser';
+import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, shadow, space } from '../../theme';
 import { formatAmount } from '../../utils/format';
 import { useReduceMotion } from '../../utils/useReduceMotion';
 
 /**
- * Pause per pipeline stage, from the design. The parse itself is instant; this
- * only paces the display of the stages it ran, and it is skipped entirely when
- * the OS asks for reduced motion.
+ * Pause per pipeline stage, from the design. The stages step on while the
+ * message is read, and the last one waits for the answer. Skipped entirely
+ * when the OS asks for reduced motion.
  */
 const STEP_MS = 400;
+
+const AI_NOTICE =
+  "PesaIQ sends each message you analyze to Claude, an AI from Anthropic, to read the amount, fee, reference and other details. Phone, account and card numbers are masked on this phone first, and PesaIQ's server keeps no copy.";
 
 const SAMPLE_TINTS = [
   { tint: colors.accent2Ramp[200], ink: colors.accent2Ramp[800] },
@@ -33,51 +37,58 @@ export default function ParserLab() {
   const loadSample = useLabStore((s) => s.loadSample);
   const clear = useLabStore((s) => s.clear);
   const analyze = useLabStore((s) => s.analyze);
+  const aiAccepted = useAppStore((s) => s.settings.aiReadingAccepted);
+  const setSetting = useAppStore((s) => s.setSetting);
   const reduceMotion = useReduceMotion();
 
   /** Stages finished so far; null when not analyzing. */
   const [completed, setCompleted] = useState<number | null>(null);
+  /** The AI notice, shown once, before the first message is sent to be read. */
+  const [askConsent, setAskConsent] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /** Bumped by every cancel, so an answer arriving after it is ignored. */
+  const runs = useRef(0);
   const analyzing = completed !== null;
 
   const cancel = useCallback(() => {
+    runs.current += 1;
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setCompleted(null);
   }, []);
 
-  // Leaving the tab mid-animation must not pull the user to the result later.
+  // Leaving the tab mid-read must not pull the user to the result later.
   useFocusEffect(useCallback(() => cancel, [cancel]));
   useEffect(() => cancel, [cancel]);
 
-  const run = () => {
+  const run = async (agreed = aiAccepted) => {
     if (analyzing) return;
     Keyboard.dismiss();
-    if (!analyze()) return;
-
-    if (reduceMotion) {
-      router.push('/result');
+    if (!agreed && text.trim()) {
+      setAskConsent(true);
       return;
     }
 
+    const mine = ++runs.current;
     setCompleted(0);
-    PIPELINE_STEPS.forEach((_, i) => {
-      const last = i === PIPELINE_STEPS.length - 1;
-      timers.current.push(
-        setTimeout(
-          () => {
-            if (!last) {
-              setCompleted(i + 1);
-              return;
-            }
-            timers.current = [];
-            setCompleted(null);
-            router.push('/result');
-          },
-          STEP_MS * (i + 1),
-        ),
-      );
-    });
+    if (!reduceMotion) {
+      PIPELINE_STEPS.slice(0, -1).forEach((_, i) => {
+        timers.current.push(setTimeout(() => setCompleted(i + 1), STEP_MS * (i + 1)));
+      });
+    }
+
+    const ok = await analyze();
+    if (runs.current !== mine) return;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setCompleted(null);
+    if (ok) router.push('/result');
+  };
+
+  const agree = async () => {
+    setAskConsent(false);
+    await setSetting('aiReadingAccepted', true);
+    void run(true);
   };
 
   const overLimit = text.trim().length > MAX_MESSAGE_LENGTH;
@@ -171,17 +182,38 @@ export default function ParserLab() {
         </View>
       ) : null}
 
+      {askConsent ? (
+        <Card style={{ marginBottom: space[3], gap: space[3] }}>
+          <Text variant="bodyMedium" style={{ fontFamily: fonts.bold }}>
+            Messages are read by AI
+          </Text>
+          <Text variant="small" tone="muted">
+            {AI_NOTICE}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: space[2] }}>
+            <Button label="Agree and analyze" onPress={() => void agree()} style={{ flex: 1 }} />
+            <Button
+              label="Not now"
+              variant="ghost"
+              onPress={() => setAskConsent(false)}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </Card>
+      ) : null}
+
       {/* Right under the message box, so it is in reach without scrolling past the samples. */}
       <View style={{ marginBottom: space[6] }}>
         <Button
           label="Analyze message"
           size="lg"
-          onPress={run}
-          disabled={analyzing}
+          onPress={() => void run()}
+          loading={analyzing}
+          disabled={analyzing || askConsent}
           style={shadow.md}
         />
 
-        {completed !== null ? (
+        {completed !== null && !reduceMotion ? (
           <View style={{ marginTop: space[4] }}>
             <PipelineProgress completed={completed} />
           </View>

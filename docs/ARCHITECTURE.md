@@ -190,6 +190,28 @@ kept on the phone per account and a name from the platform (Android maker and
 model, iPhone or iPad, Web browser). Settings → Signed-in phones lists them,
 newest first. Signing out removes this phone's row.
 
+### AI reading
+
+Decided 2026-09-14: networks and banks each word their messages differently,
+so Claude reads a message first and the on-phone rules check it
+(`features/ai/`).
+
+1. The rules read the message on the phone, as they always have.
+2. `maskForAi` masks phone, account, card and meter numbers and LUKU tokens.
+3. The `parse-sms` function asks Claude Haiku 4.5 (see `BACKEND.md`).
+4. `readWithAi` builds the result from Claude's reading. A field Claude left
+   empty falls back to the rules. If both read the amount, fee or balance and
+   they differ, the field goes to review with a warning. A known sender keeps
+   the registry's name and id; a LUKU receipt keeps the rules' token, units
+   and meter.
+5. The person's remembered category for the recipient still wins.
+
+`useAppStore().read` does this, and `analyzeAndSave` and the Lab use it.
+`analyze` stays as the rules alone. AI reading waits for the person's agreement
+(`settings.aiReadingAccepted`, given on the privacy screen or the Lab's
+notice). Without it, with no connection, or over the daily cap, the rules read
+the message and the result says why.
+
 Rules:
 
 - The latest edit wins, by when it was made; the server enforces it too.

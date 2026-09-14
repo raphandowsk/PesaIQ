@@ -29,9 +29,9 @@ const FAILED = 'That could not be completed. Nothing was changed.';
 
 /**
  * Settings, grouped as in the design. Anything that deletes asks first, in
- * place. Automatic processing and AI fallback do not exist in Stage 1, so
- * their switches are shown locked off rather than pretending. Cloud sync is
- * off until the user turns it on.
+ * place. Automatic processing does not exist in Stage 1, so its switch is
+ * shown locked off rather than pretending. Cloud sync is off until the user
+ * turns it on.
  */
 export default function Settings() {
   const settings = useAppStore((s) => s.settings);
@@ -337,9 +337,9 @@ export default function Settings() {
 
       <SettingsGroup title="Privacy">
         <SettingRow
-          label="On-device parsing"
-          sub="Rules run locally; full messages are never logged."
-          right={<Tag label="On" tone="positive" />}
+          label="Message reading"
+          sub="Read by Claude (AI), with phone, account and card numbers masked on this phone first. With no connection, the on-phone rules read them. Full messages are never logged."
+          right={<Tag label="AI" tone="positive" />}
         />
         {actionRow(
           'transactions',
@@ -363,25 +363,6 @@ export default function Settings() {
           'Removes parse events and corrections.',
           'Clear',
         )}
-      </SettingsGroup>
-
-      <SettingsGroup title="AI · fallback">
-        <SettingRow
-          label="AI fallback parsing"
-          sub="Off. No AI provider is connected in Stage 1, so no message can be sent anywhere."
-          right={
-            <Switch
-              value={settings.aiFallback}
-              disabled
-              accessibilityLabel="AI fallback parsing. Off; no AI provider is connected."
-            />
-          }
-        />
-        <SettingRow
-          label="AI provider"
-          sub="None connected in Stage 1."
-          right={<Tag label="Not set" />}
-        />
       </SettingsGroup>
 
       <SettingsGroup title="Providers">

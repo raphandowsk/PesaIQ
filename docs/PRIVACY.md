@@ -1,6 +1,6 @@
 # PesaIQ — Privacy model
 
-Last updated 2026-09-12.
+Last updated 2026-09-14.
 
 > This document describes how the application behaves. **It is not a legal,
 > compliance, or app-store approval statement**, and it does not claim any
@@ -9,19 +9,20 @@ Last updated 2026-09-12.
 ## Stage 1 behavior
 
 ```
-User → pasted message → local parser → local SQLite → local UI
+User → pasted message → numbers masked → Claude (via parse-sms) → checked by the on-phone rules → local SQLite → local UI
 ```
 
 Stage 1 processes **only messages the user pastes in**. Nothing is intercepted.
 No SMS permission is requested, and no native SMS code exists in the build.
+Since 2026-09-14 each pasted message is read by AI once the user has agreed
+(see "AI reading").
 
 ## Commitments
 
 - **No cloud by default.** Cloud sync is off until the user turns it on, and
   then uploads encrypted records only (see "Cloud sync").
-- **AI is off by default.** The `ai/` layer is an interface with no provider wired
-  in. If it is ever enabled, only low-confidence messages would be sent, and only
-  after explicit opt-in.
+- **Messages are read by AI, once agreed** (see "AI reading" below). Phone,
+  account and card numbers are masked on the phone before a message leaves it.
 - **Full messages are never logged.** Diagnostics may record message _length_,
   category and confidence — never content.
 - **Identifiers are masked** wherever displayed: `07** *** 678`, `**** 4312`.
@@ -47,8 +48,8 @@ No SMS permission is requested, and no native SMS code exists in the build.
 | `providers`         | Provider registry + maturity | No user data.                                       |
 | `settings`          | Toggles                      | Local.                                              |
 
-All of it lives in one on-device SQLite database. There is no server, no account,
-and no network call in the Stage 1 data path.
+All of it lives in one on-device SQLite database. Reading a message calls the
+server (see "AI reading"), and Cloud sync, when on, uploads locked records.
 
 ## Source-message retention
 
@@ -91,12 +92,15 @@ storage model above would not change: still local, still no upload by default.
 - **PesaIQ now needs an account:** a mobile number confirmed by a code sent by
   SMS. The number is stored by Supabase Auth on the server (see
   `docs/BACKEND.md`). PesaIQ never stores or logs the code.
-- **Messages stay on the phone. Records stay there too unless Cloud sync is
-  turned on** (see "Cloud sync" below).
+- **Stored messages stay on the phone.** A message is sent, masked, only to be
+  read by AI (see "AI reading"); nothing keeps it on the server. Records stay
+  on the phone too unless Cloud sync is turned on (see "Cloud sync").
 - **The sign-in session** is kept in the phone's secure storage. Signing out
   affects this phone only and keeps the records on it.
-- **The in-app privacy wording** still describes the phone-only design, and must
-  be updated before release (see the launch checklist).
+- **The in-app privacy wording:** the onboarding privacy screen and Settings now
+  describe AI reading. The README and the rest of onboarding still describe
+  the phone-only design, and must be updated before release (see the launch
+  checklist).
 - **The PIN never leaves the phone.** The server only sees a blinded value
   that reveals nothing about it, and it counts every guess: 5 tries, then
   waits. The account key it unlocks is stored on the server only in locked
@@ -109,6 +113,31 @@ storage model above would not change: still local, still no upload by default.
   name for itself (the Android maker and model, "iPhone", "iPad" or "Web
   browser"), its platform and when it was last active, so Settings can list
   the account's phones. Signing out removes the phone from the list.
+
+## AI reading (2026-09-14)
+
+Decided 2026-09-14: Tanzanian networks and banks each word their messages
+differently, so an AI reads them first and the on-phone rules check it.
+
+- **What is sent:** each message the person analyzes, with phone numbers,
+  account, card and meter numbers, and LUKU tokens masked on the phone first
+  (`features/ai/mask.ts`). References, names and amounts are sent, because
+  reading them is the point.
+- **Where it goes:** PesaIQ's `parse-sms` function passes it to Claude
+  (Anthropic's API) and keeps no copy. It never logs message text or what
+  Claude read, only counts and statuses. What Anthropic keeps is set by its API
+  terms, which should be checked.
+- **Agreement first:** the onboarding privacy screen says messages are read by
+  Claude and asks the person to agree; someone who onboarded earlier sees the
+  same notice in the Lab before their first message is read. Until they agree,
+  the on-phone rules read everything. There is no setting to turn AI reading
+  off after agreeing (decided 2026-09-14).
+- **No connection, or AI unavailable:** the on-phone rules read the message,
+  and the result says so.
+- **A daily cap** per account (500 messages) limits cost and misuse.
+- **Still to do before release:** the store privacy answers and the legal
+  review must now cover message content sent to an AI provider outside
+  Tanzania.
 
 ## Cloud sync (2026-09-14)
 

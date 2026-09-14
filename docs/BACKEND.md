@@ -34,6 +34,7 @@ already applied to a project is never edited; a change goes in a new file.
 | `20260914000001_pin_guard.sql`                | The PIN's guess limit: `pin_guard` and its three functions     |
 | `20260914000002_pull_records.sql`             | `pull_records` for sync, and its index                         |
 | `20260914000003_sync_clear_and_key_check.sql` | `sync_clear`, `pin_key_is_current`, `profiles.sync_cleared_at` |
+| `20260914000004_ai_usage.sql`                 | `ai_usage` and `ai_take`: the daily cap on AI reading          |
 
 What each table lets the server see:
 
@@ -46,6 +47,7 @@ What each table lets the server see:
 | `devices`         | Signed-in phones: label, platform, last seen                                                   | Those three                              |
 | `records`         | One locked record each, its fingerprint for duplicates, edit time, deletion marker             | Only ids, times and fingerprints         |
 | `synced_settings` | Remembered categories and provider choices, locked as one document                             | Nothing                                  |
+| `ai_usage`        | How many messages each account had read by AI, per day                                         | The counts                               |
 
 Rules the database enforces:
 
@@ -149,12 +151,13 @@ Deployed to `pesaiq-test` on 2026-09-13.
 
 Edge Function secrets, set by the owner:
 
-| Secret                    | What it is                                       | Status                  |
-| ------------------------- | ------------------------------------------------ | ----------------------- |
-| `MESSAGING_SERVICE_TOKEN` | The provider's API token                         | Set 2026-09-13          |
-| `SEND_SMS_HOOK_SECRET`    | `v1,whsec_…`, made when the hook is turned on    | Set 2026-09-13          |
-| `MESSAGING_SERVICE_MODE`  | `live` to send real SMS                          | `live` since 2026-09-14 |
-| `PIN_OPRF_SECRET`         | 32+ random characters for `pin-oprf` (see below) | Set 2026-09-14          |
+| Secret                    | What it is                                        | Status                  |
+| ------------------------- | ------------------------------------------------- | ----------------------- |
+| `MESSAGING_SERVICE_TOKEN` | The provider's API token                          | Set 2026-09-13          |
+| `SEND_SMS_HOOK_SECRET`    | `v1,whsec_…`, made when the hook is turned on     | Set 2026-09-13          |
+| `MESSAGING_SERVICE_MODE`  | `live` to send real SMS                           | `live` since 2026-09-14 |
+| `PIN_OPRF_SECRET`         | 32+ random characters for `pin-oprf` (see below)  | Set 2026-09-14          |
+| `ANTHROPIC_API_KEY`       | The Anthropic API key for `parse-sms` (see below) | Not yet                 |
 
 ## The PIN: the `pin-oprf` function
 
@@ -183,6 +186,29 @@ JWT checks on: only a signed-in person can call it.
     nothing. A phone asks it before syncing, so one that missed a "Forgot
     PIN" elsewhere asks for the new PIN.
 - **Logs:** never a PIN, a point or a key.
+
+## AI reading: the `parse-sms` function
+
+Deployed to `pesaiq-test` on 2026-09-14 (`supabase/functions/parse-sms/`), with
+JWT checks on: only a signed-in person can call it. It answers `503` until
+`ANTHROPIC_API_KEY` is set, and the app then reads messages with its on-phone
+rules.
+
+- **What it does:**
+  1. Checks the batch: 1 to 20 messages, each at most 1,600 characters.
+  2. Counts it against the account's daily cap (`ai_take`, 500 messages a day,
+     called with the caller's own sign-in). Over the cap: `429`.
+  3. Asks Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) to fill in one fixed
+     tool, `record_messages`, per message: category, amount, fee, taxes,
+     counterparty, reference, balance, date, provider, money category and the
+     fields it was unsure of.
+  4. Checks the answer (`logic.ts`) and returns only well-formed readings.
+- **Messages arrive masked:** phone, account, card and meter numbers and LUKU
+  tokens are masked on the phone before sending.
+- **Logs:** never message text or what Claude read; only counts and statuses.
+  An Anthropic error body can echo the request, so only its status is logged.
+- **Tests:** the rules above are in `logic.ts` and tested in
+  `tests/parse-sms.test.ts`.
 
 ## Sync
 
@@ -231,3 +257,6 @@ Supabase dashboard.
    `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
    Save the result as the Edge Function secret `PIN_OPRF_SECRET`, and keep a
    copy somewhere safe. Never change it once people have PINs.
+8. **AI reading:** create an API key in the Anthropic console, with a monthly
+   spending limit, and save it as the Edge Function secret
+   `ANTHROPIC_API_KEY`.

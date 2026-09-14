@@ -27,8 +27,8 @@ export const HOW_STEPS: readonly HowStep[] = [
 export const PRIVACY_POINTS: readonly string[] = [
   'Stage 1 processes only the messages you paste in.',
   'A future Android version may read incoming SMS, with your permission.',
-  'Financial data is sensitive, so parsing runs on this device where possible.',
-  'Cloud sync and AI processing are optional and off by default.',
+  'Messages you analyze are read by Claude, an AI from Anthropic. Phone, account and card numbers are masked on this phone first.',
+  "PesaIQ's server passes each message to Claude and keeps no copy. Your records stay on this phone unless you turn on Cloud sync.",
   'You can delete your transactions, messages and history at any time.',
 ];
 

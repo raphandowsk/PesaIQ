@@ -23,42 +23,42 @@ beforeEach(async () => {
 });
 afterEach(() => db.closeAsync());
 
-const analyzeSample = (i: number) => {
+const analyzeSample = async (i: number) => {
   lab().loadSample(SAMPLES[i]);
-  expect(lab().analyze()).toBe(true);
+  await expect(lab().analyze()).resolves.toBe(true);
 };
 
 const count = async () => (await transactionRepository.list(db)).length;
 
 describe('analyzing in the Lab', () => {
-  it('refuses an empty message', () => {
+  it('refuses an empty message', async () => {
     lab().setText('   ');
-    expect(lab().analyze()).toBe(false);
+    await expect(lab().analyze()).resolves.toBe(false);
     expect(lab().error).toBe(LAB_ERRORS.empty);
     expect(lab().draft).toBeNull();
   });
 
-  it('refuses an over-long message, and says where the limit is', () => {
+  it('refuses an over-long message, and says where the limit is', async () => {
     lab().setText('x'.repeat(MAX_MESSAGE_LENGTH + 1));
-    expect(lab().analyze()).toBe(false);
+    await expect(lab().analyze()).resolves.toBe(false);
     expect(lab().error).toBe(LAB_ERRORS.tooLong);
     expect(LAB_ERRORS.tooLong).toContain('1,600');
   });
 
-  it('produces a draft from a sample', () => {
-    analyzeSample(RECEIVED);
+  it('produces a draft from a sample', async () => {
+    await analyzeSample(RECEIVED);
     expect(lab().draft?.amount).toBe(250000);
     expect(lab().error).toBeNull();
   });
 
-  it('clears the error as soon as the user types', () => {
-    lab().analyze();
+  it('clears the error as soon as the user types', async () => {
+    await lab().analyze();
     expect(lab().error).not.toBeNull();
     lab().setText('U');
     expect(lab().error).toBeNull();
   });
 
-  it('forgets a sample sender once the box is emptied', () => {
+  it('forgets a sample sender once the box is emptied', async () => {
     lab().loadSample(SAMPLES[RECEIVED]);
     expect(lab().sender).toBe(SAMPLES[RECEIVED].sender);
     lab().setText('');
@@ -67,14 +67,14 @@ describe('analyzing in the Lab', () => {
 
   it('saves nothing just by analyzing', async () => {
     const before = await count();
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     expect(await count()).toBe(before);
   });
 });
 
 describe('editing a draft', () => {
-  it('records only real changes', () => {
-    analyzeSample(BANK_ATM);
+  it('records only real changes', async () => {
+    await analyzeSample(BANK_ATM);
     const original = lab().draft!.fields.find((f) => f.key === 'counterparty')!.value;
 
     lab().editField('counterparty', 'CITY ATM');
@@ -84,8 +84,8 @@ describe('editing a draft', () => {
     expect(lab().edits.text).toEqual({});
   });
 
-  it('ignores picking the type it already has', () => {
-    analyzeSample(RECEIVED);
+  it('ignores picking the type it already has', async () => {
+    await analyzeSample(RECEIVED);
     lab().setType(lab().draft!.type);
     expect(lab().edits.type).toBeUndefined();
 
@@ -93,12 +93,12 @@ describe('editing a draft', () => {
     expect(lab().edits.type).toBe('SENT');
   });
 
-  it('starts each new analysis clean', () => {
-    analyzeSample(BANK_ATM);
+  it('starts each new analysis clean', async () => {
+    await analyzeSample(BANK_ATM);
     lab().editField('counterparty', 'X');
     lab().setEditing(true);
 
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     expect(lab().edits.text).toEqual({});
     expect(lab().editing).toBe(false);
   });
@@ -113,7 +113,7 @@ const savedOf = (r: LabSaveResult) => {
 
 describe('saving from the Lab', () => {
   it('confirms a clean record and resets the Lab', async () => {
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     // The demo seed carries this sample's reference; samples never block a real record.
     const saved = savedOf(await lab().save());
     expect(saved.status).toBe('CONFIRMED');
@@ -127,10 +127,10 @@ describe('saving from the Lab', () => {
   });
 
   it('skips a transaction already saved, and can tell before saving', async () => {
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     const first = savedOf(await lab().save());
 
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     expect((await lab().findSaved())?.id).toBe(first.id);
 
     const before = await count();
@@ -142,17 +142,17 @@ describe('saving from the Lab', () => {
   });
 
   it('treats a corrected reference as a different transaction', async () => {
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     savedOf(await lab().save());
 
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     lab().editField('reference', 'NEWREF123');
     expect(await lab().findSaved()).toBeNull();
     expect(savedOf(await lab().save()).transactionReference).toBe('NEWREF123');
   });
 
   it('sends a record with an unsure field to review', async () => {
-    analyzeSample(BANK_ATM);
+    await analyzeSample(BANK_ATM);
     const saved = savedOf(await lab().save());
     expect(saved.status).toBe('NEEDS_REVIEW');
     expect(saved.lowFields).toEqual(['counterparty']);
@@ -160,7 +160,7 @@ describe('saving from the Lab', () => {
 
   it('refuses to save without an amount, and keeps the draft to fix', async () => {
     const before = await count();
-    analyzeSample(PROMO);
+    await analyzeSample(PROMO);
 
     expect(await lab().save()).toEqual({ ok: false, error: LAB_SAVE_ERRORS.noAmount });
     expect(await count()).toBe(before);
@@ -168,7 +168,7 @@ describe('saving from the Lab', () => {
   });
 
   it('saves a correction and records which fields changed, not their values', async () => {
-    analyzeSample(BANK_ATM);
+    await analyzeSample(BANK_ATM);
     lab().editField('counterparty', 'CITY ATM');
 
     expect(savedOf(await lab().save())).toMatchObject({
@@ -182,7 +182,7 @@ describe('saving from the Lab', () => {
   });
 
   it('stores the parse result as the parser produced it, not as edited', async () => {
-    analyzeSample(BANK_ATM);
+    await analyzeSample(BANK_ATM);
     lab().editField('counterparty', 'CITY ATM');
     const saved = savedOf(await lab().save());
 
@@ -195,7 +195,7 @@ describe('saving from the Lab', () => {
   });
 
   it('fails cleanly when the write fails, keeping the draft to retry', async () => {
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     const failing = {
       ...db,
       withTransactionAsync: () => Promise.reject(new Error('disk full')),
@@ -209,7 +209,7 @@ describe('saving from the Lab', () => {
 
 describe('rejecting and discarding', () => {
   it('records a rejection without message content, and keeps the text', async () => {
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     await lab().reject();
 
     expect(lab().draft).toBeNull();
@@ -226,7 +226,7 @@ describe('rejecting and discarding', () => {
 
   it('discards everything and saves nothing', async () => {
     const before = await count();
-    analyzeSample(RECEIVED);
+    await analyzeSample(RECEIVED);
     lab().discard();
 
     expect(lab()).toMatchObject({ text: '', draft: null, error: null, editing: false });

@@ -2,6 +2,10 @@
 
 Status: **implemented and tested** (Phase 1B, 2026-09-11). 138 tests green.
 
+Since 2026-09-14 these rules check Claude's reading and stand in for it when
+it's unavailable; they are no longer the first reader. See "AI reading" in
+`ARCHITECTURE.md`.
+
 ## Provenance
 
 The design canvas (`Android app design questions/PesaIQ Android.dc.html`) contains a

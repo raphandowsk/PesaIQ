@@ -53,7 +53,7 @@ export class MessageTooLongError extends Error {
 /** A rule-picked category is a good guess, never an "unsure" one: it is one tap to change. */
 const CATEGORY_CONFIDENCE = 0.8;
 
-function buildField(
+export function buildField(
   key: string,
   label: string,
   value: string | number | null,
@@ -84,7 +84,7 @@ const money = (n: number) => `${DEFAULT_CURRENCY} ${formatAmount(n)}`;
 const cents = (n: number) => Math.round(n * 100) / 100;
 
 /** "VAT TZS 69 (in the fee)", or "VAT 18% TZS 2,729.50 · EWURA 1% TZS 151.64". */
-function describeTaxes(taxes: readonly TaxLine[]): string {
+export function describeTaxes(taxes: readonly TaxLine[]): string {
   return taxes
     .map((t) => {
       const rate = t.ratePct == null ? '' : ` ${t.ratePct}%`;

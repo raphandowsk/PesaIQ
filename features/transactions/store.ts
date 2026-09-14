@@ -33,12 +33,21 @@ import { transactionFromParseResult, type Transaction } from './model';
 import { transactionKey } from './transactionKey';
 import { DEFAULT_CURRENCY, type MoneyCategory } from '../../types/domain';
 import type { LabSaveReady } from '../lab/draft';
+import { maskForAi } from '../ai/mask';
+import { readWithAi, rulesWithNote } from '../ai/merge';
+import { aiFailureOf, type AiReader } from '../ai/reading';
 
 /** Overridable for tests; production uses the real clock and crypto. */
 export interface StoreDeps {
   database?: SqlDatabase;
   now?: () => string;
   makeId?: (prefix: string) => string;
+  /**
+   * AI reading (the parse-sms function). Without it, or until the person
+   * agrees to it, the on-phone rules read every message. Kept across later
+   * `initialize` calls that leave it out.
+   */
+  ai?: AiReader | null;
 }
 
 const defaultNow = () => new Date().toISOString();
@@ -98,8 +107,15 @@ interface AppState {
   initialize(deps?: StoreDeps): Promise<void>;
   refresh(): Promise<void>;
 
-  /** Parse text without saving — used by the Lab preview. */
+  /** The on-phone rules' reading, without saving. Synchronous; no AI. */
   analyze(text: string, sender?: string): ParseResult;
+
+  /**
+   * Read a message the way the app does: by Claude once the person has agreed,
+   * checked against the on-phone rules, which read it alone when AI reading is
+   * unavailable. Throws, like `analyze`, for an empty or over-long message.
+   */
+  read(text: string, sender?: string): Promise<ParseResult>;
 
   /** Parse, store the message and result, and save a transaction. */
   analyzeAndSave(text: string, sender?: string): Promise<SaveOutcome>;
@@ -169,6 +185,7 @@ export const useAppStore = create<AppState>((set, get) => {
   let db: SqlDatabase | null = null;
   let now = defaultNow;
   let makeId = defaultMakeId;
+  let ai: AiReader | null = null;
 
   const requireDb = (): SqlDatabase => {
     if (!db) throw new Error('Store used before initialize()');
@@ -261,6 +278,26 @@ export const useAppStore = create<AppState>((set, get) => {
     }
   };
 
+  /**
+   * Claude's reading, checked against the rules', once the person agreed to AI
+   * reading. The message goes with its numbers masked. The rules' reading is
+   * kept, with a note, when AI reading is off or fails.
+   */
+  const readByAi = async (rules: ParseResult): Promise<ParseResult> => {
+    if (!ai || !get().settings.aiReadingAccepted) return rules;
+    try {
+      const answer = await ai.read([
+        { id: 'm1', text: maskForAi(rules.originalText), sender: rules.sender ?? null },
+      ]);
+      const reading = answer.readings.find((r) => r.id === 'm1');
+      return reading
+        ? readWithAi(rules, reading, answer.model)
+        : rulesWithNote(rules, 'unavailable');
+    } catch (e) {
+      return rulesWithNote(rules, aiFailureOf(e));
+    }
+  };
+
   /** Remember the user's category for this recipient, for the next message to them. */
   const learnCategory = async (
     database: SqlDatabase,
@@ -290,6 +327,7 @@ export const useAppStore = create<AppState>((set, get) => {
       try {
         now = deps.now ?? defaultNow;
         makeId = deps.makeId ?? defaultMakeId;
+        if (deps.ai !== undefined) ai = deps.ai;
         db = deps.database ?? (await getDatabase());
 
         await seedDatabase(db, now());
@@ -345,10 +383,16 @@ export const useAppStore = create<AppState>((set, get) => {
       return applyRememberedCategory(parseMessage(text, { sender }), get().categoryRules);
     },
 
+    async read(text, sender) {
+      const reading = await readByAi(parseMessage(text, { sender }));
+      // The person's own choice for this recipient beats any reading.
+      return applyRememberedCategory(reading, get().categoryRules);
+    },
+
     async analyzeAndSave(text, sender) {
       const database = requireDb();
       const timestamp = now();
-      const result = get().analyze(text, sender);
+      const result = await get().read(text, sender);
 
       const messageId = makeId('msg');
       const parseId = makeId('parse');

@@ -10,8 +10,16 @@ import type { SqlDatabase } from '../client';
 export interface AppSettings {
   /** Stage 1 has no automatic processing; the toggle exists for Stage 2. */
   automaticProcessing: boolean;
-  /** Off by default. No AI provider is wired in Stage 1. */
+  /**
+   * No longer used: AI reading replaced the "AI fallback" idea (2026-09-14).
+   * Kept so settings saved before then still read.
+   */
   aiFallback: boolean;
+  /**
+   * The person agreed to messages being read by Claude (onboarding, or the
+   * Lab's notice). Until then the on-phone rules read everything.
+   */
+  aiReadingAccepted: boolean;
   /** Off by default. On: encrypted records sync with the account (features/sync). */
   cloudSync: boolean;
   /** Whether generated sample records are present. */
@@ -22,6 +30,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   automaticProcessing: false,
   aiFallback: false,
+  aiReadingAccepted: false,
   cloudSync: false,
   demoDataEnabled: true,
   onboardingComplete: false,
