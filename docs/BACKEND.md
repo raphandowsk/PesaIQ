@@ -112,6 +112,13 @@ Rules the database enforces:
   - A signed-out caller was refused.
   - Security advisor: the two new `security definer` functions join the
     three PIN ones (WARN), as intended: each acts only on the caller's rows.
+- **`ai_usage` and `ai_take`** (the AI reading cap), advisor findings as
+  intended: `ai_usage` has row-level security with no policies (INFO), since
+  only `ai_take` touches it; `ai_take` is callable by signed-in users (WARN)
+  and counts only the caller's own messages.
+- **`parse-sms`, deployed without `ANTHROPIC_API_KEY`:** in the web preview,
+  the Lab shows the AI notice before a first message is read; "Not now" sends
+  nothing.
 
 ## App configuration
 
