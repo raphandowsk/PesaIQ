@@ -5,6 +5,7 @@ import { DEMO_RECORDS } from '../features/transactions/demoData';
 import { useAppStore } from '../features/transactions/store';
 import { ManualSmsSource } from '../services/sms';
 import { createMigratedDatabase } from './support/nodeSqlite';
+import { saveNew } from './support/save';
 
 const NOW = '2026-09-11T12:00:00.000Z';
 
@@ -66,9 +67,7 @@ describe('analyzeAndSave', () => {
 
   it('saves a parsed transaction and shows it in the list', async () => {
     const before = useAppStore.getState().transactions.length;
-    const { transaction } = await useAppStore
-      .getState()
-      .analyzeAndSave(SAMPLES[0].text, SAMPLES[0].sender);
+    const transaction = await saveNew(SAMPLES[0].text, SAMPLES[0].sender);
 
     expect(transaction.amount).toBe(250000);
     expect(transaction.status).toBe('PARSED');
@@ -76,33 +75,35 @@ describe('analyzeAndSave', () => {
   });
 
   it('stores the source message and the parse result alongside', async () => {
-    const { transaction } = await useAppStore
-      .getState()
-      .analyzeAndSave(SAMPLES[0].text, SAMPLES[0].sender);
+    const transaction = await saveNew(SAMPLES[0].text, SAMPLES[0].sender);
 
     expect(transaction.sourceMessageId).toBeTruthy();
     const message = await messageRepository.findById(db, transaction.sourceMessageId!);
     expect(message?.originalText).toBe(SAMPLES[0].text);
   });
 
-  it('flags a duplicate reference but still saves the record', async () => {
-    // Start from a clean slate so the first save is genuinely the first.
-    await useAppStore.getState().clearDemoData();
-
-    const first = await useAppStore.getState().analyzeAndSave(SAMPLES[0].text, SAMPLES[0].sender);
-    expect(first.duplicateOf).toBeUndefined();
+  it('skips a transaction that is already saved, and notes the attempt', async () => {
+    const first = await saveNew(SAMPLES[0].text, SAMPLES[0].sender);
+    const messagesBefore = await messageRepository.count(db);
 
     const second = await useAppStore.getState().analyzeAndSave(SAMPLES[0].text, SAMPLES[0].sender);
-    expect(second.duplicateOf?.id).toBe(first.transaction.id);
-    // Flagged, not dropped: a repeated reference is a strong hint, not proof.
-    expect(second.transaction.id).not.toBe(first.transaction.id);
-    expect(useAppStore.getState().transactions.length).toBe(2);
+    expect(second).toMatchObject({ saved: false, duplicateOf: { id: first.id } });
+
+    // Nothing new is stored: no record, and no second copy of the message.
+    expect(useAppStore.getState().transactions.filter((t) => !t.isDemo)).toHaveLength(1);
+    expect(await messageRepository.count(db)).toBe(messagesBefore);
+
+    const events = await processingEventRepository.list(db);
+    expect(events.find((e) => e.kind === 'DUPLICATE_DETECTED')).toMatchObject({
+      transactionId: first.id,
+      messageId: null,
+    });
   });
 
-  it('detects a duplicate against a seeded record', async () => {
-    // The demo seed already carries QH42T8LM9P.
+  it('never lets a demo sample block a real record', async () => {
+    // The demo seed already carries QH42T8LM9P, the sample's reference.
     const saved = await useAppStore.getState().analyzeAndSave(SAMPLES[0].text, SAMPLES[0].sender);
-    expect(saved.duplicateOf?.isDemo).toBe(true);
+    expect(saved.saved).toBe(true);
   });
 
   it('records an event carrying confidence but no message content', async () => {
@@ -120,9 +121,7 @@ describe('analyzeAndSave', () => {
   });
 
   it('sends a promotional message straight to review', async () => {
-    const { transaction } = await useAppStore
-      .getState()
-      .analyzeAndSave(SAMPLES[3].text, SAMPLES[3].sender);
+    const transaction = await saveNew(SAMPLES[3].text, SAMPLES[3].sender);
     expect(transaction.status).toBe('NEEDS_REVIEW');
   });
 

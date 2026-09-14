@@ -121,12 +121,31 @@ injected, so store tests are deterministic.
 `analyzeAndSave` writes the message, the parse result and the transaction in one
 transaction, so a failure partway leaves nothing behind.
 
-### Duplicate detection
+### Duplicates
 
-A repeated `transaction_reference` is **flagged, not dropped**. It is a strong
-hint rather than proof, and silently discarding a real transaction is worse than
-showing a duplicate the user can delete. Messages with no reference cannot be
-de-duplicated at all, which is why the parser warns about it.
+The same transaction is **never saved twice**. Each record carries a
+transaction ID (`features/transactions/transactionKey.ts`):
+
+- with a reference: the provider and the reference, ignoring case, spaces and
+  punctuation (`ref:mixx:QH42T8LM9P`). The same reference from two providers is
+  two transactions.
+- without one: a fingerprint of the message text, ignoring case and spacing
+  (`msg:` + 32 hex characters of SHA-256), so the same SMS pasted twice is still
+  caught.
+
+Saving checks for a real record with that ID first and, if there is one, stores
+nothing: not the record, not the message. It notes a `DUPLICATE_DETECTED` event
+against the existing record. A unique index on `transaction_key` (real records
+only) catches two saves racing each other. Demo samples never block a real
+record.
+
+The Result screen asks before saving, after every edit, and offers the saved
+record instead. Correcting a record's provider or reference recomputes its ID;
+taking another record's is refused (`DuplicateRecordError`).
+
+Records saved before this rule, that repeat an earlier one, keep no ID and point
+at it through `duplicate_of`. Settings → Possible duplicates lists them: delete
+the copy, or keep both. Deleting an original passes its ID to its oldest copy.
 
 ### Privacy in the data layer
 
@@ -652,6 +671,11 @@ Migration v2 adds four columns to `transactions`:
 It also adds a `category_rules` table (recipient → category) and marks Mixx
 EXPERIMENTAL. Older records keep working: when shown, their category comes from
 the same rules.
+
+Migration v3 adds `transaction_key` and `duplicate_of` to `transactions` (see
+Duplicates). A migration can carry an `after` step, run in the same transaction
+as its SQL, for work SQL can't do. v3's gives every record its ID, oldest
+first, marks later repeats as copies of the first, then adds the unique index.
 
 ### Money arithmetic (`features/transactions/money.ts`)
 

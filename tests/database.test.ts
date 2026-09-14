@@ -41,6 +41,8 @@ const draft = (over: Partial<Transaction> = {}): Transaction => ({
   sourceMessageId: null,
   parseResultId: null,
   isDemo: false,
+  transactionKey: null,
+  duplicateOf: null,
   createdAt: NOW,
   updatedAt: NOW,
   ...over,
@@ -213,13 +215,28 @@ describe('transactionRepository', () => {
     expect(await transactionRepository.countByStatus(db, 'NEEDS_REVIEW')).toBe(2);
   });
 
-  it('finds a duplicate by reference', async () => {
-    await transactionRepository.insert(db, draft({ id: 'a', transactionReference: 'QH42T8LM9P' }));
+  it('finds the real record with a transaction ID', async () => {
+    const key = 'ref:bank:QH42T8LM9P';
+    await transactionRepository.insert(db, draft({ id: 'a', transactionKey: key }));
+    await transactionRepository.insert(
+      db,
+      draft({ id: 'demo', transactionKey: 'ref:bank:DEMO0001', isDemo: true }),
+    );
 
-    expect((await transactionRepository.findByReference(db, 'QH42T8LM9P'))?.id).toBe('a');
-    expect(await transactionRepository.findByReference(db, 'OTHER')).toBeNull();
-    // A missing reference must never match another record with no reference.
-    expect(await transactionRepository.findByReference(db, '')).toBeNull();
+    expect((await transactionRepository.findByKey(db, key))?.id).toBe('a');
+    // Leaving out the record being edited.
+    expect(await transactionRepository.findByKey(db, key, 'a')).toBeNull();
+    expect(await transactionRepository.findByKey(db, 'ref:bank:OTHER0001')).toBeNull();
+    // Demo samples never count, and no ID never matches.
+    expect(await transactionRepository.findByKey(db, 'ref:bank:DEMO0001')).toBeNull();
+    expect(await transactionRepository.findByKey(db, '')).toBeNull();
+  });
+
+  it('lets any number of records have no transaction ID', async () => {
+    await transactionRepository.insert(db, draft({ id: 'a', transactionKey: null }));
+    await expect(
+      transactionRepository.insert(db, draft({ id: 'b', transactionKey: null })),
+    ).resolves.toBeDefined();
   });
 });
 

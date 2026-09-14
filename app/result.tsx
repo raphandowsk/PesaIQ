@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 
@@ -11,6 +11,7 @@ import { isTextEditable, viewDraft, type DraftEdits } from '../features/lab/draf
 import { useLabStore } from '../features/lab/store';
 import { confidenceLabel } from '../features/review/queue';
 import type { ParseResult } from '../features/parser';
+import { savedOnText, type Transaction } from '../features/transactions';
 import { colors, fonts, radius, shadow, space } from '../theme';
 import { TYPE_LABELS } from '../types/domain';
 import { formatTzs, MINUS } from '../utils/format';
@@ -35,6 +36,7 @@ export default function Result() {
   const save = useLabStore((s) => s.save);
   const reject = useLabStore((s) => s.reject);
   const discard = useLabStore((s) => s.discard);
+  const findSaved = useLabStore((s) => s.findSaved);
 
   const [why, setWhy] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
@@ -42,6 +44,20 @@ export default function Result() {
   // Save, reject and discard clear the draft while this screen is still
   // animating away. Freezing what was on screen stops it flashing empty.
   const [frozen, setFrozen] = useState<Snapshot | null>(null);
+  // The record already saved for this transaction. Asked again after every
+  // edit, since the provider or reference can change which transaction it is.
+  const [existing, setExisting] = useState<Transaction | null>(null);
+
+  useEffect(() => {
+    if (!draft) return;
+    let live = true;
+    void findSaved().then((found) => {
+      if (live) setExisting(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, [draft, edits, findSaved]);
 
   const current: Snapshot | null = frozen ?? (draft ? { draft, edits } : null);
   if (!current) return <NothingToShow />;
@@ -64,15 +80,22 @@ export default function Result() {
       return;
     }
 
-    const { transaction, duplicateOf } = result.outcome;
+    const { outcome } = result;
     toast(
-      duplicateOf
-        ? `Saved. Reference ${transaction.transactionReference} was already on record.`
-        : transaction.status === 'NEEDS_REVIEW'
+      !outcome.saved
+        ? `${savedOnText(outcome.duplicateOf)}. Nothing new was saved.`
+        : outcome.transaction.status === 'NEEDS_REVIEW'
           ? 'Saved to the review queue.'
           : 'Transaction saved.',
     );
     router.dismissTo('/dashboard');
+  };
+
+  const onOpenSaved = () => {
+    if (!existing) return;
+    if (draft) setFrozen({ draft, edits });
+    discard();
+    router.replace({ pathname: '/transactions/[id]', params: { id: existing.id } });
   };
 
   const onReject = async () => {
@@ -190,6 +213,24 @@ export default function Result() {
         ) : null}
       </View>
 
+      {existing ? (
+        <View
+          accessibilityLiveRegion="polite"
+          style={{
+            backgroundColor: colors.neutralRamp[200],
+            borderRadius: radius.md,
+            padding: space[3],
+            marginBottom: space[3],
+            gap: space[1],
+          }}
+        >
+          <Text variant="bodyMedium">{savedOnText(existing)}</Text>
+          <Text variant="small" tone="muted">
+            If this is a different transaction, edit its reference.
+          </Text>
+        </View>
+      ) : null}
+
       {current.draft.warnings.length > 0 ? (
         <View
           style={{
@@ -242,14 +283,24 @@ export default function Result() {
       ) : null}
 
       <View style={{ gap: space[2], marginTop: space[4] }}>
-        <Button
-          label={saveLabel}
-          size="lg"
-          loading={busy === 'save'}
-          disabled={busy !== null}
-          onPress={() => void onSave()}
-          style={shadow.md}
-        />
+        {existing ? (
+          <Button
+            label="Open the saved record"
+            size="lg"
+            disabled={busy !== null}
+            onPress={onOpenSaved}
+            style={shadow.md}
+          />
+        ) : (
+          <Button
+            label={saveLabel}
+            size="lg"
+            loading={busy === 'save'}
+            disabled={busy !== null}
+            onPress={() => void onSave()}
+            style={shadow.md}
+          />
+        )}
         <View style={{ flexDirection: 'row', gap: space[2] }}>
           <Button
             label="Not correct"

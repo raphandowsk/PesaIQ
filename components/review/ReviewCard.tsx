@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
-import { useAppStore, type Transaction } from '../../features/transactions';
+import {
+  duplicateEditText,
+  isDuplicateRecordError,
+  useAppStore,
+  type Transaction,
+} from '../../features/transactions';
 import {
   buildRecordPatch,
   NO_RECORD_EDITS,
@@ -114,8 +119,12 @@ export function ReviewCard({
         await correct(t.id, built.patch, { rememberCategory: built.categoryChosen });
         toast('Confirmed, with your corrections saved.');
       }
-    } catch {
-      setError('That change could not be saved. Nothing was changed.');
+    } catch (e) {
+      setError(
+        isDuplicateRecordError(e)
+          ? duplicateEditText(e.existing)
+          : 'That change could not be saved. Nothing was changed.',
+      );
       setBusy(null);
     }
   };

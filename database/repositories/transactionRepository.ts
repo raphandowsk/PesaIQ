@@ -96,6 +96,7 @@ export const transactionRepository = {
          balance_after = ?, transaction_date = ?, transaction_time = ?, confidence = ?,
          low_fields = ?, source_message_id = ?, parse_result_id = ?, is_demo = ?,
          money_category = ?, fee = ?, taxes = ?, details = ?,
+         transaction_key = ?, duplicate_of = ?,
          updated_at = ?
        WHERE id = ?`,
       [
@@ -120,6 +121,8 @@ export const transactionRepository = {
         merged.fee,
         JSON.stringify(merged.taxes),
         JSON.stringify(merged.details),
+        merged.transactionKey ?? null,
+        merged.duplicateOf ?? null,
         merged.updatedAt,
         id,
       ],
@@ -162,17 +165,24 @@ export const transactionRepository = {
   },
 
   /**
-   * Find an existing record with the same reference.
-   *
-   * A reference is the only reliable duplicate signal we have; messages with no
-   * reference cannot be de-duplicated, which is why the parser warns about it.
+   * The real record with this transaction ID (transactionKey.ts), if any.
+   * Demo samples never count, and `exceptId` leaves out the record being edited.
    */
-  async findByReference(db: SqlDatabase, reference: string): Promise<Transaction | null> {
-    if (!reference) return null;
+  async findByKey(db: SqlDatabase, key: string, exceptId?: string): Promise<Transaction | null> {
+    if (!key) return null;
     const row = await db.getFirstAsync<TransactionRow>(
-      `${SELECT} WHERE transaction_reference = ? LIMIT 1`,
-      [reference],
+      `${SELECT} WHERE transaction_key = ? AND is_demo = 0 AND id != ? LIMIT 1`,
+      [key, exceptId ?? ''],
     );
     return row ? rowToTransaction(row) : null;
+  },
+
+  /** Records marked as repeating this one, oldest first. */
+  async listCopiesOf(db: SqlDatabase, id: string): Promise<Transaction[]> {
+    const rows = await db.getAllAsync<TransactionRow>(
+      `${SELECT} WHERE duplicate_of = ? ORDER BY created_at ASC, id ASC`,
+      [id],
+    );
+    return rows.map(rowToTransaction);
   },
 };

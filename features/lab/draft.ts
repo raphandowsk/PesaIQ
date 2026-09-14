@@ -225,6 +225,14 @@ export function viewDraft(result: ParseResult, edits: DraftEdits): DraftView {
   };
 }
 
+/** What makes up the draft's transaction ID, as the user has corrected it. */
+export const draftKeyParts = (result: ParseResult, edits: DraftEdits) => ({
+  provider: editedText(edits, 'provider', result.provider),
+  // A hand-typed provider name cannot be tied back to a detected id.
+  providerId: edits.text.provider !== undefined ? null : result.providerId,
+  transactionReference: editedText(edits, 'reference', result.transactionReference),
+});
+
 export interface LabValues {
   type: TransactionType;
   amount: number;
@@ -306,10 +314,7 @@ export function buildLabSave(result: ParseResult, edits: DraftEdits): LabSave {
       type: view.type,
       amount,
       counterparty: editedText(edits, 'counterparty', result.counterparty),
-      provider: editedText(edits, 'provider', result.provider),
-      // A hand-typed provider name cannot be tied back to a detected id.
-      providerId: edits.text.provider !== undefined ? null : result.providerId,
-      transactionReference: editedText(edits, 'reference', result.transactionReference),
+      ...draftKeyParts(result, edits),
       balanceAfter: balance,
       transactionDate: date,
       transactionTime: date == null ? null : result.transactionTime,

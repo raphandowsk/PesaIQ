@@ -7,7 +7,7 @@ import { Button, Screen, Tag, Text, toast } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
 import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { usePinStore } from '../../features/pin';
-import { useAppStore } from '../../features/transactions';
+import { duplicatePairs, useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
 
@@ -40,6 +40,7 @@ export default function Settings() {
   const clearDemoData = useAppStore((s) => s.clearDemoData);
   const forgetCategoryRules = useAppStore((s) => s.forgetCategoryRules);
   const ruleCount = useAppStore((s) => Object.keys(s.categoryRules).length);
+  const duplicateCount = useAppStore((s) => duplicatePairs(s.transactions).length);
   const resetOnboarding = useAppStore((s) => s.resetOnboarding);
   const phone = useAuthStore((s) => s.session?.phone ?? null);
   const signOut = useAuthStore((s) => s.signOut);
@@ -313,6 +314,22 @@ export default function Settings() {
             />
           }
         />
+        {/* Only records saved before repeats were skipped can be here. */}
+        {duplicateCount > 0 ? (
+          <SettingRow
+            label="Possible duplicates"
+            sub={`${duplicateCount} ${duplicateCount === 1 ? 'record repeats' : 'records repeat'} one saved earlier.`}
+            right={
+              <Button
+                label="Review"
+                accessibilityLabel="Review possible duplicates"
+                variant="secondary"
+                disabled={busy !== null}
+                onPress={() => router.push('/duplicates')}
+              />
+            }
+          />
+        ) : null}
         {actionRow(
           'rules',
           'Remembered categories',

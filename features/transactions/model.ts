@@ -18,6 +18,7 @@ import {
 } from '../../types/domain';
 import type { ParseResult } from '../parser';
 import { chargeDetailsSchema, EMPTY_DETAILS, taxLineSchema } from '../parser/schema';
+import { transactionKey } from './transactionKey';
 
 export const transactionSchema = z.object({
   id: z.string(),
@@ -56,6 +57,14 @@ export const transactionSchema = z.object({
   /** Generated sample data, removable via Settings. */
   isDemo: z.boolean(),
 
+  /**
+   * The transaction's ID (transactionKey.ts). No two real records share one.
+   * Optional so hand-written records (demo samples, tests) need not carry it.
+   */
+  transactionKey: z.string().nullable().optional(),
+  /** Set on a record saved before duplicates were skipped: the earlier record's id. */
+  duplicateOf: z.string().nullable().optional(),
+
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -87,6 +96,8 @@ export interface TransactionRow {
   fee: number | null;
   taxes: string | null;
   details: string | null;
+  transaction_key?: string | null;
+  duplicate_of?: string | null;
 }
 
 /** Tolerates malformed JSON rather than throwing on a corrupt row. */
@@ -137,6 +148,8 @@ export function rowToTransaction(row: TransactionRow): Transaction {
     sourceMessageId: row.source_message_id,
     parseResultId: row.parse_result_id,
     isDemo: row.is_demo === 1,
+    transactionKey: row.transaction_key ?? null,
+    duplicateOf: row.duplicate_of ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -168,6 +181,8 @@ export const TRANSACTION_COLUMNS = [
   'fee',
   'taxes',
   'details',
+  'transaction_key',
+  'duplicate_of',
 ] as const;
 
 export function transactionToParams(t: Transaction): (string | number | null)[] {
@@ -196,6 +211,8 @@ export function transactionToParams(t: Transaction): (string | number | null)[] 
     t.fee,
     JSON.stringify(t.taxes),
     JSON.stringify(t.details),
+    t.transactionKey ?? null,
+    t.duplicateOf ?? null,
   ];
 }
 
@@ -249,6 +266,8 @@ export function transactionFromParseResult(
     sourceMessageId: options.sourceMessageId ?? null,
     parseResultId: options.parseResultId ?? null,
     isDemo: options.isDemo ?? false,
+    transactionKey: transactionKey(result, result.normalizedText),
+    duplicateOf: null,
     createdAt: options.now,
     updatedAt: options.now,
   };

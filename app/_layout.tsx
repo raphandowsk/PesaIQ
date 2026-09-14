@@ -155,6 +155,8 @@ export default function RootLayout() {
           <Stack.Screen name="fees" />
           {/* Pushed from Home's Monthly report card and the Records header. */}
           <Stack.Screen name="reports" />
+          {/* Pushed from Settings -> Possible duplicates. */}
+          <Stack.Screen name="duplicates" />
         </Stack.Protected>
       </Stack>
       <Toast />

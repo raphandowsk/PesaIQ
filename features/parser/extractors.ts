@@ -76,7 +76,8 @@ export function extractReference(text: string): Extracted<string> {
     : {
         value: null,
         confidence: 0,
-        warning: 'No transaction reference found - duplicates cannot be detected.',
+        warning:
+          'No transaction reference found - only the exact same message is caught as a repeat.',
       };
 }
 

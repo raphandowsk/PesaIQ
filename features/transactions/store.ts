@@ -29,6 +29,7 @@ import {
 } from '../parser';
 import { ManualSmsSource } from '../../services/sms';
 import { transactionFromParseResult, type Transaction } from './model';
+import { transactionKey } from './transactionKey';
 import { DEFAULT_CURRENCY, type MoneyCategory } from '../../types/domain';
 import type { LabSaveReady } from '../lab/draft';
 
@@ -47,11 +48,33 @@ const defaultMakeId = (prefix: string) => {
   return `${prefix}-${Date.now().toString(36)}-${counter.toString(36)}`;
 };
 
-export interface SaveOutcome {
-  transaction: Transaction;
-  /** Set when an existing record already carried this reference. */
-  duplicateOf?: Transaction;
+/** A save either stores a record, or finds the transaction is already saved. */
+export type SaveOutcome =
+  { saved: true; transaction: Transaction } | { saved: false; duplicateOf: Transaction };
+
+/** An edit would make a record repeat another (same transaction ID). */
+export class DuplicateRecordError extends Error {
+  readonly existing: Transaction;
+  constructor(existing: Transaction) {
+    super('Another record already has this transaction ID');
+    this.name = 'DuplicateRecordError';
+    this.existing = existing;
+  }
 }
+
+/** By name rather than `instanceof`, which a transpiled Error subclass can lose. */
+export const isDuplicateRecordError = (e: unknown): e is DuplicateRecordError =>
+  e instanceof Error && e.name === 'DuplicateRecordError' && 'existing' in e;
+
+const isUniqueViolation = (e: unknown) =>
+  e instanceof Error && /UNIQUE constraint failed/i.test(e.message);
+
+/** The fields that make up a transaction's ID; editing one may change it. */
+const KEY_FIELDS: readonly (keyof Transaction)[] = [
+  'provider',
+  'providerId',
+  'transactionReference',
+];
 
 interface AppState {
   ready: boolean;
@@ -88,6 +111,11 @@ interface AppState {
   saveFromLab(result: ParseResult, build: LabSaveReady): Promise<SaveOutcome>;
   /** The user said a Lab result was wrong. Recorded without message content. */
   recordParseRejected(result: ParseResult): Promise<void>;
+
+  /** The real record already saved with this transaction ID, if any. */
+  findSaved(key: string | null): Promise<Transaction | null>;
+  /** A copy saved before duplicates were skipped is a separate transaction after all. */
+  keepBoth(id: string): Promise<void>;
 
   /** The message a record came from, for its detail screen. Null once deleted. */
   getRecordSource(
@@ -185,6 +213,45 @@ export const useAppStore = create<AppState>((set, get) => {
     });
   };
 
+  const findExisting = (database: SqlDatabase, key: string | null | undefined) =>
+    key ? transactionRepository.findByKey(database, key) : Promise.resolve(null);
+
+  /** The transaction is already saved: nothing is stored, the attempt is noted. */
+  const skipped = async (database: SqlDatabase, existing: Transaction): Promise<SaveOutcome> => {
+    await processingEventRepository.record(database, {
+      id: makeId('evt'),
+      kind: 'DUPLICATE_DETECTED',
+      messageId: null,
+      transactionId: existing.id,
+      detail: 'skipped; already saved',
+      createdAt: now(),
+    });
+    await reload();
+    return { saved: false, duplicateOf: existing };
+  };
+
+  /**
+   * Save unless the transaction is already there. Checked first so the user
+   * can be told; the database's own rule catches two saves racing each other.
+   */
+  const saveUnlessSaved = async (
+    database: SqlDatabase,
+    rows: Parameters<typeof persist>[1],
+  ): Promise<Transaction | null> => {
+    const key = rows.transaction.transactionKey;
+    const before = await findExisting(database, key);
+    if (before) return before;
+    try {
+      await persist(database, rows);
+      return null;
+    } catch (e) {
+      if (!isUniqueViolation(e)) throw e;
+      const winner = await findExisting(database, key);
+      if (winner) return winner;
+      throw e;
+    }
+  };
+
   /** Remember the user's category for this recipient, for the next message to them. */
   const learnCategory = async (
     database: SqlDatabase,
@@ -267,13 +334,6 @@ export const useAppStore = create<AppState>((set, get) => {
       const parseId = makeId('parse');
       const transactionId = makeId('txn');
 
-      // Checked before inserting so the user can be told, but the record is
-      // still saved: a repeated reference is a strong hint, not a certainty,
-      // and silently dropping a real transaction would be worse.
-      const duplicate = result.transactionReference
-        ? await transactionRepository.findByReference(database, result.transactionReference)
-        : null;
-
       const transaction = transactionFromParseResult(result, {
         id: transactionId,
         now: timestamp,
@@ -281,11 +341,19 @@ export const useAppStore = create<AppState>((set, get) => {
         parseResultId: parseId,
       });
 
-      await persist(database, { messageId, parseId, result, transaction, timestamp });
+      // The same transaction is never saved twice.
+      const existing = await saveUnlessSaved(database, {
+        messageId,
+        parseId,
+        result,
+        transaction,
+        timestamp,
+      });
+      if (existing) return skipped(database, existing);
 
       await processingEventRepository.record(database, {
         id: makeId('evt'),
-        kind: duplicate ? 'DUPLICATE_DETECTED' : 'TRANSACTION_SAVED',
+        kind: 'TRANSACTION_SAVED',
         messageId,
         transactionId,
         // Confidence only. Never message content.
@@ -295,7 +363,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
       await reload();
 
-      return duplicate ? { transaction, duplicateOf: duplicate } : { transaction };
+      return { saved: true, transaction };
     },
 
     async saveFromLab(result, build) {
@@ -305,11 +373,6 @@ export const useAppStore = create<AppState>((set, get) => {
       const messageId = makeId('msg');
       const parseId = makeId('parse');
       const transactionId = makeId('txn');
-
-      const reference = build.values.transactionReference;
-      const duplicate = reference
-        ? await transactionRepository.findByReference(database, reference)
-        : null;
 
       const transaction: Transaction = {
         ...transactionFromParseResult(result, {
@@ -323,15 +386,24 @@ export const useAppStore = create<AppState>((set, get) => {
         confidence: build.confidence,
         lowFields: build.remainingLow,
         status: build.status,
+        // From the values as corrected: an edited reference is the one that counts.
+        transactionKey: transactionKey(build.values, result.normalizedText),
       };
 
       // The parse result is stored as the parser produced it. The user's
       // corrections live on the transaction and in the correction event.
-      await persist(database, { messageId, parseId, result, transaction, timestamp });
+      const existing = await saveUnlessSaved(database, {
+        messageId,
+        parseId,
+        result,
+        transaction,
+        timestamp,
+      });
+      if (existing) return skipped(database, existing);
 
       await processingEventRepository.record(database, {
         id: makeId('evt'),
-        kind: duplicate ? 'DUPLICATE_DETECTED' : 'TRANSACTION_SAVED',
+        kind: 'TRANSACTION_SAVED',
         messageId,
         transactionId,
         detail: `lab; confidence ${build.confidence.toFixed(2)}`,
@@ -356,7 +428,17 @@ export const useAppStore = create<AppState>((set, get) => {
 
       await reload();
 
-      return duplicate ? { transaction, duplicateOf: duplicate } : { transaction };
+      return { saved: true, transaction };
+    },
+
+    async findSaved(key) {
+      return findExisting(requireDb(), key);
+    },
+
+    async keepBoth(id) {
+      const database = requireDb();
+      await transactionRepository.update(database, id, { duplicateOf: null }, now());
+      await reload();
     },
 
     async recordParseRejected(result) {
@@ -405,15 +487,29 @@ export const useAppStore = create<AppState>((set, get) => {
     async correct(id, patch, options = {}) {
       const database = requireDb();
       const timestamp = now();
-      const before = options.rememberCategory
-        ? await transactionRepository.findById(database, id)
-        : null;
+      const before = await transactionRepository.findById(database, id);
+
+      // Editing the provider or reference can change the transaction's ID. It
+      // must not become another record's: that record is the same transaction.
+      let keyPatch: Partial<Transaction> = {};
+      if (before && KEY_FIELDS.some((k) => k in patch)) {
+        const message = before.sourceMessageId
+          ? await messageRepository.findById(database, before.sourceMessageId)
+          : null;
+        const key = transactionKey({ ...before, ...patch }, message?.normalizedText);
+        if (key !== (before.transactionKey ?? null) && !before.duplicateOf) {
+          const clash =
+            key && !before.isDemo ? await transactionRepository.findByKey(database, key, id) : null;
+          if (clash) throw new DuplicateRecordError(clash);
+          keyPatch = { transactionKey: key };
+        }
+      }
 
       // A human has now checked it, so it is verified and nothing stays flagged.
       await transactionRepository.update(
         database,
         id,
-        { ...patch, status: 'CONFIRMED', confidence: 1, lowFields: [] },
+        { ...patch, ...keyPatch, status: 'CONFIRMED', confidence: 1, lowFields: [] },
         timestamp,
       );
 
@@ -459,7 +555,29 @@ export const useAppStore = create<AppState>((set, get) => {
       // would keep the most sensitive part of what the user deleted. Its parse
       // result cascades with it.
       await database.withTransactionAsync(async () => {
+        const copies = await transactionRepository.listCopiesOf(database, id);
         await transactionRepository.remove(database, id);
+
+        // Copies of a deleted record: the oldest takes over its transaction ID,
+        // the others now repeat that one.
+        const [heir, ...rest] = copies;
+        if (heir) {
+          await transactionRepository.update(
+            database,
+            heir.id,
+            { transactionKey: existing?.transactionKey ?? null, duplicateOf: null },
+            timestamp,
+          );
+          for (const copy of rest) {
+            await transactionRepository.update(
+              database,
+              copy.id,
+              { duplicateOf: heir.id },
+              timestamp,
+            );
+          }
+        }
+
         const messageId = existing?.sourceMessageId;
         if (
           messageId &&

@@ -3,6 +3,7 @@ import { categoryRuleRepository } from '../database/repositories';
 import { useAppStore } from '../features/transactions/store';
 import { TZ } from './fixtures/tz-messages';
 import { createMigratedDatabase } from './support/nodeSqlite';
+import { saveNew } from './support/save';
 
 const NOW = '2026-09-12T08:00:00.000Z';
 const app = () => useAppStore.getState();
@@ -19,7 +20,7 @@ afterEach(() => db.closeAsync());
 
 describe('fees, taxes and category on a saved record', () => {
   it('are saved and read back as parsed', async () => {
-    const { transaction } = await app().analyzeAndSave(TZ.mixxBetting);
+    const transaction = await saveNew(TZ.mixxBetting);
     expect(transaction).toMatchObject({
       fee: 600,
       moneyCategory: 'BETTING',
@@ -33,7 +34,7 @@ describe('fees, taxes and category on a saved record', () => {
   });
 
   it('keep the LUKU token on the record', async () => {
-    const { transaction } = await app().analyzeAndSave(TZ.lukuReceipt);
+    const transaction = await saveNew(TZ.lukuReceipt);
     const saved = app().transactions.find((t) => t.id === transaction.id)!;
     expect(saved.details.token).toBe('1111 2222 3333 4444 5555');
     expect(saved.moneyCategory).toBe('ELECTRICITY_WATER');
@@ -42,7 +43,7 @@ describe('fees, taxes and category on a saved record', () => {
 
 describe('remembered categories', () => {
   it('file the next message to the same recipient the way the user chose', async () => {
-    const { transaction } = await app().analyzeAndSave(TZ.mixxBetting);
+    const transaction = await saveNew(TZ.mixxBetting);
     await app().correct(
       transaction.id,
       { moneyCategory: 'OTHER_SPENDING' },
@@ -57,13 +58,13 @@ describe('remembered categories', () => {
   });
 
   it('are not taken from a category the rules picked', async () => {
-    const { transaction } = await app().analyzeAndSave(TZ.mixxBetting);
+    const transaction = await saveNew(TZ.mixxBetting);
     await app().correct(transaction.id, { moneyCategory: 'OTHER_SPENDING' });
     expect(app().categoryRules).toEqual({});
   });
 
   it('can be forgotten on their own', async () => {
-    const { transaction } = await app().analyzeAndSave(TZ.mixxBetting);
+    const transaction = await saveNew(TZ.mixxBetting);
     await app().correct(
       transaction.id,
       { moneyCategory: 'OTHER_SPENDING' },
@@ -76,7 +77,7 @@ describe('remembered categories', () => {
   });
 
   it('go with the records when every transaction is deleted: they hold names', async () => {
-    const { transaction } = await app().analyzeAndSave(TZ.mixxBetting);
+    const transaction = await saveNew(TZ.mixxBetting);
     await app().correct(
       transaction.id,
       { moneyCategory: 'OTHER_SPENDING' },

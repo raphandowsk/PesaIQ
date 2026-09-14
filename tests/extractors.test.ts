@@ -79,7 +79,7 @@ describe('extractReference', () => {
   it('warns about duplicate detection when missing', () => {
     const r = extractReference('You have received TZS 250,000');
     expect(r.value).toBeNull();
-    expect(r.warning).toMatch(/duplicates cannot be detected/);
+    expect(r.warning).toMatch(/only the exact same message is caught/);
   });
 });
 

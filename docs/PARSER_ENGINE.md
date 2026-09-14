@@ -56,7 +56,8 @@ Every classification returns `reasons[]` — the UI shows these verbatim.
   the record cannot be verified.
 - **Balance** — after `new balance` / `avail bal` / `salio`.
 - **Reference** — after `ref` / `receipt` / `txnid` / `muamala` / `transaction id`,
-  6+ alphanumerics. Missing → warning that duplicates cannot be detected.
+  6+ alphanumerics. Missing → warning that only the exact same message is caught
+  as a repeat.
 - **Counterparty** — `from X` (0.90) · `kwa X` (0.88) · `paid/umelipa/to X` (0.76) ·
   literal `ATM withdrawal` (0.62).
 - **Account / phone** — `0XXXXXXXXX` → `07** *** 678`; `****NNNN` → `**** NNNN`.
@@ -141,8 +142,8 @@ input the difference is at most 0.003 and never changes a band.
   not distinguish them. This is the canvas formula, kept deliberately.
 - **A bare number is assumed to be TZS.** Flagged low (0.55) with a warning, and
   never treated as verified.
-- **No duplicate detection yet.** The reference is extracted for it; the check
-  itself arrives with the repository in Phase 1C.
+- **Duplicates are skipped by the store, not the parser.** The reference and
+  provider make the transaction ID; see "Duplicates" in `ARCHITECTURE.md`.
 
 ## Real Mixx and LUKU layouts (2026-09-12)
 

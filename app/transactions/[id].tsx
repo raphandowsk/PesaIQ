@@ -9,7 +9,13 @@ import { Button, Card, Icon, Screen, Text, toast } from '../../components/ui';
 import { ChargesBreakdown } from '../../components/fees/ChargesBreakdown';
 import { splitCharges } from '../../features/insights';
 import { confidenceLabel } from '../../features/review/queue';
-import { totalOutOf, useAppStore, type Transaction } from '../../features/transactions';
+import {
+  duplicateEditText,
+  isDuplicateRecordError,
+  totalOutOf,
+  useAppStore,
+  type Transaction,
+} from '../../features/transactions';
 import {
   buildRecordPatch,
   canConfirm,
@@ -121,8 +127,12 @@ export default function RecordDetail() {
     try {
       await action();
       done();
-    } catch {
-      setError('That change could not be saved. Nothing was changed.');
+    } catch (e) {
+      setError(
+        isDuplicateRecordError(e)
+          ? duplicateEditText(e.existing)
+          : 'That change could not be saved. Nothing was changed.',
+      );
     } finally {
       setBusy(null);
     }

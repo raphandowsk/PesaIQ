@@ -9,6 +9,7 @@ import { DEMO_RECORDS } from '../features/transactions/demoData';
 import { buildRecordPatch } from '../features/transactions/editRecord';
 import { useAppStore } from '../features/transactions/store';
 import { createMigratedDatabase } from './support/nodeSqlite';
+import { saveNew } from './support/save';
 
 const NOW = '2026-09-11T12:00:00.000Z';
 const app = () => useAppStore.getState();
@@ -39,7 +40,7 @@ describe('the source message behind a record', () => {
 
 describe('deleting a record', () => {
   it('deletes its source message and parse result with it', async () => {
-    const { transaction } = await app().analyzeAndSave(SAMPLES[1].text, SAMPLES[1].sender);
+    const transaction = await saveNew(SAMPLES[1].text, SAMPLES[1].sender);
     expect(await messageRepository.findById(db, transaction.sourceMessageId!)).not.toBeNull();
 
     await app().remove(transaction.id);

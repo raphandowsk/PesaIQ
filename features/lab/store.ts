@@ -10,12 +10,15 @@
 import { create } from 'zustand';
 
 import { MAX_MESSAGE_LENGTH, type ParseResult, type SmsSample } from '../parser';
+import type { Transaction } from '../transactions/model';
 import { useAppStore, type SaveOutcome } from '../transactions/store';
+import { transactionKey } from '../transactions/transactionKey';
 import type { MoneyCategory, TransactionType } from '../../types/domain';
 import { formatAmount } from '../../utils/format';
 import {
   buildLabSave,
   draftCategory,
+  draftKeyParts,
   EMPTY_EDITS,
   type DraftEdits,
   type TextEditableKey,
@@ -51,6 +54,8 @@ interface LabState {
   setType(type: TransactionType): void;
   setMoneyCategory(category: MoneyCategory): void;
   save(): Promise<LabSaveResult>;
+  /** The record already saved for this draft's transaction, if any: saving would be skipped. */
+  findSaved(): Promise<Transaction | null>;
   /** "Not correct": record it, drop the draft, keep the text to try again. */
   reject(): Promise<void>;
   /** Drop the draft and the text. */
@@ -148,6 +153,18 @@ export const useLabStore = create<LabState>((set, get) => ({
       return { ok: true, outcome };
     } catch {
       return { ok: false, error: LAB_ERRORS.saveFailed };
+    }
+  },
+
+  async findSaved() {
+    const { draft, edits } = get();
+    if (!draft) return null;
+    try {
+      const key = transactionKey(draftKeyParts(draft, edits), draft.normalizedText);
+      return await useAppStore.getState().findSaved(key);
+    } catch {
+      // Only a hint for the screen; saving checks again.
+      return null;
     }
   },
 

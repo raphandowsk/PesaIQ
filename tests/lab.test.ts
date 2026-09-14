@@ -1,7 +1,7 @@
 import type { SqlDatabase } from '../database/client';
 import { processingEventRepository, transactionRepository } from '../database/repositories';
 import { LAB_SAVE_ERRORS } from '../features/lab/draft';
-import { LAB_ERRORS, useLabStore } from '../features/lab/store';
+import { LAB_ERRORS, useLabStore, type LabSaveResult } from '../features/lab/store';
 import { MAX_MESSAGE_LENGTH, SAMPLES } from '../features/parser';
 import { useAppStore } from '../features/transactions/store';
 import { createMigratedDatabase } from './support/nodeSqlite';
@@ -104,30 +104,58 @@ describe('editing a draft', () => {
   });
 });
 
+/** The record a Lab save stored; fails the test if it stored none. */
+const savedOf = (r: LabSaveResult) => {
+  if (!r.ok) throw new Error(r.error);
+  if (!r.outcome.saved) throw new Error('Expected a new record, but it was already saved');
+  return r.outcome.transaction;
+};
+
 describe('saving from the Lab', () => {
   it('confirms a clean record and resets the Lab', async () => {
     analyzeSample(RECEIVED);
-    const r = await lab().save();
-
-    expect(r.ok).toBe(true);
-    if (!r.ok) return;
-    expect(r.outcome.transaction.status).toBe('CONFIRMED');
-    // The demo seed already carries this sample's reference.
-    expect(r.outcome.duplicateOf?.isDemo).toBe(true);
+    // The demo seed carries this sample's reference; samples never block a real record.
+    const saved = savedOf(await lab().save());
+    expect(saved.status).toBe('CONFIRMED');
 
     expect(lab().text).toBe('');
     expect(lab().draft).toBeNull();
 
-    const stored = await transactionRepository.findById(db, r.outcome.transaction.id);
+    const stored = await transactionRepository.findById(db, saved.id);
     expect(stored?.status).toBe('CONFIRMED');
     expect(stored?.maskedAccountOrPhone).toBe('07** *** 678');
   });
 
+  it('skips a transaction already saved, and can tell before saving', async () => {
+    analyzeSample(RECEIVED);
+    const first = savedOf(await lab().save());
+
+    analyzeSample(RECEIVED);
+    expect((await lab().findSaved())?.id).toBe(first.id);
+
+    const before = await count();
+    expect(await lab().save()).toMatchObject({
+      ok: true,
+      outcome: { saved: false, duplicateOf: { id: first.id } },
+    });
+    expect(await count()).toBe(before);
+  });
+
+  it('treats a corrected reference as a different transaction', async () => {
+    analyzeSample(RECEIVED);
+    savedOf(await lab().save());
+
+    analyzeSample(RECEIVED);
+    lab().editField('reference', 'NEWREF123');
+    expect(await lab().findSaved()).toBeNull();
+    expect(savedOf(await lab().save()).transactionReference).toBe('NEWREF123');
+  });
+
   it('sends a record with an unsure field to review', async () => {
     analyzeSample(BANK_ATM);
-    const r = await lab().save();
-    expect(r.ok && r.outcome.transaction.status).toBe('NEEDS_REVIEW');
-    expect(r.ok && r.outcome.transaction.lowFields).toEqual(['counterparty']);
+    const saved = savedOf(await lab().save());
+    expect(saved.status).toBe('NEEDS_REVIEW');
+    expect(saved.lowFields).toEqual(['counterparty']);
   });
 
   it('refuses to save without an amount, and keeps the draft to fix', async () => {
@@ -142,9 +170,8 @@ describe('saving from the Lab', () => {
   it('saves a correction and records which fields changed, not their values', async () => {
     analyzeSample(BANK_ATM);
     lab().editField('counterparty', 'CITY ATM');
-    const r = await lab().save();
 
-    expect(r.ok && r.outcome.transaction).toMatchObject({
+    expect(savedOf(await lab().save())).toMatchObject({
       status: 'CONFIRMED',
       counterparty: 'CITY ATM',
     });
@@ -157,12 +184,11 @@ describe('saving from the Lab', () => {
   it('stores the parse result as the parser produced it, not as edited', async () => {
     analyzeSample(BANK_ATM);
     lab().editField('counterparty', 'CITY ATM');
-    const r = await lab().save();
-    if (!r.ok) throw new Error(r.error);
+    const saved = savedOf(await lab().save());
 
     const row = await db.getFirstAsync<{ payload: string }>(
       'SELECT payload FROM parse_results WHERE id = ?',
-      [r.outcome.transaction.parseResultId!],
+      [saved.parseResultId!],
     );
     expect(row?.payload).toBeDefined();
     expect(row?.payload).not.toContain('CITY ATM');

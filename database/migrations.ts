@@ -7,12 +7,57 @@
  * Never edit a migration that has shipped — add another one. An installed app
  * has already run the old version and will not run it again.
  */
+import { transactionKey } from '../features/transactions/transactionKey';
 import type { SqlDatabase } from './client';
 
 export interface Migration {
   version: number;
   name: string;
   up: string;
+  /** Work SQL alone can't do (hashing, say), run after `up` in the same transaction. */
+  after?: (db: SqlDatabase) => Promise<void>;
+}
+
+/**
+ * Give every record its transaction ID. Records are visited oldest first; a
+ * real record repeating an earlier one keeps no ID and points at the earlier
+ * record instead, for the user to review. Demo samples get an ID but never
+ * count as the earlier record.
+ */
+async function backfillTransactionKeys(db: SqlDatabase): Promise<void> {
+  const rows = await db.getAllAsync<{
+    id: string;
+    provider: string | null;
+    provider_id: string | null;
+    transaction_reference: string | null;
+    is_demo: number;
+    normalized_text: string | null;
+  }>(
+    `SELECT t.id, t.provider, t.provider_id, t.transaction_reference, t.is_demo, m.normalized_text
+       FROM transactions t LEFT JOIN messages m ON m.id = t.source_message_id
+      ORDER BY t.created_at ASC, t.id ASC`,
+  );
+
+  const firstWithKey = new Map<string, string>();
+  for (const row of rows) {
+    const key = transactionKey(
+      {
+        provider: row.provider,
+        providerId: row.provider_id,
+        transactionReference: row.transaction_reference,
+      },
+      row.normalized_text,
+    );
+    if (!key) continue;
+
+    const earlier = row.is_demo === 1 ? undefined : firstWithKey.get(key);
+    if (earlier) {
+      await db.runAsync('UPDATE transactions SET duplicate_of = ? WHERE id = ?', [earlier, row.id]);
+      continue;
+    }
+    if (row.is_demo !== 1) firstWithKey.set(key, row.id);
+    await db.runAsync('UPDATE transactions SET transaction_key = ? WHERE id = ?', [key, row.id]);
+  }
 }
 
 /** Exported so a test can build a database as an older version left it. */
@@ -130,6 +175,26 @@ export const MIGRATIONS: Migration[] = [
       UPDATE providers SET maturity = 'EXPERIMENTAL' WHERE id = 'mixx';
     `,
   },
+  {
+    version: 3,
+    name: 'transaction IDs, to skip duplicates',
+    up: `
+      -- The transaction's ID (features/transactions/transactionKey.ts): the
+      -- provider and reference, or a fingerprint of the message.
+      ALTER TABLE transactions ADD COLUMN transaction_key TEXT;
+      -- A record saved before duplicates were skipped that repeats an earlier
+      -- one: the earlier record's id, until the copy is deleted or kept.
+      ALTER TABLE transactions ADD COLUMN duplicate_of TEXT;
+    `,
+    async after(db) {
+      await backfillTransactionKeys(db);
+      // No two real records share an ID. Demo samples never block a real one.
+      await db.execAsync(
+        `CREATE UNIQUE INDEX idx_transactions_key ON transactions(transaction_key)
+           WHERE transaction_key IS NOT NULL AND is_demo = 0`,
+      );
+    },
+  },
 ];
 
 /** Highest version this build knows about. */
@@ -154,6 +219,7 @@ export async function migrate(db: SqlDatabase): Promise<number> {
 
     await db.withTransactionAsync(async () => {
       await db.execAsync(migration.up);
+      if (migration.after) await migration.after(db);
     });
     // Outside the transaction: PRAGMA is not transactional in SQLite.
     await db.execAsync(`PRAGMA user_version = ${migration.version}`);
