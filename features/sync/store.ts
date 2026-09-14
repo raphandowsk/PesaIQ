@@ -69,7 +69,8 @@ export function createSyncStore(deps: SyncStoreDeps) {
           }),
         );
         // Only a change from another phone alters what the screens show.
-        if (report.received + report.removed + report.conflicts > 0) await app.refresh();
+        const changes = report.received + report.removed + report.conflicts + report.preferences;
+        if (changes > 0) await app.refresh();
         set({ phase: 'synced', lastSyncedAt: now(), pending: report.pending });
       } catch (e) {
         set({ phase: isOtherAccountError(e) ? 'otherAccount' : 'failed' });

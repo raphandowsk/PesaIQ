@@ -181,7 +181,7 @@ export default function Settings() {
         : lastSyncedAt
           ? `Synced at ${new Date(lastSyncedAt).toTimeString().slice(0, 5)}${pending > 0 ? `, ${pending} waiting` : ''}.`
           : 'On.';
-    return `${state} Records are encrypted on this phone first. SMS messages never leave it.`;
+    return `${state} Records, categories and provider choices are encrypted on this phone first. SMS messages never leave it.`;
   };
 
   const setCloudSync = (on: boolean) =>

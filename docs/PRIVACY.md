@@ -70,7 +70,8 @@ storage model above would not change: still local, still no upload by default.
   shown only after tapping **Show token**, are masked in the source-message view
   until "Show full numbers", and are never exported.
 - **Remembered categories** store recipient names alongside the category chosen
-  for each. They stay on the device and are deleted with "Delete all
+  for each. They stay on the device unless Cloud sync is on (see below), and
+  are deleted with "Delete all
   transactions". Settings → Remembered categories → **Forget** clears them on
   their own.
 - Phone numbers written as 255... are masked like local ones.
@@ -117,6 +118,10 @@ storage model above would not change: still local, still no upload by default.
 - **SMS messages are never uploaded**, encrypted or not. A record synced to
   another phone arrives without its message.
 - **Demo samples are never uploaded.**
+- **Remembered categories and provider choices sync too**, as one document
+  encrypted the same way (the categories hold recipient names). Forgetting
+  categories on one phone forgets them on the others. Cloud sync itself, demo
+  data and onboarding stay each phone's own.
 - **Deletions reach every phone.** A deleted record's row keeps no content.
 - **One account per phone.** Records synced to one account are not uploaded to
   another; the second account can sync once they are deleted from the phone.

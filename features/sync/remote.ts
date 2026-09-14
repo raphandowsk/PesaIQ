@@ -32,6 +32,18 @@ export const START: PullCursor = {
   id: '00000000-0000-0000-0000-000000000000',
 };
 
+/** The account's locked preferences document (`synced_settings`). */
+export interface RemotePreferences {
+  ciphertext: string;
+  nonce: string;
+  keyVersion: number;
+  editedAt: string;
+}
+
+export interface OutgoingPreferences extends RemotePreferences {
+  userId: string;
+}
+
 export interface RecordsRemote {
   /** Rows changed after `after`, oldest first, at most `limit`. */
   pull(after: PullCursor, limit: number): Promise<RemoteRecord[]>;
@@ -43,6 +55,10 @@ export interface RecordsRemote {
   push(rows: OutgoingRecord[]): Promise<void>;
   /** The live row with this fingerprint, if any. */
   findLive(dedupeKey: string): Promise<RemoteRecord | null>;
+  /** The account's preferences document, if it has one. */
+  fetchPreferences(): Promise<RemotePreferences | null>;
+  /** Replaces the document, unless the server's is a later edit. */
+  pushPreferences(doc: OutgoingPreferences): Promise<void>;
 }
 
 export type RemoteFailure = 'duplicate' | 'failed';

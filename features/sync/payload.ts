@@ -25,7 +25,7 @@ const envelopeSchema = z.object({ v: z.literal(1), record: payloadSchema });
  * JSON with every character above ASCII escaped (\uXXXX), so the bytes are
  * plain ASCII and need no TextEncoder or TextDecoder either way.
  */
-function toAsciiBytes(value: unknown): Uint8Array {
+export function toAsciiBytes(value: unknown): Uint8Array {
   const text = JSON.stringify(value).replace(
     /[-￿]/g,
     (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`,
@@ -35,7 +35,7 @@ function toAsciiBytes(value: unknown): Uint8Array {
   return bytes;
 }
 
-function fromAsciiBytes(bytes: Uint8Array): string | null {
+export function fromAsciiBytes(bytes: Uint8Array): string | null {
   let text = '';
   for (let i = 0; i < bytes.length; i += 4096) {
     const chunk = bytes.subarray(i, i + 4096);

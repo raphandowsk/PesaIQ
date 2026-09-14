@@ -228,6 +228,37 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 5,
+    name: 'times for synced preferences',
+    up: `
+      -- Remembered categories and provider choices sync between phones
+      -- (features/sync/preferences.ts). Each change carries its own time, so
+      -- the later one wins. A rule already has updated_at; a forgotten rule is
+      -- remembered here, and a provider choice gets a time when it changes.
+      CREATE TABLE category_rule_deletions (
+        party_key  TEXT PRIMARY KEY NOT NULL,
+        deleted_at TEXT NOT NULL
+      );
+      CREATE TRIGGER category_rules_forgotten AFTER DELETE ON category_rules
+      BEGIN
+        INSERT OR REPLACE INTO category_rule_deletions (party_key, deleted_at)
+        VALUES (old.party_key, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+      END;
+      CREATE TRIGGER category_rules_learned AFTER INSERT ON category_rules
+      BEGIN
+        DELETE FROM category_rule_deletions WHERE party_key = new.party_key;
+      END;
+
+      ALTER TABLE providers ADD COLUMN enabled_at TEXT;
+      CREATE TRIGGER providers_choice_changed AFTER UPDATE OF enabled ON providers
+        WHEN old.enabled IS NOT new.enabled
+      BEGIN
+        UPDATE providers SET enabled_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+         WHERE id = new.id;
+      END;
+    `,
+  },
 ];
 
 /** Highest version this build knows about. */

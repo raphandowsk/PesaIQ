@@ -8,6 +8,8 @@ import {
   type Transaction,
   type TransactionRow,
 } from '../../features/transactions/model';
+import type { CategoryEntry, Preferences, ProviderEntry } from '../../features/sync/preferences';
+import { MONEY_CATEGORIES, type MoneyCategory } from '../../types/domain';
 import type { SqlDatabase } from '../client';
 
 type SyncRow = TransactionRow & { sync_id: string | null; synced_edit: string | null };
@@ -163,5 +165,66 @@ export const syncRepository = {
     await db.runAsync('DELETE FROM sync_deletions');
     await db.runAsync('UPDATE transactions SET synced_edit = NULL');
     await db.runAsync(`DELETE FROM sync_state WHERE key = 'pulled_to'`);
+    await db.runAsync('DELETE FROM category_rule_deletions');
+  },
+
+  /** This phone's remembered categories, forgotten ones included, and its provider choices. */
+  async readPreferences(db: SqlDatabase): Promise<Preferences> {
+    const rules = await db.getAllAsync<{
+      party_key: string;
+      money_category: string;
+      updated_at: string;
+    }>('SELECT party_key, money_category, updated_at FROM category_rules');
+    const forgotten = await db.getAllAsync<{ party_key: string; deleted_at: string }>(
+      'SELECT party_key, deleted_at FROM category_rule_deletions',
+    );
+    // Only choices the user made: a provider never touched keeps its default.
+    const providers = await db.getAllAsync<{ id: string; enabled: number; enabled_at: string }>(
+      'SELECT id, enabled, enabled_at FROM providers WHERE enabled_at IS NOT NULL',
+    );
+
+    const categories: Preferences['categories'] = {};
+    for (const f of forgotten) categories[f.party_key] = { category: null, at: f.deleted_at };
+    for (const r of rules) {
+      if (!(MONEY_CATEGORIES as readonly string[]).includes(r.money_category)) continue;
+      const known = categories[r.party_key];
+      if (!known || r.updated_at > known.at) {
+        categories[r.party_key] = { category: r.money_category as MoneyCategory, at: r.updated_at };
+      }
+    }
+
+    const choices: Preferences['providers'] = {};
+    for (const p of providers) choices[p.id] = { enabled: p.enabled === 1, at: p.enabled_at };
+    return { categories, providers: choices };
+  },
+
+  /** Take a category from another phone, keeping the time it was made there. */
+  async applyCategory(db: SqlDatabase, key: string, entry: CategoryEntry): Promise<void> {
+    if (entry.category === null) {
+      await db.runAsync('DELETE FROM category_rules WHERE party_key = ?', [key]);
+      await db.runAsync(
+        'INSERT OR REPLACE INTO category_rule_deletions (party_key, deleted_at) VALUES (?, ?)',
+        [key, entry.at],
+      );
+      return;
+    }
+    await db.runAsync(
+      `INSERT INTO category_rules (party_key, money_category, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(party_key) DO UPDATE SET
+         money_category = excluded.money_category, updated_at = excluded.updated_at`,
+      [key, entry.category, entry.at],
+    );
+    await db.runAsync('DELETE FROM category_rule_deletions WHERE party_key = ?', [key]);
+  },
+
+  /** Take a provider choice from another phone. False for a provider this phone lacks. */
+  async applyProvider(db: SqlDatabase, id: string, entry: ProviderEntry): Promise<boolean> {
+    const r = await db.runAsync('UPDATE providers SET enabled = ? WHERE id = ?', [
+      entry.enabled ? 1 : 0,
+      id,
+    ]);
+    // After the trigger stamped it with this phone's clock.
+    await db.runAsync('UPDATE providers SET enabled_at = ? WHERE id = ?', [entry.at, id]);
+    return r.changes > 0;
   },
 };

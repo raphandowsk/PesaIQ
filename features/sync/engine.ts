@@ -21,6 +21,13 @@ import {
 import { dedupeKeyOf, keyTag, KEY_VERSION, openRecord, sealRecord, type SyncKeys } from './crypto';
 import { decodePayload, encodePayload, tombstoneBytes, type RecordPayload } from './payload';
 import {
+  decodePreferences,
+  encodePreferences,
+  mergePreferences,
+  NO_PREFERENCES,
+  PREFERENCES_ROW,
+} from './preferences';
+import {
   isDuplicateRejection,
   START,
   type OutgoingRecord,
@@ -40,6 +47,8 @@ export interface SyncDeps {
   pageSize?: number;
   /** Rows per push. */
   batchSize?: number;
+  /** The clock, for the preferences document's edit time. */
+  now?: () => string;
 }
 
 export interface SyncReport {
@@ -53,6 +62,8 @@ export interface SyncReport {
   unreadable: number;
   /** A second server record for a transaction already here, kept for review. */
   conflicts: number;
+  /** Remembered categories and provider choices taken from other phones. */
+  preferences: number;
   /** Changes still waiting to be sent. */
   pending: number;
 }
@@ -100,12 +111,14 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncReport> {
     sent: 0,
     unreadable: 0,
     conflicts: 0,
+    preferences: 0,
     pending: 0,
   };
   await claimPhone(deps);
   await pull(deps, report);
   await sendDeletions(deps, report);
   await sendChanges(deps, report);
+  await syncPreferences(deps, report);
   report.pending = await syncRepository.countPending(deps.db);
   return report;
 }
@@ -338,4 +351,54 @@ async function sendOne(deps: SyncDeps, o: Outgoing, report: SyncReport): Promise
     if (theirs && !o.local.syncId) await receive(deps, theirs, report);
     else report.conflicts += 1;
   }
+}
+
+/**
+ * The preferences document (preferences.ts): merged entry by entry with this
+ * phone's, the newer entries taken here, and the merge sent back if this
+ * phone had newer ones.
+ */
+async function syncPreferences(deps: SyncDeps, report: SyncReport): Promise<void> {
+  const { db, remote, keys, random } = deps;
+  const row = await remote.fetchPreferences();
+
+  let server = NO_PREFERENCES;
+  if (row) {
+    const bytes = openRecord(keys, PREFERENCES_ROW, row.ciphertext, row.nonce);
+    const decoded = bytes ? decodePreferences(bytes) : null;
+    // Locked with another key: left as it is rather than overwritten unread.
+    if (!decoded) {
+      report.unreadable += 1;
+      return;
+    }
+    server = decoded;
+  }
+
+  const here = await syncRepository.readPreferences(db);
+  const { merged, toApply, newerHere } = mergePreferences(here, server);
+
+  if (toApply.categories.length + toApply.providers.length > 0) {
+    await db.withTransactionAsync(async () => {
+      for (const [key, entry] of toApply.categories) {
+        await syncRepository.applyCategory(db, key, entry);
+        report.preferences += 1;
+      }
+      for (const [id, entry] of toApply.providers) {
+        if (await syncRepository.applyProvider(db, id, entry)) report.preferences += 1;
+      }
+    });
+  }
+
+  if (!newerHere) return;
+  const now = deps.now?.() ?? new Date().toISOString();
+  // Later than the server's edit, whatever this phone's clock says, or the
+  // server would keep its own.
+  const justAfter = row ? new Date(Date.parse(isoOf(row.editedAt)) + 1).toISOString() : now;
+  await remote.pushPreferences({
+    userId: keys.userId,
+    ...sealRecord(keys, PREFERENCES_ROW, encodePreferences(merged), random(12)),
+    keyVersion: KEY_VERSION,
+    editedAt: now > justAfter ? now : justAfter,
+  });
+  report.sent += 1;
 }

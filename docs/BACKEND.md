@@ -44,7 +44,7 @@ What each table lets the server see:
 | `pin_guard`       | The PIN's guess count, any wait, and a verifier (an HMAC under the account key)                | The count; the verifier reveals nothing  |
 | `devices`         | Signed-in phones: label, platform, last seen                                                   | Those three                              |
 | `records`         | One locked record each, its fingerprint for duplicates, edit time, deletion marker             | Only ids, times and fingerprints         |
-| `synced_settings` | Settings and remembered categories, locked as one document                                     | Nothing                                  |
+| `synced_settings` | Remembered categories and provider choices, locked as one document                             | Nothing                                  |
 
 Rules the database enforces:
 
@@ -95,6 +95,11 @@ Rules the database enforces:
   - Pages of 3 returned all seven, each once, in 3 pages.
   - Another account saw none of them; a signed-out caller was refused.
   - Security and performance advisors: nothing new.
+- **`synced_settings` as the app writes it, live and rolled back:**
+  - An older edit arriving late left the newer document in place; a newer
+    one replaced it.
+  - Another account saw no row, and its attempt to write over the first
+    account's row was refused. A signed-out caller saw no row.
 
 ## App configuration
 
@@ -181,9 +186,13 @@ server:
 - **A deletion** is an upsert with `deleted = true`, no fingerprint, and a
   locked empty body.
 
+- **Preferences** are one row per account in `synced_settings`: remembered
+  categories and provider choices, locked like a record. The phone merges
+  them entry by entry, then upserts by `user_id` with an edit time just after
+  the server's, so the latest-edit trigger accepts it.
+
 Not built yet:
 
-- Remembered categories and settings (`synced_settings`).
 - The signed-in phones list (`devices`).
 - Removing an account's records from the server when sync is turned off.
 - A phone that missed a "Forgot PIN" still holds the old key: it must sign out

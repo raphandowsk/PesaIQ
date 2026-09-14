@@ -1,6 +1,7 @@
 /**
- * Sync's server side on Supabase: the `records` table (row-level security
- * keeps each account to its own rows) and the `pull_records` function.
+ * Sync's server side on Supabase: the `records` table and the `pull_records`
+ * function, and the preferences document in `synced_settings`. Row-level
+ * security keeps each account to its own rows.
  */
 import {
   RemoteError,
@@ -19,6 +20,13 @@ interface RecordRow {
   deleted: boolean;
   edited_at: string;
   updated_at: string;
+}
+
+interface PreferencesRow {
+  ciphertext: string;
+  nonce: string;
+  key_version: number;
+  edited_at: string;
 }
 
 const COLUMNS = 'id, dedupe_key, ciphertext, nonce, key_version, deleted, edited_at, updated_at';
@@ -80,6 +88,36 @@ export function supabaseRecordsRemote(): RecordsRemote | null {
         .maybeSingle();
       if (error) throw failure(error);
       return data ? fromRow(data as RecordRow) : null;
+    },
+
+    async fetchPreferences() {
+      const { data, error } = await supabase
+        .from('synced_settings')
+        .select('ciphertext, nonce, key_version, edited_at')
+        .maybeSingle();
+      if (error) throw failure(error);
+      if (!data) return null;
+      const row = data as PreferencesRow;
+      return {
+        ciphertext: row.ciphertext,
+        nonce: row.nonce,
+        keyVersion: row.key_version,
+        editedAt: row.edited_at,
+      };
+    },
+
+    async pushPreferences(doc) {
+      const { error } = await supabase.from('synced_settings').upsert(
+        {
+          user_id: doc.userId,
+          ciphertext: doc.ciphertext,
+          nonce: doc.nonce,
+          key_version: doc.keyVersion,
+          edited_at: doc.editedAt,
+        },
+        { onConflict: 'user_id' },
+      );
+      if (error) throw failure(error);
     },
   };
 }

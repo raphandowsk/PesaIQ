@@ -326,7 +326,14 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async refresh() {
+      const database = requireDb();
       await reload();
+      // Sync can bring categories and provider choices from another phone.
+      const [providers, categoryRules] = await Promise.all([
+        providerRepository.list(database),
+        categoryRuleRepository.list(database),
+      ]);
+      set({ providers, categoryRules });
     },
 
     runSync(task) {

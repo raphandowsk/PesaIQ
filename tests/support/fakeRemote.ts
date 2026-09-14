@@ -1,8 +1,10 @@
 import {
   RemoteError,
+  type OutgoingPreferences,
   type OutgoingRecord,
   type PullCursor,
   type RecordsRemote,
+  type RemotePreferences,
   type RemoteRecord,
 } from '../../features/sync/remote';
 
@@ -35,6 +37,8 @@ export class FakeRemote implements RecordsRemote {
   readonly rows = new Map<string, RemoteRecord>();
   /** Every call fails, as with no connection. */
   offline = false;
+  /** The account's `synced_settings` row. */
+  preferences: RemotePreferences | null = null;
   private tick = 0;
 
   private serverTime(): string {
@@ -83,5 +87,24 @@ export class FakeRemote implements RecordsRemote {
     this.check();
     const found = [...this.rows.values()].find((r) => r.dedupeKey === dedupeKey && !r.deleted);
     return found ? { ...found } : null;
+  }
+
+  async fetchPreferences(): Promise<RemotePreferences | null> {
+    this.check();
+    return this.preferences ? { ...this.preferences } : null;
+  }
+
+  async pushPreferences(doc: OutgoingPreferences): Promise<void> {
+    this.check();
+    // keep_latest_edit, as on the records.
+    if (this.preferences && Date.parse(doc.editedAt) < Date.parse(this.preferences.editedAt)) {
+      return;
+    }
+    this.preferences = {
+      ciphertext: doc.ciphertext,
+      nonce: doc.nonce,
+      keyVersion: doc.keyVersion,
+      editedAt: doc.editedAt.replace('Z', '+00:00'),
+    };
   }
 }

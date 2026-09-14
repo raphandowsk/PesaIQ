@@ -55,6 +55,7 @@ describe('migrations', () => {
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
     );
     expect(rows.map((r) => r.name).sort()).toEqual([
+      'category_rule_deletions',
       'category_rules',
       'messages',
       'parse_results',

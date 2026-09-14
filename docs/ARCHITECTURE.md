@@ -165,6 +165,11 @@ One sync (`engine.ts`):
 4. **Send changes:** every real record whose `synced_edit` differs from its
    `updated_at`, so every local change is picked up without the store knowing
    about sync.
+5. **Preferences** (`preferences.ts`): remembered categories and provider
+   choices, one locked document per account. Each entry carries the time it
+   was made, a forgotten category included, and the two sides merge entry by
+   entry, the later winning. The merge goes back to the server if this phone
+   had newer entries. Cloud sync, demo data and onboarding stay per phone.
 
 Rules:
 
@@ -712,6 +717,11 @@ first, marks later repeats as copies of the first, then adds the unique index.
 Migration v4 adds sync's bookkeeping: `sync_id` and `synced_edit` on
 `transactions`, a `sync_deletions` table filled by a delete trigger, and
 `sync_state` (see Sync).
+
+Migration v5 dates each preference change for sync: a
+`category_rule_deletions` table filled by a delete trigger (cleared when the
+category is learned again), and `providers.enabled_at`, stamped by a trigger
+when a provider is switched.
 
 ### Money arithmetic (`features/transactions/money.ts`)
 
