@@ -6,14 +6,7 @@ import { ChargesBreakdown } from '../components/fees/ChargesBreakdown';
 import { TransactionListItem } from '../components/transactions/TransactionListItem';
 import { BackButton } from '../components/ui/BackButton';
 import { Card, Screen, Text } from '../components/ui';
-import {
-  chargesEquation,
-  FEE_PERIODS,
-  feesSummary,
-  splitCharges,
-  type ChargeRow,
-  type FeePeriod,
-} from '../features/insights';
+import { FEE_PERIODS, feesSummary, type ChargeRow, type FeePeriod } from '../features/insights';
 import { useAppStore } from '../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../theme';
 import { formatTzs } from '../utils/format';
@@ -133,27 +126,18 @@ export default function FeesAndTaxes() {
           </Text>
           <View style={{ gap: space[2], marginBottom: space[3] }}>
             {summary.records.map((t) => (
-              <View key={t.id} style={{ gap: 2 }}>
-                <TransactionListItem
-                  transaction={t}
-                  variant="record"
-                  onPress={() =>
-                    router.push({ pathname: '/transactions/[id]', params: { id: t.id } })
-                  }
-                />
-                <Text variant="small" tone="muted" style={{ paddingHorizontal: space[2] }}>
-                  {chargesEquation(splitCharges([t]))}
-                </Text>
-              </View>
+              <TransactionListItem
+                key={t.id}
+                transaction={t}
+                variant="record"
+                onPress={() =>
+                  router.push({ pathname: '/transactions/[id]', params: { id: t.id } })
+                }
+              />
             ))}
           </View>
         </>
       ) : null}
-
-      <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
-        Operator fees + taxes = fees & taxes. Operator fees are what the provider or agent charged,
-        less any VAT inside the fee; that VAT is counted once, under taxes.
-      </Text>
     </Screen>
   );
 }
