@@ -37,9 +37,9 @@ describe('send-sms: who gets a code', () => {
 });
 
 describe('send-sms: what is sent, and where', () => {
-  it('sends the agreed English text from NEXTSMS', () => {
+  it('sends the agreed English text from the approved sender, MUST', () => {
     expect(codeMessage('123456')).toBe("PesaIQ: your code is 123456. Don't share it with anyone.");
-    expect(SENDER_ID).toBe('NEXTSMS');
+    expect(SENDER_ID).toBe('MUST');
     // One SMS: well under 160 characters.
     expect(codeMessage('123456').length).toBeLessThan(160);
   });

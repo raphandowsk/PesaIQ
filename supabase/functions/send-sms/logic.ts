@@ -6,8 +6,11 @@
  * Provider: messaging-service.co.tz, Messaging Service API V2 (Internet SMS).
  */
 
-/** The sender name shown on the phone; registered with the provider. */
-export const SENDER_ID = 'NEXTSMS';
+/**
+ * The sender name shown on the phone. MUST is lent to PesaIQ while its own
+ * sender ID is being approved (2026-09-14); swap it here when that arrives.
+ */
+export const SENDER_ID = 'MUST';
 
 export const LIVE_URL = 'https://messaging-service.co.tz/api/sms/v2/text/single';
 /** Free: the provider answers with dummy data and sends nothing. */

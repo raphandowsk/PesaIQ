@@ -86,7 +86,9 @@ to the `send-sms` Edge Function (`supabase/functions/send-sms/`), which sends
 it through **messaging-service.co.tz** (Messaging Service API V2, Internet SMS).
 Deployed to `pesaiq-test` on 2026-09-13.
 
-- **Sender ID:** `NEXTSMS`.
+- **Sender ID:** `MUST`, lent while PesaIQ's own sender ID is approved
+  (applied for 2026-09-14). `NEXTSMS` was refused: not registered on the
+  account.
 - **Message:** "PesaIQ: your code is 123456. Don't share it with anyone."
 - **Numbers:** Tanzanian mobiles only (`255`, then nine digits starting with 6
   or 7). The `+255` and `07…` forms are accepted.
