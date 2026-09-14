@@ -1,7 +1,7 @@
 # PesaIQ — Backend (Supabase)
 
 Status, 2026-09-14: the app signs in with a mobile number against the test
-project. There is no sync code yet.
+project, and syncs encrypted records while Cloud sync is on (see "Sync").
 
 The backend holds accounts (a mobile number confirmed by SMS code) and the
 records that sync between a user's phones. Records are end-to-end encrypted on
@@ -32,6 +32,7 @@ already applied to a project is never edited; a change goes in a new file.
 | `20260913000001_sync_schema_v1.sql`     | Tables, triggers and row-level security (below)            |
 | `20260913000002_devices_user_index.sql` | Index for looking up an account's phones (advisor finding) |
 | `20260914000001_pin_guard.sql`          | The PIN's guess limit: `pin_guard` and its three functions |
+| `20260914000002_pull_records.sql`       | `pull_records` for sync, and its index                     |
 
 What each table lets the server see:
 
@@ -89,6 +90,11 @@ Rules the database enforces:
     This is intended: each is limited to the caller's own row.
   - Leaked-password protection is off (WARN). PesaIQ has no passwords, so it
     doesn't apply.
+- **`pull_records`, live and rolled back** (throwaway accounts):
+  - Seven rows sent in one statement shared one update time.
+  - Pages of 3 returned all seven, each once, in 3 pages.
+  - Another account saw none of them; a signed-out caller was refused.
+  - Security and performance advisors: nothing new.
 
 ## App configuration
 
@@ -159,6 +165,29 @@ JWT checks on: only a signed-in person can call it.
   - `pin_confirm`: records the verifier, or checks it and resets the count.
   - `pin_reset`: for "Forgot PIN?", deletes everything synced to the account.
 - **Logs:** never a PIN, a point or a key.
+
+## Sync
+
+The app's side is `features/sync/` (see "Sync" in `ARCHITECTURE.md`). On the
+server:
+
+- **Pushing** is an upsert into `records` by id. The latest-edit trigger keeps
+  a newer row; the fingerprint index refuses a second live row for one
+  transaction (`23505`), and the phone then joins its copy to the existing row.
+- **Pulling** is `pull_records(p_after, p_after_id, p_limit)`: rows after a
+  position in (update time, id) order, at most 1,000 a call, only the caller's
+  own (`security invoker`, so row-level security applies). The phone passes
+  back the update time exactly as the server wrote it, microseconds included.
+- **A deletion** is an upsert with `deleted = true`, no fingerprint, and a
+  locked empty body.
+
+Not built yet:
+
+- Remembered categories and settings (`synced_settings`).
+- The signed-in phones list (`devices`).
+- Removing an account's records from the server when sync is turned off.
+- A phone that missed a "Forgot PIN" still holds the old key: it must sign out
+  and in again. Nothing tells it yet.
 
 ## Dashboard steps for the project owner
 

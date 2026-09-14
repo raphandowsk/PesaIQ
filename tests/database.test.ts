@@ -61,6 +61,8 @@ describe('migrations', () => {
       'processing_events',
       'providers',
       'settings',
+      'sync_deletions',
+      'sync_state',
       'transactions',
     ]);
     await db.closeAsync();

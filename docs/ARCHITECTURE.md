@@ -147,6 +147,38 @@ Records saved before this rule, that repeat an earlier one, keep no ID and point
 at it through `duplicate_of`. Settings → Possible duplicates lists them: delete
 the copy, or keep both. Deleting an original passes its ID to its oldest copy.
 
+### Sync
+
+`features/sync/`. Off until the user turns on Cloud sync. It runs while signed
+in with the account key unlocked (`useAutoSync`): when that starts, when the
+app comes back to the front, and 4 seconds after records change.
+
+One sync (`engine.ts`):
+
+1. **Claim the phone.** It syncs with one account. Another account's synced
+   records block sync until they are deleted here. A new account key (after
+   "Forgot PIN" cleared the server) means sending everything again.
+2. **Pull** the rows changed since the last pull, in (server time, id) order
+   from `pull_records`, reading the last 5 minutes again so a slow write from
+   another phone is never missed. Applying a row twice changes nothing.
+3. **Send deletions**, queued by the `transactions_sync_deleted` trigger.
+4. **Send changes:** every real record whose `synced_edit` differs from its
+   `updated_at`, so every local change is picked up without the store knowing
+   about sync.
+
+Rules:
+
+- The latest edit wins, by when it was made; the server enforces it too.
+- The same transaction saved on two phones becomes one record. Their
+  duplicate fingerprints match, and the phones join them on pull, or when the
+  server refuses the second copy.
+- A record received from another phone has no SMS. Demo samples never go.
+
+Locking (`crypto.ts`): HKDF of the account key gives a record key (AES-256-GCM,
+bound to the account and the row id) and a fingerprint key (an HMAC of the
+transaction ID). The payload (`payload.ts`) is the record without its local
+links, as ASCII-only JSON.
+
 ### Privacy in the data layer
 
 - `processing_events` carries ids, a kind and a short detail — **never message
@@ -676,6 +708,10 @@ Migration v3 adds `transaction_key` and `duplicate_of` to `transactions` (see
 Duplicates). A migration can carry an `after` step, run in the same transaction
 as its SQL, for work SQL can't do. v3's gives every record its ID, oldest
 first, marks later repeats as copies of the first, then adds the unique index.
+
+Migration v4 adds sync's bookkeeping: `sync_id` and `synced_edit` on
+`transactions`, a `sync_deletions` table filled by a delete trigger, and
+`sync_state` (see Sync).
 
 ### Money arithmetic (`features/transactions/money.ts`)
 

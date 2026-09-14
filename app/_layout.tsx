@@ -16,6 +16,7 @@ import {
 import { Button, Screen, Text, Toast } from '../components/ui';
 import { accessFor, useAuthStore } from '../features/auth';
 import { usePinStore } from '../features/pin';
+import { useAutoSync } from '../features/sync';
 import { useAppStore } from '../features/transactions';
 import { colors, space } from '../theme';
 
@@ -66,6 +67,9 @@ export default function RootLayout() {
   const pinUser = usePinStore((s) => s.userId);
   const checkPin = usePinStore((s) => s.check);
   const resetPin = usePinStore((s) => s.reset);
+
+  // While Cloud sync is on and the account key is unlocked.
+  useAutoSync();
 
   useEffect(() => {
     void initialize();

@@ -9,4 +9,6 @@ export type { AppSettings } from './settingsRepository';
 export { providerRepository } from './providerRepository';
 export { processingEventRepository } from './processingEventRepository';
 export { categoryRuleRepository } from './categoryRuleRepository';
+export { isUnsent, syncRepository } from './syncRepository';
+export type { LocalRecord, SyncStateKey } from './syncRepository';
 export type { ProcessingEvent, ProcessingEventKind } from './processingEventRepository';

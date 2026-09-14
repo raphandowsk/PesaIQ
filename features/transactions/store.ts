@@ -153,6 +153,12 @@ interface AppState {
   clearDemoData(): Promise<void>;
   /** Forget every remembered category choice. Returns how many went. */
   forgetCategoryRules(): Promise<number>;
+
+  /**
+   * Run sync's database work (features/sync). Nothing is reloaded: the caller
+   * refreshes when another phone changed something.
+   */
+  runSync<T>(task: (db: SqlDatabase) => Promise<T>): Promise<T>;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -318,6 +324,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
     async refresh() {
       await reload();
+    },
+
+    runSync(task) {
+      return task(requireDb());
     },
 
     analyze(text, sender) {

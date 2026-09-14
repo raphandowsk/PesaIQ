@@ -12,7 +12,7 @@ export interface AppSettings {
   automaticProcessing: boolean;
   /** Off by default. No AI provider is wired in Stage 1. */
   aiFallback: boolean;
-  /** Off by default. No sync exists. */
+  /** Off by default. On: encrypted records sync with the account (features/sync). */
   cloudSync: boolean;
   /** Whether generated sample records are present. */
   demoDataEnabled: boolean;

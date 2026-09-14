@@ -195,6 +195,39 @@ export const MIGRATIONS: Migration[] = [
       );
     },
   },
+  {
+    version: 4,
+    name: 'sync bookkeeping',
+    up: `
+      -- Which server row a record is, and the edit the server last had
+      -- (features/sync/engine.ts). A record is unsent while synced_edit and
+      -- updated_at differ, so every local change is picked up without the
+      -- store knowing about sync.
+      ALTER TABLE transactions ADD COLUMN sync_id TEXT;
+      ALTER TABLE transactions ADD COLUMN synced_edit TEXT;
+      CREATE UNIQUE INDEX idx_transactions_sync_id ON transactions(sync_id)
+        WHERE sync_id IS NOT NULL;
+
+      -- A synced record deleted here, kept until the deletion reaches the
+      -- server. Every way of deleting goes through this trigger.
+      CREATE TABLE sync_deletions (
+        sync_id    TEXT PRIMARY KEY NOT NULL,
+        deleted_at TEXT NOT NULL
+      );
+      CREATE TRIGGER transactions_sync_deleted AFTER DELETE ON transactions
+        WHEN old.sync_id IS NOT NULL
+      BEGIN
+        INSERT OR REPLACE INTO sync_deletions (sync_id, deleted_at)
+        VALUES (old.sync_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+      END;
+
+      -- Who this phone syncs with, a tag of their key, and how far it has pulled.
+      CREATE TABLE sync_state (
+        key   TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 /** Highest version this build knows about. */

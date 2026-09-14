@@ -17,7 +17,8 @@ No SMS permission is requested, and no native SMS code exists in the build.
 
 ## Commitments
 
-- **No cloud by default.** Cloud sync is off and unimplemented.
+- **No cloud by default.** Cloud sync is off until the user turns it on, and
+  then uploads encrypted records only (see "Cloud sync").
 - **AI is off by default.** The `ai/` layer is an interface with no provider wired
   in. If it is ever enabled, only low-confidence messages would be sent, and only
   after explicit opt-in.
@@ -89,8 +90,8 @@ storage model above would not change: still local, still no upload by default.
 - **PesaIQ now needs an account:** a mobile number confirmed by a code sent by
   SMS. The number is stored by Supabase Auth on the server (see
   `docs/BACKEND.md`). PesaIQ never stores or logs the code.
-- **Messages and records still stay on the phone.** Encrypted sync is planned,
-  not built.
+- **Messages stay on the phone. Records stay there too unless Cloud sync is
+  turned on** (see "Cloud sync" below).
 - **The sign-in session** is kept in the phone's secure storage. Signing out
   affects this phone only and keeps the records on it.
 - **The in-app privacy wording** still describes the phone-only design, and must
@@ -103,3 +104,19 @@ storage model above would not change: still local, still no upload by default.
 - **There is no recovery key.** A forgotten PIN means the records synced to the
   account are deleted from the server and a new PIN is set. The records on the
   phone are kept.
+
+## Cloud sync (2026-09-14)
+
+- **Off until the user turns it on** in Settings. Turning it off stops syncing;
+  what was already synced stays on the server (removal from the server is not
+  built yet).
+- **Records are encrypted on the phone before they leave it**, with a key made
+  from the account key (AES-256-GCM). The server stores locked rows it cannot
+  read, plus each row's id, edit time, deletion marker and a duplicate
+  fingerprint (an HMAC of the transaction ID that reveals nothing about it).
+- **SMS messages are never uploaded**, encrypted or not. A record synced to
+  another phone arrives without its message.
+- **Demo samples are never uploaded.**
+- **Deletions reach every phone.** A deleted record's row keeps no content.
+- **One account per phone.** Records synced to one account are not uploaded to
+  another; the second account can sync once they are deleted from the phone.

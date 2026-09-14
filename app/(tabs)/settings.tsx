@@ -7,12 +7,13 @@ import { Button, Screen, Tag, Text, toast } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
 import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { usePinStore } from '../../features/pin';
+import { SYNC_MESSAGES, useSyncStore } from '../../features/sync';
 import { duplicatePairs, useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
 
 type DataAction = 'transactions' | 'messages' | 'history' | 'demo' | 'rules' | 'signout';
-type Busy = DataAction | 'replay' | null;
+type Busy = DataAction | 'replay' | 'sync' | null;
 
 const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
 
@@ -27,8 +28,9 @@ const FAILED = 'That could not be completed. Nothing was changed.';
 
 /**
  * Settings, grouped as in the design. Anything that deletes asks first, in
- * place. Automatic processing, cloud sync and AI fallback do not exist in
- * Stage 1, so their switches are shown locked off rather than pretending.
+ * place. Automatic processing and AI fallback do not exist in Stage 1, so
+ * their switches are shown locked off rather than pretending. Cloud sync is
+ * off until the user turns it on.
  */
 export default function Settings() {
   const settings = useAppStore((s) => s.settings);
@@ -45,6 +47,13 @@ export default function Settings() {
   const phone = useAuthStore((s) => s.session?.phone ?? null);
   const signOut = useAuthStore((s) => s.signOut);
   const forgetKey = usePinStore((s) => s.forget);
+  const setSetting = useAppStore((s) => s.setSetting);
+  const accountKey = usePinStore((s) => s.accountKey);
+  const keyUser = usePinStore((s) => s.userId);
+  const syncPhase = useSyncStore((s) => s.phase);
+  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
+  const pending = useSyncStore((s) => s.pending);
+  const syncNow = useSyncStore((s) => s.syncNow);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
@@ -66,7 +75,7 @@ export default function Settings() {
 
   const ACTIONS: Record<DataAction, { ask: string; confirm: string; go: () => Promise<string> }> = {
     transactions: {
-      ask: `Delete all ${recordCount} ${recordCount === 1 ? 'record' : 'records'}? Their source messages go with them. This cannot be undone.`,
+      ask: `Delete all ${recordCount} ${recordCount === 1 ? 'record' : 'records'}? Their source messages go with them${settings.cloudSync ? ', and they are deleted on every phone that syncs with your account' : ''}. This cannot be undone.`,
       confirm: 'Delete permanently',
       go: async () => {
         const n = await deleteAllTransactions();
@@ -161,6 +170,26 @@ export default function Settings() {
     </SettingRow>
   );
 
+  const syncStatus = (): string => {
+    if (!settings.cloudSync) return 'Off. Records stay on this phone only.';
+    if (syncPhase === 'failed' || syncPhase === 'otherAccount' || syncPhase === 'unavailable') {
+      return SYNC_MESSAGES[syncPhase];
+    }
+    const state =
+      syncPhase === 'syncing'
+        ? 'Syncing…'
+        : lastSyncedAt
+          ? `Synced at ${new Date(lastSyncedAt).toTimeString().slice(0, 5)}${pending > 0 ? `, ${pending} waiting` : ''}.`
+          : 'On.';
+    return `${state} Records are encrypted on this phone first. SMS messages never leave it.`;
+  };
+
+  const setCloudSync = (on: boolean) =>
+    run('sync', async () => {
+      await setSetting('cloudSync', on);
+      return on ? 'Cloud sync is on.' : 'Cloud sync is off. Records stay on this phone.';
+    });
+
   const replay = () =>
     run('replay', async () => {
       await resetOnboarding();
@@ -224,15 +253,31 @@ export default function Settings() {
         />
         <SettingRow
           label="Cloud sync"
-          sub="Not available. Records stay on this device only."
+          sub={syncStatus()}
           right={
             <Switch
               value={settings.cloudSync}
-              disabled
-              accessibilityLabel="Cloud sync. Not available; records stay on this device."
+              disabled={busy !== null}
+              onValueChange={(on) => void setCloudSync(on)}
+              accessibilityLabel="Cloud sync"
             />
           }
         />
+        {settings.cloudSync && accountKey && keyUser ? (
+          <SettingRow
+            label="Sync now"
+            sub="It also syncs by itself when records change."
+            right={
+              <Button
+                label="Sync now"
+                variant="secondary"
+                loading={syncPhase === 'syncing'}
+                disabled={busy !== null || syncPhase === 'syncing'}
+                onPress={() => void syncNow({ userId: keyUser, accountKey })}
+              />
+            }
+          />
+        ) : null}
       </SettingsGroup>
 
       <SettingsGroup title="Privacy">
