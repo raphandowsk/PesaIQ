@@ -261,7 +261,7 @@ export default function RecordDetail() {
             marginBottom: space[2],
           }}
           accessible
-          accessibilityLabel={`Confidence ${confidence.text}. Rules, no AI.`}
+          accessibilityLabel={`Confidence ${confidence.text}.`}
         >
           <View style={{ transform: [{ rotate: '-90deg' }] }}>
             <Svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`}>
@@ -294,12 +294,6 @@ export default function RecordDetail() {
               Confidence
             </Text>
           </View>
-          {/* The brief asks for AI-made records to be marked. None are yet. */}
-          <Pill
-            label="Rules · no AI"
-            tint={colors.neutralRamp[200]}
-            ink={colors.neutralRamp[700]}
-          />
         </View>
 
         {editing
@@ -434,9 +428,6 @@ export default function RecordDetail() {
             style={{ alignSelf: 'flex-start' }}
           />
         ) : null}
-        <Text variant="small" tone="muted" style={{ fontSize: 11 }}>
-          Sender {sender} · stored on this device only
-        </Text>
       </View>
 
       {error ? (
