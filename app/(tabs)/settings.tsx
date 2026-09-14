@@ -7,6 +7,7 @@ import { Button, Screen, Tag, Text, toast } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
 import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { usePinStore } from '../../features/pin';
+import { useDevicesStore } from '../../features/devices';
 import { SYNC_MESSAGES, useSyncStore } from '../../features/sync';
 import { duplicatePairs, useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
@@ -54,8 +55,13 @@ export default function Settings() {
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
   const pending = useSyncStore((s) => s.pending);
   const syncNow = useSyncStore((s) => s.syncNow);
+  const syncNotice = useSyncStore((s) => s.notice);
+  const clearSyncNotice = useSyncStore((s) => s.clearNotice);
+  const clearAndTurnOff = useSyncStore((s) => s.clearAndTurnOff);
+  const forgetThisPhone = useDevicesStore((s) => s.forgetThisPhone);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
+  const [askSyncOff, setAskSyncOff] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +118,8 @@ export default function Settings() {
       go: async () => {
         // Read before signing out: signing out clears the PIN state.
         const userId = usePinStore.getState().userId ?? undefined;
+        // While still signed in: this phone leaves the signed-in list.
+        if (userId) await forgetThisPhone(userId);
         const result = await signOut();
         if (!result.ok) throw new Error(result.message);
         // This phone's copy of the account key goes too; the PIN opens it again.
@@ -171,7 +179,11 @@ export default function Settings() {
   );
 
   const syncStatus = (): string => {
-    if (!settings.cloudSync) return 'Off. Records stay on this phone only.';
+    if (!settings.cloudSync) {
+      return syncNotice === 'clearedElsewhere'
+        ? SYNC_MESSAGES.clearedElsewhere
+        : 'Off. Records stay on this phone only.';
+    }
     if (syncPhase === 'failed' || syncPhase === 'otherAccount' || syncPhase === 'unavailable') {
       return SYNC_MESSAGES[syncPhase];
     }
@@ -184,10 +196,28 @@ export default function Settings() {
     return `${state} Records, categories and provider choices are encrypted on this phone first. SMS messages never leave it.`;
   };
 
-  const setCloudSync = (on: boolean) =>
+  // Turning on is immediate. Turning off asks whether to remove the server copy.
+  const onCloudSyncSwitch = (on: boolean) => {
+    setError(null);
+    if (!on) {
+      setAskSyncOff(true);
+      return;
+    }
+    clearSyncNotice();
+    void run('sync', async () => {
+      await setSetting('cloudSync', true);
+      return 'Cloud sync is on.';
+    });
+  };
+
+  const turnSyncOff = (remove: boolean) =>
     run('sync', async () => {
-      await setSetting('cloudSync', on);
-      return on ? 'Cloud sync is on.' : 'Cloud sync is off. Records stay on this phone.';
+      if (remove) await clearAndTurnOff();
+      else await setSetting('cloudSync', false);
+      setAskSyncOff(false);
+      return remove
+        ? 'Cloud sync is off, and your synced data was removed from the server.'
+        : 'Cloud sync is off. What was synced stays on the server.';
     });
 
   const replay = () =>
@@ -226,6 +256,19 @@ export default function Settings() {
             </Text>
           }
         />
+        <SettingRow
+          label="Signed-in phones"
+          sub="Phones that use PesaIQ with your number."
+          right={
+            <Button
+              label="View"
+              accessibilityLabel="View signed-in phones"
+              variant="secondary"
+              disabled={busy !== null}
+              onPress={() => router.push('/devices')}
+            />
+          }
+        />
         {actionRow(
           'signout',
           'Sign out',
@@ -257,12 +300,24 @@ export default function Settings() {
           right={
             <Switch
               value={settings.cloudSync}
-              disabled={busy !== null}
-              onValueChange={(on) => void setCloudSync(on)}
+              disabled={busy !== null || askSyncOff}
+              onValueChange={onCloudSyncSwitch}
               accessibilityLabel="Cloud sync"
             />
           }
-        />
+        >
+          {askSyncOff ? (
+            <ConfirmPanel
+              message="Also remove your synced records, categories and provider choices from PesaIQ's server? That turns sync off on your other phones too. Everything stays on this phone."
+              confirmLabel="Turn off and remove"
+              alternative={{ label: 'Just turn off', onPress: () => void turnSyncOff(false) }}
+              cancelLabel="Cancel"
+              busy={busy === 'sync'}
+              onConfirm={() => void turnSyncOff(true)}
+              onCancel={() => setAskSyncOff(false)}
+            />
+          ) : null}
+        </SettingRow>
         {settings.cloudSync && accountKey && keyUser ? (
           <SettingRow
             label="Sync now"

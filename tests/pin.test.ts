@@ -189,6 +189,10 @@ describe('the PIN store', () => {
         lockedUntil = null;
         calls.push('startOver');
       },
+      async isKeyCurrent(v) {
+        if (opts.offline) throw new Error('offline');
+        return record !== null && verifier === toBase64(v);
+      },
     };
     return { api, calls, record: () => record, failures: () => failures };
   };
@@ -321,5 +325,57 @@ describe('the PIN store', () => {
     expect(await store.getState().startOver()).toEqual({ ok: true });
     expect(store.getState().status).toBe('needsCreate');
     expect(server.record()).toBeNull();
+  });
+
+  /** A PIN made on one phone, and a second phone already holding its key. */
+  const twoPhones = async (seed: string, api = fakeServer().api) => {
+    const first = createPinStore(api, memoryKeys().local, seeded(`${seed}1`), now);
+    await first.getState().check(USER);
+    await first.getState().create('2580');
+    const { local, map } = memoryKeys();
+    map.set(USER, first.getState().accountKey!);
+    const second = createPinStore(api, local, seeded(`${seed}2`), now);
+    await second.getState().check(USER);
+    return { first, second, map };
+  };
+
+  it("confirms that a key kept on this phone is still the account's", async () => {
+    const { second } = await twoPhones('k');
+    expect(second.getState()).toMatchObject({ status: 'ready', verified: false });
+
+    await second.getState().verify();
+    expect(second.getState()).toMatchObject({ status: 'ready', verified: true, replaced: false });
+  });
+
+  it('asks for the new PIN when another phone reset it', async () => {
+    const { first, second, map } = await twoPhones('m');
+
+    // "Forgot PIN?" on the first phone, then a new PIN.
+    await first.getState().startOver();
+    expect(await first.getState().create('6195')).toEqual({ ok: true });
+
+    await second.getState().verify();
+    expect(second.getState()).toMatchObject({
+      status: 'needsUnlock',
+      replaced: true,
+      verified: false,
+      accountKey: null,
+    });
+    expect(map.has(USER)).toBe(false);
+
+    expect(await second.getState().unlock('6195')).toEqual({ ok: true });
+    expect(second.getState()).toMatchObject({ replaced: false, verified: true });
+    expect(second.getState().accountKey).toEqual(first.getState().accountKey);
+  });
+
+  it('keeps the key, unconfirmed, without a connection', async () => {
+    const { local, map } = memoryKeys();
+    map.set(USER, new Uint8Array(32).fill(7));
+    const store = createPinStore(fakeServer({ offline: true }).api, local, seeded('o'), now);
+    await store.getState().check(USER);
+
+    await store.getState().verify();
+    expect(store.getState()).toMatchObject({ status: 'ready', verified: false, replaced: false });
+    expect(map.has(USER)).toBe(true);
   });
 });

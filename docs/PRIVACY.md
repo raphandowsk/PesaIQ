@@ -105,12 +105,21 @@ storage model above would not change: still local, still no upload by default.
 - **There is no recovery key.** A forgotten PIN means the records synced to the
   account are deleted from the server and a new PIN is set. The records on the
   phone are kept.
+- **Signed-in phones:** each phone signed in and unlocked tells the server a
+  name for itself (the Android maker and model, "iPhone", "iPad" or "Web
+  browser"), its platform and when it was last active, so Settings can list
+  the account's phones. Signing out removes the phone from the list.
 
 ## Cloud sync (2026-09-14)
 
-- **Off until the user turns it on** in Settings. Turning it off stops syncing;
-  what was already synced stays on the server (removal from the server is not
-  built yet).
+- **Off until the user turns it on** in Settings. Turning it off asks whether
+  to keep what was synced on the server or remove it. **Turn off and remove**
+  deletes the account's synced records, categories and provider choices from
+  the server, and turns sync off on the account's other phones when they next
+  connect. Nothing is deleted from any phone.
+- **A phone whose key was replaced** (a "Forgot PIN" on another phone) asks for
+  the new PIN before it syncs again, so nothing it sends is locked with the
+  old key.
 - **Records are encrypted on the phone before they leave it**, with a key made
   from the account key (AES-256-GCM). The server stores locked rows it cannot
   read, plus each row's id, edit time, deletion marker and a duplicate

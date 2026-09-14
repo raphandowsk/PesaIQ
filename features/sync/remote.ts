@@ -59,6 +59,10 @@ export interface RecordsRemote {
   fetchPreferences(): Promise<RemotePreferences | null>;
   /** Replaces the document, unless the server's is a later edit. */
   pushPreferences(doc: OutgoingPreferences): Promise<void>;
+  /** When a phone last removed the account's synced data, if ever. */
+  fetchClearedAt(): Promise<string | null>;
+  /** Removes the account's records and preferences from the server; returns the date it records. */
+  clearServer(): Promise<string>;
 }
 
 export type RemoteFailure = 'duplicate' | 'failed';

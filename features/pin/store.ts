@@ -46,6 +46,8 @@ export interface PinApi {
   confirm(verifier: Uint8Array): Promise<boolean>;
   /** Deletes everything synced to the account, so a new PIN can be set. */
   startOver(): Promise<void>;
+  /** Whether a verifier belongs to the account's current key. Changes nothing. */
+  isKeyCurrent(verifier: Uint8Array): Promise<boolean>;
 }
 
 /** The account key on this phone, by account. */
@@ -69,7 +71,17 @@ export interface PinState {
   /** The unlocked account key, in memory while signed in. */
   accountKey: Uint8Array | null;
   record: KeyRecord | null;
+  /** The server has confirmed, since launch, that the key here is the account's. */
+  verified: boolean;
+  /** The key here was replaced from another phone ("Forgot PIN" there). */
+  replaced: boolean;
   check(userId: string): Promise<void>;
+  /**
+   * Asks the server whether the key here is still the account's. If another
+   * phone reset the PIN it is not: it is removed, and the new PIN is asked for.
+   * Without a connection nothing changes, and `verified` stays false.
+   */
+  verify(): Promise<void>;
   create(pin: string): Promise<PinResult>;
   unlock(pin: string): Promise<PinResult>;
   startOver(): Promise<PinResult>;
@@ -78,6 +90,15 @@ export interface PinState {
   /** Clears the state only (signed out elsewhere). */
   reset(): void;
 }
+
+const SIGNED_OUT = {
+  status: 'idle',
+  userId: null,
+  accountKey: null,
+  record: null,
+  verified: false,
+  replaced: false,
+} as const;
 
 const wrongPin = (failures: number) => {
   const left = triesLeft(failures);
@@ -118,14 +139,25 @@ export function createPinStore(
     }
   };
 
+  let verifying: Promise<void> | null = null;
+
   return create<PinState>()((set, get) => ({
     status: 'idle',
     userId: null,
     accountKey: null,
     record: null,
+    verified: false,
+    replaced: false,
 
     async check(userId) {
-      set({ status: 'checking', userId, accountKey: null, record: null });
+      set({
+        status: 'checking',
+        userId,
+        accountKey: null,
+        record: null,
+        verified: false,
+        replaced: false,
+      });
       try {
         const kept = await local.get(userId);
         if (kept) {
@@ -182,7 +214,7 @@ export function createPinStore(
         return { ok: false, message: PIN_MESSAGES.offline };
       }
       await keepOnPhone(userId, accountKey);
-      set({ status: 'ready', accountKey, record });
+      set({ status: 'ready', accountKey, record, verified: true, replaced: false });
       return { ok: true };
     },
 
@@ -218,8 +250,50 @@ export function createPinStore(
         // The count resets on the next correct PIN; the key is already open.
       }
       await keepOnPhone(userId, accountKey);
-      set({ status: 'ready', accountKey });
+      set({ status: 'ready', accountKey, verified: true, replaced: false });
       return { ok: true };
+    },
+
+    verify() {
+      if (verifying) return verifying;
+      verifying = (async () => {
+        const { userId, accountKey, status } = get();
+        if (!api || !userId || !accountKey || status !== 'ready') return;
+
+        let current: boolean;
+        try {
+          current = await api.isKeyCurrent(pinVerifier(accountKey));
+        } catch {
+          return; // No answer: asked again later.
+        }
+        if (get().accountKey !== accountKey) return; // Changed meanwhile.
+        if (current) {
+          set({ verified: true });
+          return;
+        }
+
+        // Replaced on another phone: this copy opens nothing any more.
+        try {
+          await local.remove(userId);
+        } catch {
+          // Unreadable anyway once replaced.
+        }
+        try {
+          const record = await api.fetchKey();
+          set({
+            status: record ? 'needsUnlock' : 'needsCreate',
+            record,
+            accountKey: null,
+            verified: false,
+            replaced: true,
+          });
+        } catch {
+          set({ status: 'offline', accountKey: null, verified: false, replaced: true });
+        }
+      })().finally(() => {
+        verifying = null;
+      });
+      return verifying;
     },
 
     async startOver() {
@@ -229,7 +303,7 @@ export function createPinStore(
       } catch {
         return { ok: false, message: PIN_MESSAGES.offline };
       }
-      set({ status: 'needsCreate', record: null, accountKey: null });
+      set({ status: 'needsCreate', record: null, accountKey: null, verified: false });
       return { ok: true };
     },
 
@@ -241,11 +315,11 @@ export function createPinStore(
           // Nothing kept, or unreadable: either way it is not used again.
         }
       }
-      set({ status: 'idle', userId: null, accountKey: null, record: null });
+      set({ ...SIGNED_OUT });
     },
 
     reset() {
-      set({ status: 'idle', userId: null, accountKey: null, record: null });
+      set({ ...SIGNED_OUT });
     },
   }));
 }

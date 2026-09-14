@@ -77,5 +77,13 @@ export function supabasePinApi(): PinApi | null {
       const { error } = await supabase.rpc('pin_reset');
       if (error) throw error;
     },
+
+    async isKeyCurrent(verifier) {
+      const { data, error } = await supabase.rpc('pin_key_is_current', {
+        p_verifier: toBase64(verifier),
+      });
+      if (error) throw error;
+      return data === true;
+    },
   };
 }

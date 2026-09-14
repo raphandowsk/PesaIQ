@@ -39,6 +39,8 @@ export class FakeRemote implements RecordsRemote {
   offline = false;
   /** The account's `synced_settings` row. */
   preferences: RemotePreferences | null = null;
+  /** `profiles.sync_cleared_at`. */
+  clearedAt: string | null = null;
   private tick = 0;
 
   private serverTime(): string {
@@ -106,5 +108,19 @@ export class FakeRemote implements RecordsRemote {
       keyVersion: doc.keyVersion,
       editedAt: doc.editedAt.replace('Z', '+00:00'),
     };
+  }
+
+  async fetchClearedAt(): Promise<string | null> {
+    this.check();
+    return this.clearedAt;
+  }
+
+  /** sync_clear: every record and the preferences gone, and the time noted. */
+  async clearServer(): Promise<string> {
+    this.check();
+    this.rows.clear();
+    this.preferences = null;
+    this.clearedAt = this.serverTime();
+    return this.clearedAt;
   }
 }

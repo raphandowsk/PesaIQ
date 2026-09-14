@@ -17,6 +17,7 @@ import { colors, fonts, HIT_SLOP, MIN_TOUCH, space } from '../../theme';
 export default function UnlockPin() {
   const unlock = usePinStore((s) => s.unlock);
   const startOver = usePinStore((s) => s.startOver);
+  const replaced = usePinStore((s) => s.replaced);
   const signOut = useAuthStore((s) => s.signOut);
 
   const [value, setValue] = useState('');
@@ -71,7 +72,11 @@ export default function UnlockPin() {
   return (
     <OnboardingFrame
       title="Enter your PIN"
-      subtitle="Your account has a PIN. Enter it to unlock your records on this phone."
+      subtitle={
+        replaced
+          ? 'Your PIN was changed on another phone. Enter the new PIN to unlock your records here.'
+          : 'Your account has a PIN. Enter it to unlock your records on this phone.'
+      }
       cta={{ label: 'Unlock', onPress: () => void submit(value), loading: busy && !resetting }}
     >
       <View style={{ gap: space[3] }}>

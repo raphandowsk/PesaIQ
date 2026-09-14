@@ -171,6 +171,25 @@ One sync (`engine.ts`):
    entry, the later winning. The merge goes back to the server if this phone
    had newer entries. Cloud sync, demo data and onboarding stay per phone.
 
+Turning sync off asks whether to remove the server copy. **Turn off and
+remove** calls `sync_clear`, which deletes the account's records and
+preferences and dates it (`profiles.sync_cleared_at`). Every other phone sees
+the new date at the start of its next sync (`noticeClearing`), turns its own
+sync off and says why in Settings. Nothing is deleted from a phone.
+
+Sync waits until the server confirms that the account key on this phone is
+still current (`useKeyCheck` → `pin_key_is_current`, compared by verifier). After
+"Forgot PIN" on another phone it isn't: the phone drops its key and asks for
+the new PIN, instead of sending records locked with the old one.
+
+### Signed-in phones
+
+`features/devices/`. Each phone, once unlocked, checks in to `devices` on
+launch and on coming back to the app (at most every 5 minutes), with a row id
+kept on the phone per account and a name from the platform (Android maker and
+model, iPhone or iPad, Web browser). Settings → Signed-in phones lists them,
+newest first. Signing out removes this phone's row.
+
 Rules:
 
 - The latest edit wins, by when it was made; the server enforces it too.

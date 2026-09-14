@@ -20,12 +20,18 @@ export function useAutoSync() {
   const userId = useAuthStore((s) => s.session?.userId ?? null);
   const pinUser = usePinStore((s) => s.userId);
   const accountKey = usePinStore((s) => s.accountKey);
+  // The server confirmed the key is current (useKeyCheck): a key replaced on
+  // another phone must not lock anything that is sent.
+  const verified = usePinStore((s) => s.verified);
   const syncNow = useSyncStore((s) => s.syncNow);
   const reset = useSyncStore((s) => s.reset);
 
   const context = useMemo(
-    () => (enabled && userId && accountKey && pinUser === userId ? { userId, accountKey } : null),
-    [enabled, userId, accountKey, pinUser],
+    () =>
+      enabled && userId && accountKey && verified && pinUser === userId
+        ? { userId, accountKey }
+        : null,
+    [enabled, userId, accountKey, verified, pinUser],
   );
 
   useEffect(() => {

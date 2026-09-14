@@ -15,7 +15,8 @@ import {
 
 import { Button, Screen, Text, Toast } from '../components/ui';
 import { accessFor, useAuthStore } from '../features/auth';
-import { usePinStore } from '../features/pin';
+import { useDeviceCheckIn } from '../features/devices';
+import { useKeyCheck, usePinStore } from '../features/pin';
 import { useAutoSync } from '../features/sync';
 import { useAppStore } from '../features/transactions';
 import { colors, space } from '../theme';
@@ -68,7 +69,10 @@ export default function RootLayout() {
   const checkPin = usePinStore((s) => s.check);
   const resetPin = usePinStore((s) => s.reset);
 
-  // While Cloud sync is on and the account key is unlocked.
+  // Once unlocked: confirm the key is still the account's, keep this phone in
+  // the signed-in list, and sync while Cloud sync is on.
+  useKeyCheck();
+  useDeviceCheckIn();
   useAutoSync();
 
   useEffect(() => {
@@ -161,6 +165,8 @@ export default function RootLayout() {
           <Stack.Screen name="reports" />
           {/* Pushed from Settings -> Possible duplicates. */}
           <Stack.Screen name="duplicates" />
+          {/* Pushed from Settings -> Signed-in phones. */}
+          <Stack.Screen name="devices" />
         </Stack.Protected>
       </Stack>
       <Toast />

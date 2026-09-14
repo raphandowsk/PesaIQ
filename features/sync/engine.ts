@@ -79,6 +79,28 @@ export class OtherAccountError extends Error {
 export const isOtherAccountError = (e: unknown): boolean =>
   e instanceof Error && e.name === 'OtherAccountError';
 
+/** Another phone removed the account's synced data: sync stops here too. */
+export class SyncClearedError extends Error {
+  constructor() {
+    super("The account's synced data was removed from the server on another phone");
+    this.name = 'SyncClearedError';
+  }
+}
+
+export const isSyncClearedError = (e: unknown): boolean =>
+  e instanceof Error && e.name === 'SyncClearedError';
+
+/**
+ * After the server was cleared (by this phone, or noticed from another): this
+ * phone has sent nothing that is still there, and knows the clearing's date.
+ */
+export async function forgetServer(db: SqlDatabase, clearedAt: string): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await syncRepository.startOver(db);
+    await syncRepository.setState(db, 'cleared', clearedAt);
+  });
+}
+
 /** Rows are read again from this far back, so a slow write from another phone is never skipped. */
 export const PULL_OVERLAP_MS = 5 * 60 * 1000;
 
@@ -115,6 +137,7 @@ export async function syncOnce(deps: SyncDeps): Promise<SyncReport> {
     pending: 0,
   };
   await claimPhone(deps);
+  await noticeClearing(deps);
   await pull(deps, report);
   await sendDeletions(deps, report);
   await sendChanges(deps, report);
@@ -140,9 +163,28 @@ async function claimPhone({ db, keys }: SyncDeps): Promise<void> {
 
   await db.withTransactionAsync(async () => {
     if (account) await syncRepository.startOver(db);
+    // Another account's clearing date means nothing for this one.
+    if (account && account !== keys.userId) await syncRepository.removeState(db, 'cleared');
     await syncRepository.setState(db, 'account', keys.userId);
     await syncRepository.setState(db, 'key', currentTag);
   });
+}
+
+/**
+ * "Turn off and remove" on any phone clears the server and dates it. A phone
+ * that sees a date it didn't know stops, and its sync is turned off too. A
+ * phone syncing for the first time just notes the date.
+ */
+async function noticeClearing({ db, remote }: SyncDeps): Promise<void> {
+  const cleared = (await remote.fetchClearedAt()) ?? 'never';
+  const seen = await syncRepository.getState(db, 'cleared');
+  if (seen === cleared) return;
+  if (seen === null) {
+    await syncRepository.setState(db, 'cleared', cleared);
+    return;
+  }
+  await forgetServer(db, cleared);
+  throw new SyncClearedError();
 }
 
 async function pull(deps: SyncDeps, report: SyncReport): Promise<void> {

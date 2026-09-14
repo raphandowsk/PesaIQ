@@ -74,19 +74,26 @@ export function SettingRow({
   );
 }
 
-/** The in-place "are you sure" for anything that cannot be undone. */
+/**
+ * The in-place "are you sure" for anything that cannot be undone. With an
+ * `alternative`, a milder choice sits between the two, and the three stack.
+ */
 export function ConfirmPanel({
   message,
   confirmLabel,
   busy,
   onConfirm,
   onCancel,
+  alternative,
+  cancelLabel = 'Keep',
 }: {
   message: string;
   confirmLabel: string;
   busy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  alternative?: { label: string; onPress: () => void };
+  cancelLabel?: string;
 }) {
   return (
     <View
@@ -102,21 +109,29 @@ export function ConfirmPanel({
       <Text variant="small" style={{ color: colors.accentRamp[900] }}>
         {message}
       </Text>
-      <View style={{ flexDirection: 'row', gap: space[2] }}>
+      <View style={{ flexDirection: alternative ? 'column' : 'row', gap: space[2] }}>
         <Button
           label={confirmLabel}
           variant="danger"
           loading={busy}
           disabled={busy}
           onPress={onConfirm}
-          style={{ flex: 1 }}
+          style={alternative ? undefined : { flex: 1 }}
         />
+        {alternative ? (
+          <Button
+            label={alternative.label}
+            variant="secondary"
+            disabled={busy}
+            onPress={alternative.onPress}
+          />
+        ) : null}
         <Button
-          label="Keep"
+          label={cancelLabel}
           variant="ghost"
           disabled={busy}
           onPress={onCancel}
-          style={{ flex: 1 }}
+          style={alternative ? undefined : { flex: 1 }}
         />
       </View>
     </View>

@@ -22,8 +22,12 @@ export interface LocalRecord {
   syncedEdit: string | null;
 }
 
-/** 'account': who this phone syncs with. 'key': a tag of their key. 'pulled_to': a PullCursor. */
-export type SyncStateKey = 'account' | 'key' | 'pulled_to';
+/**
+ * 'account': who this phone syncs with. 'key': a tag of their key.
+ * 'pulled_to': a PullCursor. 'cleared': when the server was last cleared, as
+ * this phone knows it ('never' if not).
+ */
+export type SyncStateKey = 'account' | 'key' | 'pulled_to' | 'cleared';
 
 const toLocal = (row: SyncRow): LocalRecord => ({
   transaction: rowToTransaction(row),
@@ -51,6 +55,10 @@ export const syncRepository = {
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
       [key, value],
     );
+  },
+
+  async removeState(db: SqlDatabase, key: SyncStateKey): Promise<void> {
+    await db.runAsync('DELETE FROM sync_state WHERE key = ?', [key]);
   },
 
   /** Records the server lacks or has an older edit of. Demo samples never go. */

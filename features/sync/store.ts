@@ -9,7 +9,7 @@ import { create } from 'zustand';
 
 import { useAppStore } from '../transactions/store';
 import { syncKeys } from './crypto';
-import { isOtherAccountError, syncOnce } from './engine';
+import { forgetServer, isOtherAccountError, isSyncClearedError, syncOnce } from './engine';
 import type { RecordsRemote } from './remote';
 
 export type SyncPhase = 'idle' | 'syncing' | 'synced' | 'failed' | 'otherAccount' | 'unavailable';
@@ -24,7 +24,12 @@ export const SYNC_MESSAGES = {
   otherAccount:
     "This phone holds another account's synced records. Delete all transactions here to sync this account.",
   unavailable: "Sync isn't set up in this build.",
+  clearedElsewhere:
+    'Turned off on another phone, which also removed your synced data from the server. Everything stays on this phone.',
 } as const;
+
+/** Kept after sync turns off, to say why. */
+export type SyncNotice = 'clearedElsewhere' | null;
 
 export interface SyncStoreDeps {
   remote: RecordsRemote | null;
@@ -39,8 +44,16 @@ export interface SyncState {
   lastSyncedAt: number | null;
   /** Changes waiting to be sent, as of the last sync. */
   pending: number;
+  notice: SyncNotice;
   syncNow(context: SyncContext): Promise<void>;
-  /** Forget the state: signed out, or sync turned off. */
+  /**
+   * "Turn off and remove": deletes the account's records and preferences from
+   * the server and turns sync off here. Other phones turn theirs off when they
+   * next sync. Throws, changing nothing, when the server can't be reached.
+   */
+  clearAndTurnOff(): Promise<void>;
+  clearNotice(): void;
+  /** Forget the state: signed out, or sync turned off. The notice stays. */
   reset(): void;
 }
 
@@ -48,6 +61,8 @@ export function createSyncStore(deps: SyncStoreDeps) {
   const now = deps.now ?? Date.now;
   let running: Promise<void> | null = null;
   let queued: SyncContext | null = null;
+  // While the server is being cleared, nothing is sent to it.
+  let paused = false;
 
   return create<SyncState>()((set) => {
     const runOnce = async (context: SyncContext) => {
@@ -73,6 +88,14 @@ export function createSyncStore(deps: SyncStoreDeps) {
         if (changes > 0) await app.refresh();
         set({ phase: 'synced', lastSyncedAt: now(), pending: report.pending });
       } catch (e) {
+        if (isSyncClearedError(e)) {
+          set({ phase: 'idle', notice: 'clearedElsewhere', pending: 0, lastSyncedAt: null });
+          await useAppStore
+            .getState()
+            .setSetting('cloudSync', false)
+            .catch(() => undefined);
+          return;
+        }
         set({ phase: isOtherAccountError(e) ? 'otherAccount' : 'failed' });
       }
     };
@@ -81,8 +104,10 @@ export function createSyncStore(deps: SyncStoreDeps) {
       phase: 'idle',
       lastSyncedAt: null,
       pending: 0,
+      notice: null,
 
       syncNow(context) {
+        if (paused) return Promise.resolve();
         if (running) {
           queued = context;
           return running;
@@ -98,6 +123,27 @@ export function createSyncStore(deps: SyncStoreDeps) {
           running = null;
         });
         return running;
+      },
+
+      async clearAndTurnOff() {
+        const { remote } = deps;
+        if (!remote) throw new Error(SYNC_MESSAGES.unavailable);
+        paused = true;
+        queued = null;
+        try {
+          if (running) await running;
+          const clearedAt = await remote.clearServer();
+          const app = useAppStore.getState();
+          await app.runSync((db) => forgetServer(db, clearedAt));
+          await app.setSetting('cloudSync', false);
+          set({ phase: 'idle', lastSyncedAt: null, pending: 0 });
+        } finally {
+          paused = false;
+        }
+      },
+
+      clearNotice() {
+        set({ notice: null });
       },
 
       reset() {

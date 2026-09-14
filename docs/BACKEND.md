@@ -27,19 +27,20 @@ never leave the phone.
 Migrations live in `supabase/migrations/` and apply in filename order. A file
 already applied to a project is never edited; a change goes in a new file.
 
-| Migration                               | What it does                                               |
-| --------------------------------------- | ---------------------------------------------------------- |
-| `20260913000001_sync_schema_v1.sql`     | Tables, triggers and row-level security (below)            |
-| `20260913000002_devices_user_index.sql` | Index for looking up an account's phones (advisor finding) |
-| `20260914000001_pin_guard.sql`          | The PIN's guess limit: `pin_guard` and its three functions |
-| `20260914000002_pull_records.sql`       | `pull_records` for sync, and its index                     |
+| Migration                                     | What it does                                                   |
+| --------------------------------------------- | -------------------------------------------------------------- |
+| `20260913000001_sync_schema_v1.sql`           | Tables, triggers and row-level security (below)                |
+| `20260913000002_devices_user_index.sql`       | Index for looking up an account's phones (advisor finding)     |
+| `20260914000001_pin_guard.sql`                | The PIN's guess limit: `pin_guard` and its three functions     |
+| `20260914000002_pull_records.sql`             | `pull_records` for sync, and its index                         |
+| `20260914000003_sync_clear_and_key_check.sql` | `sync_clear`, `pin_key_is_current`, `profiles.sync_cleared_at` |
 
 What each table lets the server see:
 
 | Table             | Holds                                                                                          | Readable by the server                   |
 | ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `auth.users`      | The account, with its mobile number                                                            | The number                               |
-| `profiles`        | An optional display name                                                                       | The name, if given                       |
+| `profiles`        | An optional display name, and when synced data was last removed                                | The name, if given, and that date        |
 | `account_keys`    | The account key, locked with a key made from the PIN and the server's secret (no recovery key) | Nothing usable: never the PIN or the key |
 | `pin_guard`       | The PIN's guess count, any wait, and a verifier (an HMAC under the account key)                | The count; the verifier reveals nothing  |
 | `devices`         | Signed-in phones: label, platform, last seen                                                   | Those three                              |
@@ -100,6 +101,15 @@ Rules the database enforces:
     one replaced it.
   - Another account saw no row, and its attempt to write over the first
     account's row was refused. A signed-out caller saw no row.
+- **`sync_clear` and `pin_key_is_current`, live and rolled back** (throwaway
+  accounts):
+  - The current key's verifier was reported current; an old one was not, and
+    neither was the first account's verifier when asked by another account.
+  - `sync_clear` removed the account's two records and its preferences, and
+    recorded its date in the profile. Another account's record was untouched.
+  - A signed-out caller was refused.
+  - Security advisor: the two new `security definer` functions join the
+    three PIN ones (WARN), as intended: each acts only on the caller's rows.
 
 ## App configuration
 
@@ -144,7 +154,7 @@ Edge Function secrets, set by the owner:
 | `MESSAGING_SERVICE_TOKEN` | The provider's API token                         | Set 2026-09-13          |
 | `SEND_SMS_HOOK_SECRET`    | `v1,whsec_…`, made when the hook is turned on    | Set 2026-09-13          |
 | `MESSAGING_SERVICE_MODE`  | `live` to send real SMS                          | `live` since 2026-09-14 |
-| `PIN_OPRF_SECRET`         | 32+ random characters for `pin-oprf` (see below) | Not yet                 |
+| `PIN_OPRF_SECRET`         | 32+ random characters for `pin-oprf` (see below) | Set 2026-09-14          |
 
 ## The PIN: the `pin-oprf` function
 
@@ -164,11 +174,14 @@ JWT checks on: only a signed-in person can call it.
 - **Limit:** 5 tries, then waits of 1 minute, 5 minutes, 1 hour, then a day.
   Answers `429` with `retry_at` while a wait runs. Nothing is counted while an
   account is setting its first PIN.
-- **The three database functions** run with raised rights (`security definer`),
+- **The four database functions** run with raised rights (`security definer`),
   but each acts only on the caller's own row:
   - `pin_attempt`: counts a guess.
   - `pin_confirm`: records the verifier, or checks it and resets the count.
   - `pin_reset`: for "Forgot PIN?", deletes everything synced to the account.
+  - `pin_key_is_current`: whether a verifier is the current key's. Changes
+    nothing. A phone asks it before syncing, so one that missed a "Forgot
+    PIN" elsewhere asks for the new PIN.
 - **Logs:** never a PIN, a point or a key.
 
 ## Sync
@@ -190,13 +203,14 @@ server:
   categories and provider choices, locked like a record. The phone merges
   them entry by entry, then upserts by `user_id` with an edit time just after
   the server's, so the latest-edit trigger accepts it.
-
-Not built yet:
-
-- The signed-in phones list (`devices`).
-- Removing an account's records from the server when sync is turned off.
-- A phone that missed a "Forgot PIN" still holds the old key: it must sign out
-  and in again. Nothing tells it yet.
+- **"Turn off and remove"** calls `sync_clear` (`security definer`, the
+  caller's rows only): it deletes the account's `records` and
+  `synced_settings` and records the time in `profiles.sync_cleared_at`. Every
+  phone reads that date at the start of a sync; a date it didn't know turns
+  its sync off.
+- **Signed-in phones** are rows in `devices`, one per phone and account, which
+  each phone upserts by its own id when unlocked (at most every 5 minutes) and
+  deletes when signing out.
 
 ## Dashboard steps for the project owner
 

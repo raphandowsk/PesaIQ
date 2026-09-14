@@ -119,5 +119,20 @@ export function supabaseRecordsRemote(): RecordsRemote | null {
       );
       if (error) throw failure(error);
     },
+
+    async fetchClearedAt() {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('sync_cleared_at')
+        .maybeSingle();
+      if (error) throw failure(error);
+      return (data as { sync_cleared_at: string | null } | null)?.sync_cleared_at ?? null;
+    },
+
+    async clearServer() {
+      const { data, error } = await supabase.rpc('sync_clear');
+      if (error) throw failure(error);
+      return data as string;
+    },
   };
 }
