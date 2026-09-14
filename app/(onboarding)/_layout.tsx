@@ -1,14 +1,16 @@
 import { Stack } from 'expo-router';
 
 import { useAuthStore } from '../../features/auth';
+import { usePinStore } from '../../features/pin';
 import { colors } from '../../theme';
 
 /**
  * Welcome and How it works come before signing in; Privacy and the senders
- * picker come after, so they need an account.
+ * picker come after, so they need an account and its PIN.
  */
 export default function OnboardingLayout() {
   const signedIn = useAuthStore((s) => s.status === 'signedIn');
+  const keyReady = usePinStore((s) => s.status === 'ready');
 
   return (
     <Stack
@@ -20,7 +22,7 @@ export default function OnboardingLayout() {
     >
       <Stack.Screen name="welcome" />
       <Stack.Screen name="how-it-works" />
-      <Stack.Protected guard={signedIn}>
+      <Stack.Protected guard={signedIn && keyReady}>
         <Stack.Screen name="privacy" />
         <Stack.Screen name="setup" />
       </Stack.Protected>

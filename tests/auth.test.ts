@@ -171,40 +171,55 @@ describe('session storage', () => {
 });
 
 describe('where people can go', () => {
-  it('needs an account for the app, and closes sign-in once signed in', () => {
-    expect(accessFor(false, false)).toEqual({
+  it('needs an account and the account key for the app, and closes sign-in once signed in', () => {
+    // signedIn, keyReady, onboarded
+    expect(accessFor(false, false, false)).toEqual({
       intro: true,
       signIn: true,
+      pin: false,
       onboarding: false,
       app: false,
     });
-    expect(accessFor(true, false)).toEqual({
+    expect(accessFor(true, false, false)).toEqual({
       intro: true,
       signIn: false,
+      pin: true,
+      onboarding: false,
+      app: false,
+    });
+    expect(accessFor(true, true, false)).toEqual({
+      intro: true,
+      signIn: false,
+      pin: false,
       onboarding: true,
       app: false,
     });
-    expect(accessFor(true, true)).toEqual({
+    expect(accessFor(true, true, true)).toEqual({
       intro: false,
       signIn: false,
+      pin: false,
       onboarding: false,
       app: true,
     });
-    expect(accessFor(false, true)).toEqual({
-      intro: true,
-      signIn: true,
+    // Onboarded before, on a new phone: the PIN first, not the intro.
+    expect(accessFor(true, false, true)).toEqual({
+      intro: false,
+      signIn: false,
+      pin: true,
       onboarding: false,
       app: false,
     });
   });
 
   it('lands a launch in the right place', () => {
-    expect(landingFor(false, false)).toBe('/welcome');
-    expect(landingFor(false, true)).toBe('/phone');
-    expect(landingFor(true, false)).toBe('/privacy');
-    expect(landingFor(true, true)).toBe('/dashboard');
+    expect(landingFor(false, 'create', false)).toBe('/welcome');
+    expect(landingFor(false, 'ready', true)).toBe('/phone');
+    expect(landingFor(true, 'create', false)).toBe('/create-pin');
+    expect(landingFor(true, 'unlock', true)).toBe('/unlock');
+    expect(landingFor(true, 'ready', false)).toBe('/privacy');
+    expect(landingFor(true, 'ready', true)).toBe('/dashboard');
     expect(afterIntro(false)).toBe('/phone');
-    expect(afterIntro(true)).toBe('/privacy');
+    expect(afterIntro(true)).toBe('/');
   });
 });
 

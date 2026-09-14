@@ -6,6 +6,7 @@ import { ConfirmPanel, SettingRow, SettingsGroup } from '../../components/settin
 import { Button, Screen, Tag, Text, toast } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
 import { formatTzMobile, useAuthStore } from '../../features/auth';
+import { usePinStore } from '../../features/pin';
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
@@ -42,6 +43,7 @@ export default function Settings() {
   const resetOnboarding = useAppStore((s) => s.resetOnboarding);
   const phone = useAuthStore((s) => s.session?.phone ?? null);
   const signOut = useAuthStore((s) => s.signOut);
+  const forgetKey = usePinStore((s) => s.forget);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
@@ -98,8 +100,12 @@ export default function Settings() {
       ask: 'Sign out on this phone? Your records stay here, and you can sign back in with your number.',
       confirm: 'Sign out',
       go: async () => {
+        // Read before signing out: signing out clears the PIN state.
+        const userId = usePinStore.getState().userId ?? undefined;
         const result = await signOut();
         if (!result.ok) throw new Error(result.message);
+        // This phone's copy of the account key goes too; the PIN opens it again.
+        await forgetKey(userId);
         router.replace('/');
         return 'Signed out on this phone.';
       },

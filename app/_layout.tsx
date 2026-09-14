@@ -15,6 +15,7 @@ import {
 
 import { Button, Screen, Text, Toast } from '../components/ui';
 import { accessFor, useAuthStore } from '../features/auth';
+import { usePinStore } from '../features/pin';
 import { useAppStore } from '../features/transactions';
 import { colors, space } from '../theme';
 
@@ -60,6 +61,11 @@ export default function RootLayout() {
   const onboarded = useAppStore((s) => s.settings.onboardingComplete);
   const authStatus = useAuthStore((s) => s.status);
   const initializeAuth = useAuthStore((s) => s.initialize);
+  const userId = useAuthStore((s) => s.session?.userId ?? null);
+  const pinStatus = usePinStore((s) => s.status);
+  const pinUser = usePinStore((s) => s.userId);
+  const checkPin = usePinStore((s) => s.check);
+  const resetPin = usePinStore((s) => s.reset);
 
   useEffect(() => {
     void initialize();
@@ -69,19 +75,29 @@ export default function RootLayout() {
     void initializeAuth();
   }, [initializeAuth]);
 
+  // Signed in: find out whether this phone holds the account key. Signed out:
+  // forget the key's state (the key itself is removed by Sign out).
+  useEffect(() => {
+    if (authStatus === 'signedIn' && userId && pinUser !== userId) void checkPin(userId);
+    if (authStatus === 'signedOut' && pinUser) resetPin();
+  }, [authStatus, userId, pinUser, checkPin, resetPin]);
+
+  const signedIn = authStatus === 'signedIn';
+
   // A font failure still lets the app start, in a fallback face; a stuck
   // splash would be worse.
   const fontsSettled = fontsLoaded || fontError != null;
   const storeSettled = ready || error != null;
   const authSettled = authStatus !== 'loading';
+  const pinSettled = !signedIn || (pinStatus !== 'idle' && pinStatus !== 'checking');
 
   useEffect(() => {
-    if (fontsSettled && storeSettled && authSettled) void SplashScreen.hideAsync();
-  }, [fontsSettled, storeSettled, authSettled]);
+    if (fontsSettled && storeSettled && authSettled && pinSettled) void SplashScreen.hideAsync();
+  }, [fontsSettled, storeSettled, authSettled, pinSettled]);
 
   if (!fontsSettled) return null;
 
-  if (!ready || !authSettled) {
+  if (!ready || !authSettled || !pinSettled) {
     return (
       <SafeAreaProvider>
         <Boot error={error} onRetry={() => void initialize()} />
@@ -97,7 +113,15 @@ export default function RootLayout() {
     );
   }
 
-  const access = accessFor(authStatus === 'signedIn', onboarded);
+  if (signedIn && pinStatus === 'offline') {
+    return (
+      <SafeAreaProvider>
+        <Offline onRetry={() => userId && void checkPin(userId)} />
+      </SafeAreaProvider>
+    );
+  }
+
+  const access = accessFor(signedIn, pinStatus === 'ready', onboarded);
 
   return (
     <SafeAreaProvider>
@@ -117,6 +141,9 @@ export default function RootLayout() {
         <Stack.Protected guard={access.signIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
+        <Stack.Protected guard={access.pin}>
+          <Stack.Screen name="(pin)" />
+        </Stack.Protected>
         <Stack.Protected guard={access.app}>
           <Stack.Screen name="(tabs)" />
           {/* Pushed over the tabs from the Parser Lab; no tab bar. */}
@@ -132,6 +159,23 @@ export default function RootLayout() {
       </Stack>
       <Toast />
     </SafeAreaProvider>
+  );
+}
+
+/** Signed in, but the account key could not be looked up. */
+function Offline({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Screen>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[3] }}>
+        <Text variant="h3" accessibilityRole="header">
+          Couldn&apos;t reach PesaIQ
+        </Text>
+        <Text variant="small" tone="muted" style={{ textAlign: 'center' }}>
+          Check your connection, then try again. Your records on this phone are safe.
+        </Text>
+        <Button label="Try again" onPress={onRetry} />
+      </View>
+    </Screen>
   );
 }
 

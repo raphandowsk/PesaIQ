@@ -821,4 +821,46 @@ sent by SMS. Supabase Auth makes the code and the `send-sms` hook sends it (see
 - **Service boundary:** `features/auth/store.ts` talks to an `AuthApi`.
   `services/supabase/authApi.ts` is the Supabase one; tests use a fake.
 
-Not built yet: the PIN, encrypted sync, the profile screen and account deletion.
+Not built yet: encrypted sync, the profile screen and account deletion.
+
+## The PIN and the account key (2026-09-14)
+
+After signing in, a phone needs the **account key**: 32 random bytes that
+will lock the records that sync. A **4-digit PIN** unlocks it. There is no
+recovery key (decided 2026-09-14).
+
+- **Order:** Number → Code → **Create PIN** (entered twice) or **Enter PIN**
+  (a phone that doesn't hold the key yet) → Privacy → Senders. The routing
+  rule gained a third fact: whether this phone holds the key.
+- **Why a guess limit:** 10,000 PINs could all be tried in minutes against a
+  copy of the database. So a PIN can only be tested through the `pin-oprf`
+  Edge Function, which counts every guess first: 5 tries, then waits of 1
+  minute, 5 minutes, 1 hour, then a day. There is never a permanent lock.
+- **How the server never sees the PIN** (`features/pin/crypto.ts`):
+  1. The phone hashes the PIN to a point on ristretto255 and blinds it with a
+     random number.
+  2. The function multiplies the point by a per-user key derived from
+     `PIN_OPRF_SECRET`. This is an oblivious pseudorandom function, or OPRF.
+  3. The phone unblinds the answer and hashes it. That gives a secret that
+     exists only for the right PIN plus the server's secret.
+  4. Through HKDF, that secret locks the account key with AES-256-GCM. Only the
+     locked key is stored (`account_keys`).
+- **The guess count** lives in `pin_guard`, which no app can read or write, and
+  is changed only by three database functions:
+  - `pin_attempt` counts a guess. Nothing is counted before the account has a
+    key.
+  - `pin_confirm` takes a verifier (an HMAC under the account key) and resets
+    the count after a correct PIN.
+  - `pin_reset` handles "Forgot PIN?" by deleting everything synced to the
+    account.
+- **On the phone:** the opened key is kept in secure storage, on this device
+  only (`services/keyStore.ts`), so the PIN isn't asked for on every launch.
+  Sign out removes it.
+- **Common PINs** are refused: four of a digit, runs like 1234, and pairs like 1212.
+- **Libraries:** `@noble/curves`, `@noble/hashes` and `@noble/ciphers`. They are
+  audited, pure JavaScript, and run in Expo Go. Randomness comes from
+  `expo-crypto`.
+- **Tests** (`tests/pin.test.ts`) cover the protocol against a simulated server
+  doing the real maths: the same PIN gives the same secret under different
+  blinds, a wrong PIN, salt or account opens nothing, and the store's create,
+  unlock, wait and start-over paths.

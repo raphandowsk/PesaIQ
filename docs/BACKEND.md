@@ -31,17 +31,19 @@ already applied to a project is never edited; a change goes in a new file.
 | --------------------------------------- | ---------------------------------------------------------- |
 | `20260913000001_sync_schema_v1.sql`     | Tables, triggers and row-level security (below)            |
 | `20260913000002_devices_user_index.sql` | Index for looking up an account's phones (advisor finding) |
+| `20260914000001_pin_guard.sql`          | The PIN's guess limit: `pin_guard` and its three functions |
 
 What each table lets the server see:
 
-| Table             | Holds                                                                                      | Readable by the server                   |
-| ----------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------- |
-| `auth.users`      | The account, with its mobile number                                                        | The number                               |
-| `profiles`        | An optional display name                                                                   | The name, if given                       |
-| `account_keys`    | The record key, locked with a key made from the user's PIN (and optionally a recovery key) | Nothing usable: never the PIN or the key |
-| `devices`         | Signed-in phones: label, platform, last seen                                               | Those three                              |
-| `records`         | One locked record each, its fingerprint for duplicates, edit time, deletion marker         | Only ids, times and fingerprints         |
-| `synced_settings` | Settings and remembered categories, locked as one document                                 | Nothing                                  |
+| Table             | Holds                                                                                          | Readable by the server                   |
+| ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `auth.users`      | The account, with its mobile number                                                            | The number                               |
+| `profiles`        | An optional display name                                                                       | The name, if given                       |
+| `account_keys`    | The account key, locked with a key made from the PIN and the server's secret (no recovery key) | Nothing usable: never the PIN or the key |
+| `pin_guard`       | The PIN's guess count, any wait, and a verifier (an HMAC under the account key)                | The count; the verifier reveals nothing  |
+| `devices`         | Signed-in phones: label, platform, last seen                                                   | Those three                              |
+| `records`         | One locked record each, its fingerprint for duplicates, edit time, deletion marker             | Only ids, times and fingerprints         |
+| `synced_settings` | Settings and remembered categories, locked as one document                                     | Nothing                                  |
 
 Rules the database enforces:
 
@@ -70,6 +72,23 @@ Rules the database enforces:
   - Account A saw its one record; account B and a signed-out visitor saw none.
   - An older edit sent late left the newer one in place.
   - A second record with the same fingerprint was refused.
+
+## Checks run on the test project (2026-09-14)
+
+- **PIN guess limit, live and rolled back** (one throwaway account):
+  - Setting the first PIN counted nothing.
+  - Once the key existed, the 5th guess was allowed and started the 1-minute
+    wait; a 6th was refused.
+  - A wrong verifier was refused; the right one reset the count.
+  - `pin_reset` deleted the key.
+- **`pin-oprf` without signing in:** `401`.
+- **Security advisor**, all expected:
+  - `pin_guard` has row-level security with no policies (INFO). This is
+    intended: only its functions touch it.
+  - Signed-in users can call the three `security definer` functions (WARN).
+    This is intended: each is limited to the caller's own row.
+  - Leaked-password protection is off (WARN). PesaIQ has no passwords, so it
+    doesn't apply.
 
 ## App configuration
 
@@ -109,11 +128,37 @@ Deployed to `pesaiq-test` on 2026-09-13.
 
 Edge Function secrets, set by the owner:
 
-| Secret                    | What it is                                    | Status            |
-| ------------------------- | --------------------------------------------- | ----------------- |
-| `MESSAGING_SERVICE_TOKEN` | The provider's API token                      | Set 2026-09-13    |
-| `SEND_SMS_HOOK_SECRET`    | `v1,whsec_…`, made when the hook is turned on | Not yet           |
-| `MESSAGING_SERVICE_MODE`  | `live` to send real SMS                       | Unset (test mode) |
+| Secret                    | What it is                                       | Status                  |
+| ------------------------- | ------------------------------------------------ | ----------------------- |
+| `MESSAGING_SERVICE_TOKEN` | The provider's API token                         | Set 2026-09-13          |
+| `SEND_SMS_HOOK_SECRET`    | `v1,whsec_…`, made when the hook is turned on    | Set 2026-09-13          |
+| `MESSAGING_SERVICE_MODE`  | `live` to send real SMS                          | `live` since 2026-09-14 |
+| `PIN_OPRF_SECRET`         | 32+ random characters for `pin-oprf` (see below) | Not yet                 |
+
+## The PIN: the `pin-oprf` function
+
+Deployed to `pesaiq-test` on 2026-09-14 (`supabase/functions/pin-oprf/`), with
+JWT checks on: only a signed-in person can call it.
+
+- **What it does:**
+  1. Counts the guess first (`pin_attempt`, called with the caller's own
+     sign-in).
+  2. Only if the guess is allowed, multiplies the blinded PIN point by the
+     caller's key.
+- **The caller's key** is derived from `PIN_OPRF_SECRET` and the account id,
+  and is never stored. Without that secret, a copy of the database cannot test
+  PINs.
+- **Changing `PIN_OPRF_SECRET` makes every existing PIN stop working.** Set it
+  once and keep it safe.
+- **Limit:** 5 tries, then waits of 1 minute, 5 minutes, 1 hour, then a day.
+  Answers `429` with `retry_at` while a wait runs. Nothing is counted while an
+  account is setting its first PIN.
+- **The three database functions** run with raised rights (`security definer`),
+  but each acts only on the caller's own row:
+  - `pin_attempt`: counts a guess.
+  - `pin_confirm`: records the verifier, or checks it and resets the count.
+  - `pin_reset`: for "Forgot PIN?", deletes everything synced to the account.
+- **Logs:** never a PIN, a point or a key.
 
 ## Dashboard steps for the project owner
 
@@ -130,3 +175,7 @@ Supabase dashboard.
 4. **Email sign-up off:** PesaIQ signs people up by mobile number only.
 5. **Rate limits:** cap the number of SMS codes sent per hour.
 6. **Go live:** after a successful test, set `MESSAGING_SERVICE_MODE` to `live`.
+7. **PIN secret:** make 32 random bytes, for example with
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+   Save the result as the Edge Function secret `PIN_OPRF_SECRET`, and keep a
+   copy somewhere safe. Never change it once people have PINs.

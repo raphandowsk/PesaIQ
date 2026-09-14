@@ -95,3 +95,11 @@ storage model above would not change: still local, still no upload by default.
   affects this phone only and keeps the records on it.
 - **The in-app privacy wording** still describes the phone-only design, and must
   be updated before release (see the launch checklist).
+- **The PIN never leaves the phone.** The server only sees a blinded value
+  that reveals nothing about it, and it counts every guess: 5 tries, then
+  waits. The account key it unlocks is stored on the server only in locked
+  form. The unlocked key stays in this phone's secure storage and is removed
+  on sign-out.
+- **There is no recovery key.** A forgotten PIN means the records synced to the
+  account are deleted from the server and a new PIN is set. The records on the
+  phone are kept.
