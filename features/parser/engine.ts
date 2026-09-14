@@ -6,17 +6,15 @@
  * no I/O, no dates read from the clock, no randomness - so a given message
  * always produces the same result and the tests can pin exact numbers.
  */
-import { formatAmount as formatMoney } from '../../utils/format';
 import {
   CATEGORY_TO_TYPE,
   DEFAULT_CURRENCY,
   MONEY_CATEGORY_LABELS,
-  TAX_LABELS,
   TYPE_LABELS,
 } from '../../types/domain';
 import { checkCharges, extractElectricityReceipt, extractFee, extractTaxes } from './charges';
 import { classify } from './classifier';
-import { isLowConfidenceField, scoreConfidence } from './confidence';
+import { scoreConfidence } from './confidence';
 import {
   extractAmount,
   extractBalance,
@@ -27,11 +25,16 @@ import {
   maskIdentifier,
   type Extracted,
 } from './extractors';
+import { buildField, cents, describeTaxes, money } from './fields';
 import { inferMoneyCategory } from './moneyCategory';
 import { normalizationNote, normalize, type NormalizedSms } from './normalizer';
 import { detectProvider } from './providers';
 import { extractReceiptNumber, extractRecipient } from './recipient';
-import type { ChargeDetails, ParseResult, ParsedField, TaxLine } from './schema';
+import { EMPTY_DETAILS, type ChargeDetails, type ParseResult, type ParsedField } from './schema';
+import { parseTanzaniaSms } from './tz';
+import { resultFromTz } from './tzResult';
+
+export { buildField, describeTaxes, formatAmount } from './fields';
 
 /** Longest message we will attempt. Beyond this the input is likely not an SMS. */
 export const MAX_MESSAGE_LENGTH = 1600;
@@ -53,47 +56,6 @@ export class MessageTooLongError extends Error {
 /** A rule-picked category is a good guess, never an "unsure" one: it is one tap to change. */
 const CATEGORY_CONFIDENCE = 0.8;
 
-export function buildField(
-  key: string,
-  label: string,
-  value: string | number | null,
-  display: string,
-  confidence: number,
-): ParsedField {
-  const asText = value == null ? '' : String(value);
-  return {
-    key,
-    label,
-    value: asText,
-    display,
-    confidence,
-    low: isLowConfidenceField(confidence),
-    missing: asText === '',
-  };
-}
-
-/** Format a number the way the UI shows money. */
-export function formatAmount(n: number | null | undefined): string {
-  if (n == null) return '-';
-  // Shared with the UI so a figure reads the same on every screen, and so the
-  // parser does not depend on per-device Intl data.
-  return formatMoney(n);
-}
-
-const money = (n: number) => `${DEFAULT_CURRENCY} ${formatAmount(n)}`;
-const cents = (n: number) => Math.round(n * 100) / 100;
-
-/** "VAT TZS 69 (in the fee)", or "VAT 18% TZS 2,729.50 · EWURA 1% TZS 151.64". */
-export function describeTaxes(taxes: readonly TaxLine[]): string {
-  return taxes
-    .map((t) => {
-      const rate = t.ratePct == null ? '' : ` ${t.ratePct}%`;
-      const where = t.within === 'fee' ? ' (in the fee)' : t.within === 'extra' ? ' (on top)' : '';
-      return `${TAX_LABELS[t.code]}${rate} ${money(t.amount)}${where}`;
-    })
-    .join(' · ');
-}
-
 /**
  * Parse an already-normalized message.
  *
@@ -105,6 +67,12 @@ export function parseNormalized(sms: NormalizedSms): ParseResult {
 
   // The demo samples carry their sender inline; a real source passes it in.
   const sender = sms.sender || /DEMO-[A-Z-]+/.exec(text)?.[0] || undefined;
+
+  // Tanzanian mobile money first, by the operators' own layouts
+  // (features/parser/tz). The general rules below read everything no
+  // operator recognizes: banks, LUKU receipts, the demo samples.
+  const tz = parseTanzaniaSms({ body: sms.originalText, sender, receivedAt: sms.receivedAt });
+  if (tz) return resultFromTz({ ...sms, sender }, tz);
 
   const classification = classify(text);
   const provider = detectProvider(text, sender);
@@ -143,6 +111,7 @@ export function parseNormalized(sms: NormalizedSms): ParseResult {
   const taxTotal = cents(taxes.reduce((sum, t) => sum + t.amount, 0));
 
   const details: ChargeDetails = {
+    ...EMPTY_DETAILS,
     receipt: extractReceiptNumber(text),
     network: recipient?.network ?? null,
     merchant: recipient?.merchant ?? false,

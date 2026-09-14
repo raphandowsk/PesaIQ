@@ -1,16 +1,17 @@
 /**
  * Provider recognition.
  *
- * IMPORTANT: every parser here is DEMO maturity except Mixx by Yas, which is
- * EXPERIMENTAL: its rules come from three real Mixx layouts the user supplied
- * on 2026-09-12 (anonymized in tests/fixtures/tz-messages.ts). We do not know
- * the live SMS formats of M-Pesa, Airtel Money, CRDB, NMB, NBC, Absa or
- * Stanbic, and nothing in this file claims otherwise. The other hints match
- * invented demo senders plus a few generic tokens ("acct", bank names) that are
- * safe to look for.
+ * The five mobile-money operators are EXPERIMENTAL: the Tanzania parser
+ * (features/parser/tz) reads them from layouts documented in the Tanzania
+ * Mobile Money SMS Specification and, for Mixx, from the owner's own
+ * messages (anonymized in tests/fixtures). None is SUPPORTED: the layouts
+ * still have to be checked against messages from real phones. T-PESA rests on
+ * a single public example. The banks stay DEMO: their live formats are not
+ * known, and nothing in this file claims otherwise.
  *
- * A provider is promoted past DEMO only when anonymized fixtures from real
- * messages prove its rules. Until then the UI shows the DEMO badge.
+ * The hints below are the fallback for messages the Tanzania parser does not
+ * recognize: invented demo senders plus a few generic tokens ("acct", bank
+ * names) that are safe to look for.
  */
 import type { ProviderMaturity } from '../../types/domain';
 
@@ -24,9 +25,11 @@ export interface SmsProvider {
 
 /** The provider registry seeded into the database. */
 export const PROVIDERS: SmsProvider[] = [
-  { id: 'mpesa', name: 'M-Pesa', country: 'TZ', enabled: true, maturity: 'DEMO' },
-  { id: 'airtel', name: 'Airtel Money', country: 'TZ', enabled: true, maturity: 'DEMO' },
+  { id: 'mpesa', name: 'M-Pesa', country: 'TZ', enabled: true, maturity: 'EXPERIMENTAL' },
+  { id: 'airtel', name: 'Airtel Money', country: 'TZ', enabled: true, maturity: 'EXPERIMENTAL' },
   { id: 'mixx', name: 'Mixx by Yas', country: 'TZ', enabled: true, maturity: 'EXPERIMENTAL' },
+  { id: 'halopesa', name: 'HaloPesa', country: 'TZ', enabled: true, maturity: 'EXPERIMENTAL' },
+  { id: 'tpesa', name: 'T-PESA', country: 'TZ', enabled: true, maturity: 'EXPERIMENTAL' },
   { id: 'crdb', name: 'CRDB', country: 'TZ', enabled: true, maturity: 'DEMO' },
   { id: 'nmb', name: 'NMB', country: 'TZ', enabled: true, maturity: 'DEMO' },
   { id: 'nbc', name: 'NBC', country: 'TZ', enabled: true, maturity: 'DEMO' },
@@ -61,8 +64,10 @@ const PROVIDER_HINTS: ProviderHint[] = [
     match: /\bmixx\b|jumla ya makato|bao la ushindi|kumbukumbu no\b/i,
     name: 'Mixx by Yas',
   },
-  { id: 'mpesa', match: /wallet-a|m-?pesa/i, name: 'Wallet A (M-Pesa-like demo)' },
-  { id: 'airtel', match: /wallet-b|airtel/i, name: 'Wallet B (Airtel-like demo)' },
+  // The demo senders only. A real M-Pesa or Airtel message is the Tanzania
+  // parser's to recognize, from several signals, never from one word here.
+  { id: 'mpesa', match: /wallet-a/i, name: 'Wallet A (M-Pesa-like demo)' },
+  { id: 'airtel', match: /wallet-b/i, name: 'Wallet B (Airtel-like demo)' },
   {
     id: 'bank',
     match: /demo-bank|crdb|nmb|nbc|absa|stanbic|acct|account/i,

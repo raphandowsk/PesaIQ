@@ -1,10 +1,11 @@
 # PesaIQ — Parser engine
 
-Status: **implemented and tested** (Phase 1B, 2026-09-11). 138 tests green.
-
-Since 2026-09-14 these rules check Claude's reading and stand in for it when
-it's unavailable; they are no longer the first reader. See "AI reading" in
-`ARCHITECTURE.md`.
+Status: **implemented and tested.** The general rules below date from Phase 1B
+(2026-09-11). Since 2026-09-14 the **Tanzania mobile-money parser** reads
+M-Pesa, Airtel Money, Mixx by Yas, HaloPesa and T-PESA messages first (see
+"Tanzania mobile money" at the end). The general rules read everything it does
+not recognize: banks, LUKU receipts and the demo samples. AI reading is paused
+(`features/ai/config.ts`).
 
 ## Provenance
 
@@ -70,8 +71,10 @@ Every classification returns `reasons[]` — the UI shows these verbatim.
   date wins: one that cannot exist (31/02, month 13, a three-digit year) is skipped,
   as is an impossible time (25:61). A four-digit year is taken as written. No real
   date → a warning that capture time will be used instead.
-- **Provider** — sender/text hints: wallet-a (M-Pesa-like), wallet-b (Airtel-like),
-  bank (crdb/nmb/nbc/absa/stanbic/acct), promo (unrecognized).
+- **Provider** — sender/text hints: the demo senders wallet-a (M-Pesa-like) and
+  wallet-b (Airtel-like), bank (crdb/nmb/nbc/absa/stanbic/acct), promo
+  (unrecognized). A real operator is the Tanzania parser's to recognize, never a
+  single word here.
 
 ### 4. Score
 
@@ -100,9 +103,10 @@ is **never treated as verified**.
 
 ## Provider maturity
 
-All provider parsers ship as **DEMO**. They are promoted to EXPERIMENTAL or SUPPORTED
-only when anonymized fixtures prove them. No live provider format is claimed, and the
-four sample messages are invented.
+The five mobile-money operators are **EXPERIMENTAL** (since 2026-09-14): their
+rules come from documented layouts and, for Mixx, the owner's own messages.
+The banks stay **DEMO**. Nothing is **SUPPORTED**: that needs anonymized
+fixtures from real phones. The sample messages are invented.
 
 ## Test plan (Phase 1B)
 
@@ -196,3 +200,153 @@ Numbers written as 255... are masked like local ones (`07** *** 123`). Lipa,
 till and meter numbers keep their last four digits. The LUKU token is kept on
 the record and shown only on request. It never appears in the parse fields (only
 its last four digits do), in the masked source-message view, or in an export.
+
+## Tanzania mobile money (2026-09-14)
+
+Built to the owner's _Tanzania Mobile Money SMS Specification_ (v1.0), in
+`features/parser/tz/`. Deterministic and offline: plain TypeScript, no network,
+no AI, no clock, no logging. Parser version **1.0.0**, recorded on every reading
+(`details.parserVersion`) so an old record stays auditable.
+
+### Architecture
+
+```
+SmsMessage → normalize → each operator with evidence for itself parses → most confident wins
+                                                                          ↓
+                                              below 0.50, or no kind → UNKNOWN (kept for review)
+                                                                          ↓
+                                                     tzResult.ts → ParseResult (the app's shape)
+```
+
+`parseNormalized` (`engine.ts`) calls `parseTanzaniaSms` first. When no operator
+has any evidence for itself it returns null, and the general rules above read
+the message, so banks, LUKU receipts and the demo samples behave as before.
+
+| File                                            | Holds                                                                        |
+| ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `index.ts`                                      | The master parser (§37), `PARSER_VERSION`, `toUnknownSms` (§43)              |
+| `normalize.ts`                                  | Whitespace, dashes and invisible characters; case and line breaks kept       |
+| `classifier.ts`                                 | Operator evidence (§28), direction, status, the 16 kinds in §29's order      |
+| `confidence.ts`                                 | §45's weights, §53's consistency penalty, the 0.98 ceiling                   |
+| `amount.ts`, `phone.ts`, `date.ts`              | §24, §25 (normalized, then masked), and the four date forms                  |
+| `transaction-id.ts`                             | §26's labels, most specific first, plus M-Pesa's leading code                |
+| `patterns/*.patterns.ts`                        | Every regex, per operator, plus the shared vocabulary (§23, §38)             |
+| `operators/*.ts`                                | One parser per operator (§36), from `createOperatorParser(patterns, hooks)`  |
+| `types/{operator,transaction,parser-result}.ts` | Operator codes and sender-ID hints (§27), `ParsedTransaction` (§4, §35)      |
+| `../tzResult.ts`                                | A reading as a `ParseResult`: fields, fee and tax lines, categories, details |
+
+### Which operator
+
+Weighted signals, never one word (§2, §28): the sender ID exactly matching a
+documented one (+0.50), the operator's own name in the message (+0.35), and each
+documented phrase (+0.25, two at most), less 0.30 for each other operator with
+any evidence. A network named as the other side of a transfer ("kwenda kwa
+mpokeaji wa Halo Pesa", "Payment To TIPS-Mixx") does not count. The operator
+counts as recognized from 0.50.
+
+The layout "Umetuma pesa kwa NAME, kiasi Tsh …/=, Ada ----" is documented for
+M-Pesa, Airtel Money, HaloPesa and T-PESA alike, so on its own it names none of
+them: it needs a sender ID or the operator's name.
+
+### What kind
+
+REVERSAL, REFUND → BANK_TRANSFER (in or out) → GOVERNMENT_PAYMENT →
+INTERNATIONAL_TRANSFER → MERCHANT_PAYMENT → BILL_PAYMENT → WITHDRAWAL →
+DEPOSIT → AIRTIME, BUNDLE → RECEIVED → SENT → BALANCE_NOTIFICATION → UNKNOWN.
+Every money kind needs its own words **and** an amount. A one-time code or a
+promotion is UNKNOWN. "Failed" or "pending" wording is kept as the status.
+
+In the app the 16 kinds map onto the 8 record types: a merchant payment is Sent
+(to a merchant), a government payment is a Bill payment, money from a bank is
+Received, money to a bank is a Transfer, a bundle is Airtime, a reversal or
+refund follows its direction, and a failed or pending one moved no money. The
+kind itself is kept (`details.kind`) and shown on the Result and record screens,
+beside "Parsed from SMS" (§49): a reading is never called verified.
+
+### Confidence
+
+| Factor                        | Weight |
+| ----------------------------- | ------ |
+| Operator recognized           | 0.25   |
+| Transaction type recognized   | 0.20   |
+| Amount extracted              | 0.20   |
+| Transaction ID extracted      | 0.15   |
+| Sender or recipient extracted | 0.10   |
+| Balance extracted             | 0.05   |
+| Date extracted                | 0.025  |
+| Time extracted                | 0.025  |
+
+Each field that does not add up (an impossible amount, a levy larger than its
+fee) costs 0.10. The ceiling is 0.98, as in §40's example. Below **0.50** the
+message is UNKNOWN: in the app it has no type and scores under the review line.
+
+### Regex patterns
+
+Shared fragments: currency `(?:TZS|Tshs?|TSH)\.?`; number
+`(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)`; a transaction ID is
+`[A-Z0-9][A-Z0-9._-]{5,40}` containing a digit.
+
+- **M-Pesa** (`mpesa.patterns.ts`): code `([A-Z0-9]{6,20})\s+[Ii]methibitishwa`;
+  balance `salio\s+lako\s+la\s+M[-\s]?PESA\s+ni …`; receipt
+  `Transaction\s+Amount\s*:?\s*NUM\s*TZS`, `Total\s+fees?\s*:?\s*NUM\s*TZS`,
+  `Receipt\s+Number …`, `Bill\s+Reference …`, `Payment\s+Type …`; merchant
+  `merchant\s+payment\s+to\s*(\d{4,10}\s*-\s*LIPA … NAME)`; a bank (NMB and
+  others) with transfer wording.
+- **Airtel Money** (`airtel.patterns.ts`): `txn\s*id\s*[:-]?\s*(ID)`;
+  `umepokea\s*NUM\s*Tshs?`; `kutoka\s*\(\s*jina\s+la\s+akaunti\s*:\s*(NAME)\)`;
+  `salio\s+lako\s+ni\s*NUM\s*Tshs?`; "Kwenda Kwa No" and "Jina La Mpokeaji".
+- **Mixx by Yas** (`mixx.patterns.ts`, `recipient.ts`): "Jumla ya makato",
+  "Salio jipya ni", "Namba ya muamala", "Malipo yamekamilika kwenda NAME, Kiasi",
+  `kwenda kwa (mpokeaji wa)? NETWORK (LIPA)? NAME - number`, "Risiti"; a GePG
+  control number and payment ID.
+- **HaloPesa** (`halopesa.patterns.ts`): `utambulisho\s+wa\s+muamala\s*:\s*(ID)`;
+  `umetuma\s+TSH\s*NUM`; "kwenda NETWORK, jina NAME"; `gharama\s+TSH\s*NUM`;
+  `tozo\s+(?:ya|la)\s+serikali … NUM` (a government levy, kept as a tax inside
+  the fee); `wakati\s+yyyy/mm/dd hh:mm:ss`; `salio\s+lako\s+jipya\s+ni …`.
+- **T-PESA** (`tpesa.patterns.ts`): the shared layout, reported as
+  `TPESA_PATTERN_CONFIRMED_PUBLIC_EXAMPLE`, with a caution that T-PESA is known
+  from one public example.
+
+### Tests
+
+`tests/tz-fixtures.test.ts` runs every fixture in `tests/fixtures/tz/` (at least
+ten per operator, 54 in all). It checks each reading field by field, that it
+says parsed and never verified, and that no field holds a full phone number.
+`tests/tz-parser.test.ts` covers each part (amounts, phones, dates, IDs, operator
+evidence, the kind order, confidence, the master parser, §46's security rules)
+and how readings appear in the app. `tests/tz-formats.test.ts` still pins the
+owner's Mixx and LUKU layouts.
+
+Every name and number in the fixtures is invented. The specification's own
+examples were re-filled, and a test checks that none of its real names or
+numbers appear. Each fixture says where its layout comes from (§56): **A** a
+documented Tanzanian example, **B** a public example still to check, **LOCAL**
+the owner's own messages, **ASSUMED** written only to exercise a rule.
+
+### Known limitations
+
+- **Nothing is checked against real phones yet.** Apart from the owner's Mixx
+  messages, every layout comes from the specification's public examples, and
+  some fixtures are assumed. The operators are EXPERIMENTAL, not SUPPORTED.
+- **T-PESA** is known from one example, in a layout shared with three other
+  operators: it needs its sender ID or its name.
+- **Dates are day-first.** A month-first date is misread.
+- **Balance consistency** (§53, "balance changed consistently") needs the
+  previous balance, which a single pasted message does not carry.
+- **Unknown messages** are kept only when saved: the unattended path
+  (`analyzeAndSave`) stores them for review, and in the Lab the person chooses
+  "Save it anyway". The bulk import must leave out one-time codes (§46): the
+  parser marks them, but the store does not yet refuse them.
+
+### Adding a template
+
+1. Anonymize a real message: replace every name, number, code and balance.
+2. Add it as a fixture in `tests/fixtures/tz/<operator>.ts` with the reading you
+   expect, and `evidence` set honestly. Run `npx jest tz-fixtures`: it fails.
+3. Add the layout's patterns to `patterns/<operator>.patterns.ts`: a `marker`
+   for wording only this operator uses, a `template` naming the layout, and any
+   amount, fee, balance, ID or party pattern the shared vocabulary misses.
+   Operator patterns are tried before the shared ones.
+4. Run the whole suite. Every other fixture must still pass.
+5. Raise `PARSER_VERSION` in `operators/base.ts`: 1.1.0 for new or changed
+   patterns, 2.0.0 for a change to how readings are built.

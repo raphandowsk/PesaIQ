@@ -15,6 +15,7 @@ import {
   TAX_CODES,
   TRANSACTION_TYPES,
 } from '../../types/domain';
+import { TZ_STATUSES, TZ_TRANSACTION_TYPES } from './tz/types/transaction';
 
 export const parsedFieldSchema = z.object({
   key: z.string(),
@@ -67,6 +68,30 @@ export const chargeDetailsSchema = z.object({
   netCost: z.number().nullable().default(null),
   /** LUKU: old electricity debt recovered from this payment. Not a tax. */
   debtCollected: z.number().nullable().default(null),
+
+  // From the Tanzania mobile-money parser (features/parser/tz). Null for
+  // anything else, and for records saved before it.
+  /** The transaction in the specification's own terms ("MERCHANT_PAYMENT"). */
+  kind: z.enum(TZ_TRANSACTION_TYPES).nullable().default(null),
+  /** "MPESA_TZ", "MIXX_TZ", … */
+  operator: z.string().nullable().default(null),
+  /** As the message states it: a failed or pending transaction moved no money. */
+  messageStatus: z.enum(TZ_STATUSES).nullable().default(null),
+  /** The documented layout that matched ("TPESA_PATTERN_CONFIRMED_PUBLIC_EXAMPLE"). */
+  template: z.string().nullable().default(null),
+  /** The customer's reference at the biller, masked when it is a phone number. */
+  billReference: z.string().nullable().default(null),
+  /** "Pay Bill". */
+  paymentType: z.string().nullable().default(null),
+  /** A Lipa, till or business number, masked. */
+  merchantNumber: z.string().nullable().default(null),
+  bankName: z.string().nullable().default(null),
+  /** Masked. */
+  bankAccount: z.string().nullable().default(null),
+  /** A GePG control number, masked. */
+  controlNumber: z.string().nullable().default(null),
+  /** Which parser version read it, so an old record stays auditable. */
+  parserVersion: z.string().nullable().default(null),
 });
 
 export const EMPTY_DETAILS = chargeDetailsSchema.parse({});

@@ -18,7 +18,9 @@ Normalizer          original text preserved, never mutated
       ↓
 Classifier          12 categories + explainable reasons[]
       ↓
-Parser engine       GenericParser + provider hints
+Tanzania parser     M-Pesa · Airtel Money · Mixx · HaloPesa · T-PESA (features/parser/tz)
+      ↓             (no operator recognized)
+Parser engine       GenericParser + provider hints: banks, LUKU, demo samples
       ↓
 ParseResult         Zod-validated, per-field confidence
       ↓

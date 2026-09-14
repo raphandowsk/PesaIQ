@@ -259,6 +259,16 @@ export const MIGRATIONS: Migration[] = [
       END;
     `,
   },
+  {
+    version: 6,
+    name: 'Tanzania mobile-money parser',
+    up: `
+      -- M-Pesa and Airtel Money are now read by the Tanzania mobile-money
+      -- parser (features/parser/tz), from documented layouts. HaloPesa and
+      -- T-PESA join the registry when it is seeded on launch.
+      UPDATE providers SET maturity = 'EXPERIMENTAL' WHERE id IN ('mpesa', 'airtel');
+    `,
+  },
 ];
 
 /** Highest version this build knows about. */

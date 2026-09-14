@@ -11,6 +11,7 @@ import { isTextEditable, viewDraft, type DraftEdits } from '../features/lab/draf
 import { useLabStore } from '../features/lab/store';
 import { confidenceLabel } from '../features/review/queue';
 import type { ParseResult } from '../features/parser';
+import { TZ_TYPE_LABELS } from '../features/parser/tz';
 import { savedOnText, type Transaction } from '../features/transactions';
 import { colors, fonts, radius, shadow, space } from '../theme';
 import { TYPE_LABELS } from '../types/domain';
@@ -130,9 +131,13 @@ export default function Result() {
 
   const sign = view.direction === 'in' ? '+ ' : view.direction === 'out' ? `${MINUS} ` : '';
   const amountLabel = view.amount == null ? 'No amount' : `${sign}${formatTzs(view.amount)}`;
+  // The Tanzania parser's own kind ("Merchant payment") when it read the message.
+  const kind = current.draft.details.kind;
   const categoryLabel = current.edits.type
     ? TYPE_LABELS[view.type]
-    : current.draft.category.replace(/_/g, ' ');
+    : kind
+      ? TZ_TYPE_LABELS[kind]
+      : current.draft.category.replace(/_/g, ' ');
   const subLabel = `${view.counterparty ?? 'No counterparty'} · ${view.provider ?? 'sender not recognized'}`;
 
   // The same arithmetic a saved record uses: spent + fees and taxes = total out,
@@ -193,7 +198,7 @@ export default function Result() {
         <>
           <View
             accessible
-            accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. ${amountLabel}. ${subLabel}.${chargesLabel ? ` ${chargesLabel}.` : ''}`}
+            accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. Parsed from SMS, not verified. ${amountLabel}. ${subLabel}.${chargesLabel ? ` ${chargesLabel}.` : ''}`}
             style={{
               backgroundColor: hero.tint,
               borderRadius: radius.lg,
@@ -205,6 +210,8 @@ export default function Result() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
               <Pill label={categoryLabel} tint={colors.surface} ink={hero.ink} />
               <Pill label={confidence.text} tint={bandTone.tint} ink={bandTone.ink} />
+              {/* An SMS can be spoofed: read from the message, never "verified". */}
+              <Pill label="Parsed from SMS" tint={colors.surface} ink={colors.neutralRamp[800]} />
             </View>
             <Text
               variant="display"

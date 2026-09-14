@@ -370,16 +370,23 @@ describe('settingsRepository', () => {
 });
 
 describe('providerRepository', () => {
-  it('seeds Mixx as experimental and every other provider as a demo', async () => {
+  it('seeds the mobile-money operators as experimental and the banks as demos', async () => {
     const db = await createMigratedDatabase();
     await providerRepository.seed(db);
 
     const providers = await providerRepository.list(db);
-    expect(providers.length).toBeGreaterThanOrEqual(10);
-    // Nothing may claim support until fixtures prove it. Mixx has fixtures from
-    // real layouts, so it is experimental; none is "supported".
-    expect(providers.find((p) => p.id === 'mixx')?.maturity).toBe('EXPERIMENTAL');
-    expect(providers.filter((p) => p.id !== 'mixx').every((p) => p.maturity === 'DEMO')).toBe(true);
+    expect(providers.length).toBeGreaterThanOrEqual(12);
+    // Nothing may claim support until real messages prove it. The five
+    // operators are read from documented layouts, so they are experimental;
+    // the banks' formats are unknown. None is "supported".
+    const mobileMoney = ['mpesa', 'airtel', 'mixx', 'halopesa', 'tpesa'];
+    for (const id of mobileMoney) {
+      expect(providers.find((p) => p.id === id)?.maturity).toBe('EXPERIMENTAL');
+    }
+    expect(
+      providers.filter((p) => !mobileMoney.includes(p.id)).every((p) => p.maturity === 'DEMO'),
+    ).toBe(true);
+    expect(providers.some((p) => p.maturity === 'SUPPORTED')).toBe(false);
     await db.closeAsync();
   });
 

@@ -31,10 +31,11 @@ SMS reading.
   spent, fees and taxes, and net, each broken down by category and compared with
   the period before. Save it as a PDF to a folder you pick.
 
-Mixx by Yas rules are **experimental**, built from real message layouts. The
-other provider parsers are **demo rules**, checked only against invented, anonymized
-sample messages. PesaIQ makes no claim of support for any real provider's
-messages, of app-store approval, or of regulatory compliance.
+The five mobile-money operators (M-Pesa, Airtel Money, Mixx by Yas, HaloPesa and
+T-PESA) are read by **experimental** rules, built from documented message layouts
+and, for Mixx, real ones. The bank parsers are **demo rules**, checked only against
+invented, anonymized sample messages. PesaIQ makes no claim of support for any real
+provider's messages, of app-store approval, or of regulatory compliance.
 
 ## Privacy
 

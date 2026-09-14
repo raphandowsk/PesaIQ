@@ -8,6 +8,7 @@ import { BackButton } from '../../components/ui/BackButton';
 import { Button, Card, Icon, Screen, Text, toast } from '../../components/ui';
 import { ChargesBreakdown } from '../../components/fees/ChargesBreakdown';
 import { splitCharges } from '../../features/insights';
+import { TZ_TYPE_LABELS } from '../../features/parser/tz';
 import { confidenceLabel } from '../../features/review/queue';
 import {
   duplicateEditText,
@@ -254,7 +255,7 @@ export default function RecordDetail() {
 
       <View
         accessible
-        accessibilityLabel={`${TYPE_LABELS[t.type]}, ${status.label}. ${amountLabel}. ${t.counterparty ?? 'No name'}, ${when}.`}
+        accessibilityLabel={`${TYPE_LABELS[t.type]}, ${status.label}.${t.isDemo ? '' : ' Parsed from SMS, not verified.'} ${amountLabel}. ${t.counterparty ?? 'No name'}, ${when}.`}
         style={{
           backgroundColor: hero.tint,
           borderRadius: radius.lg,
@@ -266,6 +267,10 @@ export default function RecordDetail() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           <Pill label={TYPE_LABELS[t.type]} tint={colors.surface} ink={hero.ink} />
           <Pill label={status.label} tint={status.tint} ink={status.ink} />
+          {/* An SMS can be spoofed: read from the message, never "verified". */}
+          {t.isDemo ? null : (
+            <Pill label="Parsed from SMS" tint={colors.surface} ink={colors.neutralRamp[800]} />
+          )}
         </View>
         <Text variant="display" style={{ color: hero.ink }}>
           {amountLabel}
@@ -357,6 +362,7 @@ export default function RecordDetail() {
                     },
                   ]
                 : []),
+              ...parsedRows(t),
               {
                 key: 'source',
                 label: 'Source',
@@ -577,6 +583,22 @@ export default function RecordDetail() {
         </View>
       )}
     </Screen>
+  );
+}
+
+/** What the Tanzania mobile-money parser read beyond the core fields. */
+function parsedRows(t: Transaction) {
+  const d = t.details;
+  const bank = [d.bankName, d.bankAccount].filter(Boolean).join(' · ');
+  const rows: [string, string, string | null][] = [
+    ['kind', 'Read as', d.kind ? TZ_TYPE_LABELS[d.kind] : null],
+    ['billReference', 'Bill reference', d.billReference],
+    ['paymentType', 'Payment type', d.paymentType],
+    ['controlNumber', 'Control number', d.controlNumber],
+    ['bank', 'Bank', bank || null],
+  ];
+  return rows.flatMap(([key, label, display]) =>
+    display ? [{ key, label, display, low: false, missing: false }] : [],
   );
 }
 

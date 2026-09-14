@@ -82,11 +82,16 @@ describe('onboarding state in the store', () => {
     expect(useAppStore.getState().settings.onboardingComplete).toBe(false);
   });
 
-  it('loads the provider registry: Mixx experimental, every other one a demo', () => {
+  it('loads the provider registry: mobile money experimental, banks demo, none supported', () => {
     const { providers } = useAppStore.getState();
-    expect(providers.length).toBeGreaterThanOrEqual(10);
-    expect(providers.find((p) => p.id === 'mixx')?.maturity).toBe('EXPERIMENTAL');
-    expect(providers.filter((p) => p.id !== 'mixx').every((p) => p.maturity === 'DEMO')).toBe(true);
+    const mobileMoney = ['mpesa', 'airtel', 'mixx', 'halopesa', 'tpesa'];
+    expect(providers.length).toBeGreaterThanOrEqual(12);
+    for (const id of mobileMoney) {
+      expect(providers.find((p) => p.id === id)?.maturity).toBe('EXPERIMENTAL');
+    }
+    expect(
+      providers.filter((p) => !mobileMoney.includes(p.id)).every((p) => p.maturity === 'DEMO'),
+    ).toBe(true);
   });
 
   it('remembers finishing onboarding across a restart', async () => {

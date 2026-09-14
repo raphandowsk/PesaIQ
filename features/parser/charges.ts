@@ -68,7 +68,7 @@ const TAX_PATTERNS: [TaxCode, RegExp][] = [
   [
     'LEVY',
     new RegExp(
-      String.raw`\b(?:tozo(?:\s+la\s+serikali)?|government levy|levy)\b\s*${RATE}${OPTIONAL_CURRENCY}${MONEY}`,
+      String.raw`\b(?:tozo(?:\s+(?:la|ya)\s+serikali)?|government levy|levy)\b\s*${RATE}${OPTIONAL_CURRENCY}${MONEY}`,
       'gi',
     ),
   ],
