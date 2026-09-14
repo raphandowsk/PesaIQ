@@ -63,6 +63,8 @@ export default function Result() {
   if (!current) return <NothingToShow />;
 
   const view = viewDraft(current.draft, current.edits);
+  // Said plainly, with no score; "Save it anyway" opens the fields to fix it.
+  const notMoney = view.notTransaction && !editing;
 
   const onSave = async () => {
     if (!draft) return;
@@ -185,89 +187,100 @@ export default function Result() {
         />
       </View>
 
-      <View
-        accessible
-        accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. ${amountLabel}. ${subLabel}.${chargesLabel ? ` ${chargesLabel}.` : ''}`}
-        style={{
-          backgroundColor: hero.tint,
-          borderRadius: radius.lg,
-          padding: space[4],
-          marginBottom: space[3],
-          gap: space[2],
-        }}
-      >
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
-          <Pill label={categoryLabel} tint={colors.surface} ink={hero.ink} />
-          <Pill label={confidence.text} tint={bandTone.tint} ink={bandTone.ink} />
-        </View>
-        <Text variant="display" numberOfLines={1} adjustsFontSizeToFit style={{ color: hero.ink }}>
-          {amountLabel}
-        </Text>
-        <Text variant="small" style={{ color: hero.ink, opacity: 0.85 }}>
-          {subLabel}
-        </Text>
-        {chargesLabel ? (
-          <Text variant="small" style={{ color: hero.ink, fontFamily: fonts.semibold }}>
-            {chargesLabel}
-          </Text>
-        ) : null}
-      </View>
-
-      {existing ? (
-        <View
-          accessibilityLiveRegion="polite"
-          style={{
-            backgroundColor: colors.neutralRamp[200],
-            borderRadius: radius.md,
-            padding: space[3],
-            marginBottom: space[3],
-            gap: space[1],
-          }}
-        >
-          <Text variant="bodyMedium">{savedOnText(existing)}</Text>
-          <Text variant="small" tone="muted">
-            If this is a different transaction, edit its reference.
-          </Text>
-        </View>
-      ) : null}
-
-      {current.draft.warnings.length > 0 ? (
-        <View
-          style={{
-            backgroundColor: colors.accentRamp[200],
-            borderRadius: radius.md,
-            padding: space[3],
-            marginBottom: space[3],
-            gap: space[1],
-          }}
-        >
-          <Text variant="kicker" style={{ color: colors.accentRamp[800] }}>
-            Warnings
-          </Text>
-          {current.draft.warnings.map((warning) => (
-            <Text key={warning} variant="small" style={{ color: colors.accentRamp[900] }}>
-              · {warning}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-
-      <Card style={{ paddingVertical: space[1], marginBottom: space[3] }}>
-        {view.fields.map((field, i) => (
-          <FieldRow
-            key={field.key}
-            field={field}
-            editing={editing}
-            type={view.type}
-            last={i === view.fields.length - 1}
-            onChangeText={(value) => {
-              if (isTextEditable(field.key)) editField(field.key, value);
+      {notMoney ? (
+        <NotMoney kind={view.messageKind} />
+      ) : (
+        <>
+          <View
+            accessible
+            accessibilityLabel={`${categoryLabel}. Confidence ${confidence.text}. ${amountLabel}. ${subLabel}.${chargesLabel ? ` ${chargesLabel}.` : ''}`}
+            style={{
+              backgroundColor: hero.tint,
+              borderRadius: radius.lg,
+              padding: space[4],
+              marginBottom: space[3],
+              gap: space[2],
             }}
-            onChangeType={setType}
-            onChangeCategory={setMoneyCategory}
-          />
-        ))}
-      </Card>
+          >
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
+              <Pill label={categoryLabel} tint={colors.surface} ink={hero.ink} />
+              <Pill label={confidence.text} tint={bandTone.tint} ink={bandTone.ink} />
+            </View>
+            <Text
+              variant="display"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              style={{ color: hero.ink }}
+            >
+              {amountLabel}
+            </Text>
+            <Text variant="small" style={{ color: hero.ink, opacity: 0.85 }}>
+              {subLabel}
+            </Text>
+            {chargesLabel ? (
+              <Text variant="small" style={{ color: hero.ink, fontFamily: fonts.semibold }}>
+                {chargesLabel}
+              </Text>
+            ) : null}
+          </View>
+
+          {existing ? (
+            <View
+              accessibilityLiveRegion="polite"
+              style={{
+                backgroundColor: colors.neutralRamp[200],
+                borderRadius: radius.md,
+                padding: space[3],
+                marginBottom: space[3],
+                gap: space[1],
+              }}
+            >
+              <Text variant="bodyMedium">{savedOnText(existing)}</Text>
+              <Text variant="small" tone="muted">
+                If this is a different transaction, edit its reference.
+              </Text>
+            </View>
+          ) : null}
+
+          {current.draft.warnings.length > 0 ? (
+            <View
+              style={{
+                backgroundColor: colors.accentRamp[200],
+                borderRadius: radius.md,
+                padding: space[3],
+                marginBottom: space[3],
+                gap: space[1],
+              }}
+            >
+              <Text variant="kicker" style={{ color: colors.accentRamp[800] }}>
+                Warnings
+              </Text>
+              {current.draft.warnings.map((warning) => (
+                <Text key={warning} variant="small" style={{ color: colors.accentRamp[900] }}>
+                  · {warning}
+                </Text>
+              ))}
+            </View>
+          ) : null}
+
+          <Card style={{ paddingVertical: space[1], marginBottom: space[3] }}>
+            {view.fields.map((field, i) => (
+              <FieldRow
+                key={field.key}
+                field={field}
+                editing={editing}
+                type={view.type}
+                last={i === view.fields.length - 1}
+                onChangeText={(value) => {
+                  if (isTextEditable(field.key)) editField(field.key, value);
+                }}
+                onChangeType={setType}
+                onChangeCategory={setMoneyCategory}
+              />
+            ))}
+          </Card>
+        </>
+      )}
 
       <HowWeGotThis result={current.draft} expanded={why} onToggle={() => setWhy(!why)} />
 
@@ -283,7 +296,12 @@ export default function Result() {
       ) : null}
 
       <View style={{ gap: space[2], marginTop: space[4] }}>
-        {existing ? (
+        {notMoney ? (
+          <>
+            <Button label="Done" size="lg" onPress={onDiscard} style={shadow.md} />
+            <Button label="Save it anyway" variant="secondary" onPress={() => setEditing(true)} />
+          </>
+        ) : existing ? (
           <Button
             label="Open the saved record"
             size="lg"
@@ -301,23 +319,25 @@ export default function Result() {
             style={shadow.md}
           />
         )}
-        <View style={{ flexDirection: 'row', gap: space[2] }}>
-          <Button
-            label="Not correct"
-            variant="secondary"
-            loading={busy === 'reject'}
-            disabled={busy !== null}
-            onPress={() => void onReject()}
-            style={{ flex: 1 }}
-          />
-          <Button
-            label="Discard"
-            variant="ghost"
-            disabled={busy !== null}
-            onPress={onDiscard}
-            style={{ flex: 1 }}
-          />
-        </View>
+        {notMoney ? null : (
+          <View style={{ flexDirection: 'row', gap: space[2] }}>
+            <Button
+              label="Not correct"
+              variant="secondary"
+              loading={busy === 'reject'}
+              disabled={busy !== null}
+              onPress={() => void onReject()}
+              style={{ flex: 1 }}
+            />
+            <Button
+              label="Discard"
+              variant="ghost"
+              disabled={busy !== null}
+              onPress={onDiscard}
+              style={{ flex: 1 }}
+            />
+          </View>
+        )}
       </View>
     </Screen>
   );
@@ -335,6 +355,35 @@ function Pill({ label, tint, ink }: { label: string; tint: string; ink: string }
     >
       <Text variant="kicker" style={{ color: ink, fontFamily: fonts.bold }}>
         {label}
+      </Text>
+    </View>
+  );
+}
+
+/** A message that isn't a money transaction: said plainly, with no score. */
+function NotMoney({ kind }: { kind: string }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={`Not a money transaction: ${kind}. Nothing to save.`}
+      style={{
+        backgroundColor: colors.neutralRamp[200],
+        borderRadius: radius.lg,
+        padding: space[4],
+        marginBottom: space[3],
+        gap: space[2],
+      }}
+    >
+      <View style={{ flexDirection: 'row' }}>
+        <Pill label={kind} tint={colors.surface} ink={colors.neutralRamp[800]} />
+      </View>
+      <Text variant="h2" style={{ color: colors.neutralRamp[800] }}>
+        Not a money transaction
+      </Text>
+      <Text variant="small" style={{ color: colors.neutralRamp[800] }}>
+        {
+          "There's nothing to save from this message. If it is a transaction, choose Save it anyway and add the type and amount."
+        }
       </Text>
     </View>
   );

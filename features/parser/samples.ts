@@ -50,7 +50,7 @@ export const SAMPLES: SmsSample[] = [
     id: 's4',
     name: 'Unknown - promotional',
     badge: '??',
-    hint: 'No amount, no reference - lands in review',
+    hint: 'Not a transaction: nothing to save',
     sender: 'DEMO-PROMO',
     text: `${DEMO_PREFIX}\nKaribu! Bonasi ya 20% kwa kila bando unalonunua wiki hii. Bofya *149*88# kujiunga.`,
   },

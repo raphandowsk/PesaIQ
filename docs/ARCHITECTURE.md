@@ -212,6 +212,13 @@ so Claude reads a message first and the on-phone rules check it
 notice). Without it, with no connection, or over the daily cap, the rules read
 the message and the result says why.
 
+Confidence is earned by what the message states (an amount, a reference, a
+date), by the two readers agreeing, and by nothing being left uncertain. Being
+read by Claude adds nothing on its own. A message that isn't a money
+transaction (a promotion, a code, a balance, a failed payment) is shown as
+exactly that on the Result screen, with no score and nothing to save, unless
+the person chooses "Save it anyway".
+
 Rules:
 
 - The latest edit wins, by when it was made; the server enforces it too.

@@ -20,6 +20,7 @@ import {
   isOutgoing,
   MONEY_CATEGORY_LABELS,
   TYPE_LABELS,
+  type MessageCategory,
   type MoneyCategory,
   type TransactionType,
 } from '../../types/domain';
@@ -112,7 +113,27 @@ export interface DraftView {
   remainingLow: string[];
   /** Whether saving now would go to the review queue instead of confirmed. */
   willNeedReview: boolean;
+  /** Not a money transaction (a promotion, a code, a balance): nothing to save. */
+  notTransaction: boolean;
+  /** What the message is, shown when it isn't a transaction. */
+  messageKind: string;
 }
+
+/** What a message is, when it isn't a money transaction. */
+export const MESSAGE_KIND: Record<MessageCategory, string> = {
+  PAYMENT_RECEIVED: 'Not a completed transaction',
+  PAYMENT_SENT: 'Not a completed transaction',
+  WITHDRAWAL: 'Not a completed transaction',
+  DEPOSIT: 'Not a completed transaction',
+  BANK_TRANSFER: 'Not a completed transaction',
+  AIRTIME_PURCHASE: 'Not a completed transaction',
+  BILL_PAYMENT: 'Not a completed transaction',
+  BALANCE_UPDATE: 'Balance update',
+  OTP: 'One-time code',
+  PROMOTIONAL: 'Promotion',
+  SECURITY_ALERT: 'Security alert',
+  OTHER: 'Not a money message',
+};
 
 const editedText = (edits: DraftEdits, key: TextEditableKey, fallback: string | null) => {
   const v = edits.text[key];
@@ -222,6 +243,9 @@ export function viewDraft(result: ParseResult, edits: DraftEdits): DraftView {
     band: bandFor(confidence),
     remainingLow,
     willNeedReview: remainingLow.length > 0 || confidence < REVIEW_THRESHOLD,
+    // Until the person picks a type, a message with none is not a transaction.
+    notTransaction: type === 'UNKNOWN',
+    messageKind: MESSAGE_KIND[result.category],
   };
 }
 

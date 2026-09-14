@@ -30,6 +30,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const money = (n: number) => `${DEFAULT_CURRENCY} ${formatAmount(n)}`;
 const cents = (n: number) => Math.round(n * 100) / 100;
 
+/** "counterparty", "counterparty and date", "fee, counterparty and date". */
+const listOf = (items: readonly string[]) =>
+  items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
+
 /** "2026-03-12" → "12 Mar 2026", the way the rules write dates. */
 export function writtenDate(iso: string | null): string | null {
   const m = iso ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso) : null;
@@ -67,7 +71,8 @@ export function readWithAi(rules: ParseResult, ai: AiReading, model: string): Pa
   const disagreed = warnings.length > 0;
 
   const category = ai.category;
-  const type = CATEGORY_TO_TYPE[category];
+  // A failed or pending payment names a money category but moved no money.
+  const type = ai.isMoney ? CATEGORY_TO_TYPE[category] : 'UNKNOWN';
   const amount = ai.amount ?? rules.amount;
   const fee = ai.fee ?? rules.fee;
   const taxes = ai.taxes.length > 0 ? ai.taxes : rules.taxes;
@@ -187,17 +192,23 @@ export function readWithAi(rules: ParseResult, ai: AiReading, model: string): Pa
   if (ai.isMoney && date == null) {
     warnings.push('No date in the message - capture time will be used instead.');
   }
-  for (const key of ai.unsure) {
-    const label = fields.find((f) => f.key === key)?.label.toLowerCase();
-    if (label) warnings.push(`The AI wasn't sure of the ${label}.`);
+  const doubtful = ai.unsure.flatMap(
+    (key) => fields.find((f) => f.key === key)?.label.toLowerCase() ?? [],
+  );
+  if (ai.isMoney && doubtful.length > 0) {
+    warnings.push(
+      `Check the ${listOf(doubtful)}: the AI wasn't sure of ${doubtful.length === 1 ? 'it' : 'them'}.`,
+    );
   }
 
+  // Earned only by what the message states and how well the two readers
+  // agree: being read by Claude is worth nothing on its own.
   const factors = [
-    { label: `Read by ${modelName(model)}`, hit: true, weight: 0.45 },
-    { label: 'Amount found', hit: amount != null, weight: 0.25 },
+    { label: 'Amount stated', hit: amount != null, weight: 0.4 },
+    { label: 'Agrees with the on-phone rules', hit: !disagreed, weight: 0.25 },
+    { label: 'Nothing the AI was unsure of', hit: ai.unsure.length === 0, weight: 0.15 },
     { label: 'Reference found', hit: reference != null, weight: 0.1 },
-    { label: 'No disagreement with the on-phone rules', hit: !disagreed, weight: 0.1 },
-    { label: 'Nothing the AI was unsure of', hit: ai.unsure.length === 0, weight: 0.08 },
+    { label: 'Date found', hit: date != null, weight: 0.08 },
   ];
   const scored = Math.min(
     CONFIDENCE_MAX,

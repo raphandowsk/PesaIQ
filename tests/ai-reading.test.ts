@@ -122,6 +122,37 @@ describe('a reading from Claude, checked against the rules', () => {
     expect(modelName('something-else')).toBe('Claude');
   });
 
+  it('gives nothing for simply being read: no amount means review', () => {
+    const promo = SAMPLES.find((s) => s.id === 's4')!;
+    const promoRules = parseMessage(promo.text, { sender: promo.sender });
+    const r = readWithAi(
+      promoRules,
+      reading({
+        category: 'PAYMENT_SENT',
+        amount: null,
+        reference: null,
+        date: null,
+        time: null,
+        counterparty: null,
+        balanceAfter: null,
+        unsure: ['amount'],
+      }),
+      MODEL,
+    );
+    expect(r.confidence).toBeLessThan(0.6);
+    expect(r.band).toBe('Needs review');
+  });
+
+  it('calls a failed or pending payment what it is: not a transaction', () => {
+    const r = readWithAi(rules, reading({ isMoney: false, category: 'PAYMENT_SENT' }), MODEL);
+    expect(r.type).toBe('UNKNOWN');
+  });
+
+  it('asks once for a check of everything the AI was unsure of', () => {
+    const r = readWithAi(rules, reading({ unsure: ['counterparty', 'date'] }), MODEL);
+    expect(r.warnings).toContain("Check the counterparty and date: the AI wasn't sure of them.");
+  });
+
   it('says why when the rules read it alone', () => {
     expect(rulesWithNote(rules, 'limit').warnings[0]).toBe(AI_FAILURE_NOTES.limit);
   });
