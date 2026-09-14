@@ -4,24 +4,13 @@ import { router } from 'expo-router';
 import { OnboardingFrame } from '../../components/onboarding/OnboardingFrame';
 import { Icon, Text } from '../../components/ui';
 import { PRIVACY_DISCLAIMER, PRIVACY_POINTS } from '../../features/onboarding/content';
-import { useAppStore } from '../../features/transactions';
 import { colors, radius, space } from '../../theme';
 
 const SHIELD = 60;
 const TICK = 22;
 
-/**
- * How messages are handled, agreed to before the first one is read. Messages
- * go to Claude to be read, so the agreement is recorded (aiReadingAccepted).
- */
+/** How messages are handled. They are read on the phone: nothing to agree to. */
 export default function Privacy() {
-  const setSetting = useAppStore((s) => s.setSetting);
-
-  const agree = async () => {
-    await setSetting('aiReadingAccepted', true);
-    router.push('/setup');
-  };
-
   return (
     <OnboardingFrame
       backTo="/how-it-works"
@@ -40,9 +29,9 @@ export default function Privacy() {
           <Icon name="shield" size={28} color={colors.accentRamp[800]} />
         </View>
       }
-      title="How your messages are read"
+      title="Your messages stay here"
       subtitle="Your financial data is sensitive."
-      cta={{ label: 'I agree', onPress: () => void agree() }}
+      cta={{ label: 'I understand', onPress: () => router.push('/setup') }}
     >
       <View style={{ gap: space[2] }}>
         {PRIVACY_POINTS.map((point) => (

@@ -40,10 +40,11 @@ provider's messages, of app-store approval, or of regulatory compliance.
 ## Privacy
 
 Your messages and records stay on the device; only your mobile number is stored on
-the server, to sign you in. Messages are processed only when you paste them,
-full messages are never logged, account and phone numbers are masked, AI and cloud
-sync are off (and not implemented in Stage 1), and export happens only when you tap
-it. See [docs/PRIVACY.md](docs/PRIVACY.md).
+the server, to sign you in. Messages are processed only when you paste them, and
+are read on the phone: no AI reads them (AI reading is paused). Full messages are
+never logged, account and phone numbers are masked, Cloud sync is off until you
+turn it on (and then uploads encrypted records only), and export happens only when
+you tap it. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Running it
 

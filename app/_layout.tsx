@@ -15,6 +15,7 @@ import {
 
 import { Button, Screen, Text, Toast } from '../components/ui';
 import { accessFor, useAuthStore } from '../features/auth';
+import { AI_READING_ENABLED } from '../features/ai/config';
 import { aiReader } from '../features/ai/instance';
 import { useDeviceCheckIn } from '../features/devices';
 import { useKeyCheck, usePinStore } from '../features/pin';
@@ -25,6 +26,9 @@ import { colors, space } from '../theme';
 // Hold the native splash until fonts and the database are both ready, so the
 // first painted frame is the right screen in the right face.
 void SplashScreen.preventAutoHideAsync();
+
+/** Paused (features/ai/config.ts): the on-phone rules read every message. */
+const ai = AI_READING_ENABLED ? aiReader : null;
 
 /**
  * Anything a screen throws while rendering lands here instead of a blank
@@ -77,7 +81,7 @@ export default function RootLayout() {
   useAutoSync();
 
   useEffect(() => {
-    void initialize({ ai: aiReader });
+    void initialize({ ai });
   }, [initialize]);
 
   useEffect(() => {
@@ -109,7 +113,7 @@ export default function RootLayout() {
   if (!ready || !authSettled || !pinSettled) {
     return (
       <SafeAreaProvider>
-        <Boot error={error} onRetry={() => void initialize({ ai: aiReader })} />
+        <Boot error={error} onRetry={() => void initialize({ ai })} />
       </SafeAreaProvider>
     );
   }

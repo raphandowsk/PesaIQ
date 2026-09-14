@@ -119,7 +119,8 @@ export function HowWeGotThis({
             <Text variant="small" style={{ fontFamily: fonts.bold }}>
               {result.parserId}
             </Text>{' '}
-            · maturity DEMO. Rule-based, no AI. Low-confidence fields are never treated as verified.
+            . On-phone rules, no AI. Parsed from SMS, not verified with the provider: low-confidence
+            fields are never treated as verified.
           </Text>
         </Card>
       ) : null}

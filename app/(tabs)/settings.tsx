@@ -337,9 +337,9 @@ export default function Settings() {
 
       <SettingsGroup title="Privacy">
         <SettingRow
-          label="Message reading"
-          sub="Read by Claude (AI), with phone, account and card numbers masked on this phone first. With no connection, the on-phone rules read them. Full messages are never logged."
-          right={<Tag label="AI" tone="positive" />}
+          label="On-device parsing"
+          sub="Messages are read on this phone by PesaIQ's rules. No AI; full messages are never logged."
+          right={<Tag label="On" tone="positive" />}
         />
         {actionRow(
           'transactions',

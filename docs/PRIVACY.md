@@ -9,20 +9,22 @@ Last updated 2026-09-14.
 ## Stage 1 behavior
 
 ```
-User → pasted message → numbers masked → Claude (via parse-sms) → checked by the on-phone rules → local SQLite → local UI
+User → pasted message → on-phone rules (Tanzania mobile-money parser, then the general rules) → local SQLite → local UI
 ```
 
 Stage 1 processes **only messages the user pastes in**. Nothing is intercepted.
 No SMS permission is requested, and no native SMS code exists in the build.
-Since 2026-09-14 each pasted message is read by AI once the user has agreed
-(see "AI reading").
+AI reading was added on 2026-09-14 and paused the same day: every message is
+read on the phone, and none is sent to an AI (see "AI reading (paused)").
 
 ## Commitments
 
 - **No cloud by default.** Cloud sync is off until the user turns it on, and
   then uploads encrypted records only (see "Cloud sync").
-- **Messages are read by AI, once agreed** (see "AI reading" below). Phone,
-  account and card numbers are masked on the phone before a message leaves it.
+- **Messages are read on the phone.** While AI reading is paused, no message
+  leaves the phone to be read (see "AI reading (paused)" below).
+- **Parsed is not verified.** A reading says what the SMS claims; an SMS can be
+  spoofed, so the app shows "Parsed from SMS" and never "verified payment".
 - **Full messages are never logged.** Diagnostics may record message _length_,
   category and confidence — never content.
 - **Identifiers are masked** wherever displayed: `07** *** 678`, `**** 4312`.
@@ -48,8 +50,8 @@ Since 2026-09-14 each pasted message is read by AI once the user has agreed
 | `providers`         | Provider registry + maturity | No user data.                                       |
 | `settings`          | Toggles                      | Local.                                              |
 
-All of it lives in one on-device SQLite database. Reading a message calls the
-server (see "AI reading"), and Cloud sync, when on, uploads locked records.
+All of it lives in one on-device SQLite database. Reading a message needs no
+server; Cloud sync, when on, uploads locked records.
 
 ## Source-message retention
 
@@ -92,15 +94,13 @@ storage model above would not change: still local, still no upload by default.
 - **PesaIQ now needs an account:** a mobile number confirmed by a code sent by
   SMS. The number is stored by Supabase Auth on the server (see
   `docs/BACKEND.md`). PesaIQ never stores or logs the code.
-- **Stored messages stay on the phone.** A message is sent, masked, only to be
-  read by AI (see "AI reading"); nothing keeps it on the server. Records stay
-  on the phone too unless Cloud sync is turned on (see "Cloud sync").
+- **Stored messages stay on the phone.** While AI reading is paused, no
+  message is sent anywhere. Records stay on the phone too unless Cloud sync is
+  turned on (see "Cloud sync").
 - **The sign-in session** is kept in the phone's secure storage. Signing out
   affects this phone only and keeps the records on it.
-- **The in-app privacy wording:** the onboarding privacy screen and Settings now
-  describe AI reading. The README and the rest of onboarding still describe
-  the phone-only design, and must be updated before release (see the launch
-  checklist).
+- **The in-app privacy wording:** with AI reading paused, the onboarding privacy
+  screen and Settings say again that messages are read on the phone.
 - **The PIN never leaves the phone.** The server only sees a blinded value
   that reveals nothing about it, and it counts every guess: 5 tries, then
   waits. The account key it unlocks is stored on the server only in locked
@@ -114,10 +114,16 @@ storage model above would not change: still local, still no upload by default.
   browser"), its platform and when it was last active, so Settings can list
   the account's phones. Signing out removes the phone from the list.
 
-## AI reading (2026-09-14)
+## AI reading (paused)
 
-Decided 2026-09-14: Tanzanian networks and banks each word their messages
-differently, so an AI reads them first and the on-phone rules check it.
+**Paused on 2026-09-14** (`features/ai/config.ts`). Every message is read on
+the phone by the Tanzania mobile-money parser and the general rules, and none
+is sent to Claude. The `parse-sms` function stays deployed, but nothing calls
+it. The notes below describe how AI reading worked, for if it is turned back
+on; its consent screens would need restoring first.
+
+It was added the same day because Tanzanian networks and banks each word their
+messages differently, so an AI read them first and the on-phone rules checked it.
 
 - **What is sent:** each message the person analyzes, with phone numbers,
   account, card and meter numbers, and LUKU tokens masked on the phone first

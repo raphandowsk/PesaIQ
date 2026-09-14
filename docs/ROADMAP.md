@@ -19,6 +19,7 @@ Must run in Expo Go. No native modules. No Android Studio.
 | **1J** | Hardening: empty/loading/error states, accessibility, full test pass, typecheck, lint                                                                                            | **Done** — 2026-09-12 |
 | **1K** | Fees, taxes and categories: real Mixx and LUKU layouts, fee and tax lines, categories remembered per recipient, Fees & taxes screen                                              | **Done** — 2026-09-12 |
 | **1L** | Reports: monthly summary for a month or a custom range, compared with the period before, saved as a PDF, with agent/operator fees; Home score info window and one-at-a-time tips | **Done** — 2026-09-12 |
+| **1M** | Tanzania mobile-money parser, to the owner's specification: M-Pesa, Airtel Money, Mixx, HaloPesa and T-PESA, 16 transaction kinds, 54 anonymized fixtures; AI reading paused     | **Done** — 2026-09-14 |
 
 ### Definition of done
 
@@ -30,7 +31,7 @@ TypeScript clean · ESLint clean.
 
 ### Stage 1 against the definition of done
 
-Checked 2026-09-12, at the end of 1J; the Reports row and test counts added at the end of 1L.
+Checked 2026-09-12, at the end of 1J; the Reports row added at the end of 1L; test counts updated 2026-09-14, at the end of 1M.
 
 | Item                                                       | Status                                                         | How it was checked                                                                                                                                                        |
 | ---------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,12 +40,12 @@ Checked 2026-09-12, at the end of 1J; the Reports row and test counts added at t
 | Dashboard                                                  | Works                                                          | Web preview; insights suite                                                                                                                                               |
 | Demo data                                                  | Works                                                          | Seed and removal suites; web preview                                                                                                                                      |
 | Parser Lab                                                 | Works                                                          | Web preview; Lab suite                                                                                                                                                    |
-| Normalization, classification, generic parsing, confidence | Works                                                          | Parser suites, the robustness suite (27 hostile inputs, 500 generated), and anonymized real Mixx and LUKU layouts                                                         |
+| Normalization, classification, generic parsing, confidence | Works                                                          | Parser suites, the robustness suite (27 hostile inputs, 500 generated), anonymized real Mixx and LUKU layouts, and 54 Tanzania mobile-money fixtures                      |
 | Local persistence                                          | Works                                                          | Database and store suites against real SQLite                                                                                                                             |
 | Edit, review, delete                                       | Works                                                          | Record, review and data-management suites; web preview                                                                                                                    |
 | Export                                                     | Works on web; Android folder picker covered by unit tests only | Export and save suites; web preview                                                                                                                                       |
 | Settings                                                   | Works                                                          | Web preview; store suites                                                                                                                                                 |
-| Tests pass                                                 | 49 suites, 802 tests                                           | `npm test`                                                                                                                                                                |
+| Tests pass                                                 | 51 suites, 925 tests                                           | `npm test`                                                                                                                                                                |
 | No secrets committed                                       | None found                                                     | Scan of tracked files for key and token patterns                                                                                                                          |
 | Docs exist                                                 | Yes                                                            | README and `docs/`                                                                                                                                                        |
 | TypeScript clean                                           | Yes                                                            | `npm run typecheck`                                                                                                                                                       |
@@ -61,6 +62,6 @@ sensitive SMS permissions and their Play Store review. Everything downstream of
 
 ## Beyond
 
-Real provider fixtures (promoting parsers DEMO → EXPERIMENTAL → SUPPORTED),
-optional AI fallback for low-confidence messages, budgets and caps hinted at by the
-dashboard tips, multi-currency.
+Fixtures from real phones (promoting the mobile-money operators EXPERIMENTAL →
+SUPPORTED, and the banks past DEMO), AI reading (built, paused since 2026-09-14),
+budgets and caps hinted at by the dashboard tips, multi-currency.

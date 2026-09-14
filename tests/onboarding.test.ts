@@ -33,13 +33,13 @@ describe('onboarding copy', () => {
     expect(SETUP_COPY.note).toMatch(/nothing is intercepted/i);
   });
 
-  it('says messages are read by Claude with numbers masked, and sync is the person’s choice', () => {
+  it('says messages are read on the phone with no AI, and sync is off by default', () => {
     const points = PRIVACY_POINTS.join(' ');
-    expect(points).toMatch(/read by Claude/);
-    expect(points).toMatch(/numbers are masked on this phone first/);
-    expect(points).toMatch(/unless you turn on Cloud sync/);
+    expect(points).toMatch(/read on this phone/);
+    expect(points).toMatch(/None is sent to an AI/);
+    expect(points).toMatch(/Cloud sync is optional and off by default/);
     expect(DEFAULT_SETTINGS.cloudSync).toBe(false);
-    // Agreed to on the privacy screen, never assumed.
+    // AI reading is paused, and was never assumed agreed.
     expect(DEFAULT_SETTINGS.aiReadingAccepted).toBe(false);
   });
 

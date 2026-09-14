@@ -4,6 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 
 import { PIPELINE_STEPS, PipelineProgress } from '../../components/parser/PipelineProgress';
 import { Button, Card, Icon, Screen, Tag, Text } from '../../components/ui';
+import { AI_READING_ENABLED } from '../../features/ai/config';
 import { useLabStore } from '../../features/lab/store';
 import { MAX_MESSAGE_LENGTH, SAMPLES } from '../../features/parser';
 import { useAppStore } from '../../features/transactions';
@@ -64,7 +65,8 @@ export default function ParserLab() {
   const run = async (agreed = aiAccepted) => {
     if (analyzing) return;
     Keyboard.dismiss();
-    if (!agreed && text.trim()) {
+    // Only asked while AI reading is on; it is paused (features/ai/config.ts).
+    if (AI_READING_ENABLED && !agreed && text.trim()) {
       setAskConsent(true);
       return;
     }

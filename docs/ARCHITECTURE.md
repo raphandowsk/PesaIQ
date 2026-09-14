@@ -37,15 +37,15 @@ Dashboard
 
 ## Layers
 
-| Layer         | Holds                                         | Rule                                                    |
-| ------------- | --------------------------------------------- | ------------------------------------------------------- |
-| `app/`        | Expo Router screens                           | No SQL, no regex. Reads through stores/selectors.       |
-| `components/` | Presentational UI                             | No data fetching.                                       |
-| `features/`   | Domain logic (parser, transactions, insights) | Pure and unit-testable.                                 |
-| `database/`   | Schema, migrations, repositories              | The only place SQL is written.                          |
-| `services/`   | `SmsSource`, export, storage                  | Side effects live here.                                 |
-| `theme/`      | Design tokens                                 | Ported from the canvas; no hard-coded colors elsewhere. |
-| `ai/`         | Interfaces, schemas, prompts                  | Abstraction only in Stage 1. Not wired to a provider.   |
+| Layer          | Holds                                         | Rule                                                     |
+| -------------- | --------------------------------------------- | -------------------------------------------------------- |
+| `app/`         | Expo Router screens                           | No SQL, no regex. Reads through stores/selectors.        |
+| `components/`  | Presentational UI                             | No data fetching.                                        |
+| `features/`    | Domain logic (parser, transactions, insights) | Pure and unit-testable.                                  |
+| `database/`    | Schema, migrations, repositories              | The only place SQL is written.                           |
+| `services/`    | `SmsSource`, export, storage                  | Side effects live here.                                  |
+| `theme/`       | Design tokens                                 | Ported from the canvas; no hard-coded colors elsewhere.  |
+| `features/ai/` | AI reading: masking, merge, parse-sms client  | Paused since 2026-09-14 (`config.ts`): nothing calls it. |
 
 **UI never touches SQLite directly.** Screens call repositories or selectors. This
 is what lets the prototype's in-memory state become real persistence without
@@ -192,10 +192,17 @@ kept on the phone per account and a name from the platform (Android maker and
 model, iPhone or iPad, Web browser). Settings → Signed-in phones lists them,
 newest first. Signing out removes this phone's row.
 
-### AI reading
+### AI reading (paused)
 
-Decided 2026-09-14: networks and banks each word their messages differently,
-so Claude reads a message first and the on-phone rules check it
+**Paused on 2026-09-14.** `AI_READING_ENABLED` in `features/ai/config.ts` is
+false, so `app/_layout.tsx` starts the store with no AI reader, the Lab never
+asks for consent, and `read` returns the on-phone reading: the Tanzania
+mobile-money parser (see "Tanzania mobile money" in `PARSER_ENGINE.md`), then
+the general rules. The code and the `parse-sms` function stay, tested, for if
+it is turned back on. What follows is how it worked.
+
+It was added because networks and banks each word their messages differently,
+so Claude read a message first and the on-phone rules checked it
 (`features/ai/`).
 
 1. The rules read the message on the phone, as they always have.
