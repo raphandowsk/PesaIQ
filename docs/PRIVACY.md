@@ -83,3 +83,15 @@ storage model above would not change: still local, still no upload by default.
   numbers, references, LUKU tokens or message text.
 - Demo records in the period are flagged in the PDF. Once saved, a PDF is
   outside PesaIQ, like an export: deleting data in the app does not delete it.
+
+## Accounts (2026-09-14)
+
+- **PesaIQ now needs an account:** a mobile number confirmed by a code sent by
+  SMS. The number is stored by Supabase Auth on the server (see
+  `docs/BACKEND.md`). PesaIQ never stores or logs the code.
+- **Messages and records still stay on the phone.** Encrypted sync is planned,
+  not built.
+- **The sign-in session** is kept in the phone's secure storage. Signing out
+  affects this phone only and keeps the records on it.
+- **The in-app privacy wording** still describes the phone-only design, and must
+  be updated before release (see the launch checklist).

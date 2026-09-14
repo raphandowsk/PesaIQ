@@ -14,6 +14,7 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 
 import { Button, Screen, Text, Toast } from '../components/ui';
+import { accessFor, useAuthStore } from '../features/auth';
 import { useAppStore } from '../features/transactions';
 import { colors, space } from '../theme';
 
@@ -57,29 +58,46 @@ export default function RootLayout() {
   const error = useAppStore((s) => s.error);
   const initialize = useAppStore((s) => s.initialize);
   const onboarded = useAppStore((s) => s.settings.onboardingComplete);
+  const authStatus = useAuthStore((s) => s.status);
+  const initializeAuth = useAuthStore((s) => s.initialize);
 
   useEffect(() => {
     void initialize();
   }, [initialize]);
 
+  useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
+
   // A font failure still lets the app start, in a fallback face; a stuck
   // splash would be worse.
   const fontsSettled = fontsLoaded || fontError != null;
   const storeSettled = ready || error != null;
+  const authSettled = authStatus !== 'loading';
 
   useEffect(() => {
-    if (fontsSettled && storeSettled) void SplashScreen.hideAsync();
-  }, [fontsSettled, storeSettled]);
+    if (fontsSettled && storeSettled && authSettled) void SplashScreen.hideAsync();
+  }, [fontsSettled, storeSettled, authSettled]);
 
   if (!fontsSettled) return null;
 
-  if (!ready) {
+  if (!ready || !authSettled) {
     return (
       <SafeAreaProvider>
         <Boot error={error} onRetry={() => void initialize()} />
       </SafeAreaProvider>
     );
   }
+
+  if (authStatus === 'unavailable') {
+    return (
+      <SafeAreaProvider>
+        <SignInMissing />
+      </SafeAreaProvider>
+    );
+  }
+
+  const access = accessFor(authStatus === 'signedIn', onboarded);
 
   return (
     <SafeAreaProvider>
@@ -89,13 +107,17 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
 
         {/*
-          The guards make the rule structural. Onboarding cannot be reached by
-          Back once finished, and the tabs cannot be deep-linked into before.
+          The guards make the rule structural (features/auth/routing.ts): the
+          app needs an account, sign-in closes once signed in, and onboarding
+          cannot be reached by Back once finished.
         */}
-        <Stack.Protected guard={!onboarded}>
+        <Stack.Protected guard={access.intro}>
           <Stack.Screen name="(onboarding)" />
         </Stack.Protected>
-        <Stack.Protected guard={onboarded}>
+        <Stack.Protected guard={access.signIn}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Protected guard={access.app}>
           <Stack.Screen name="(tabs)" />
           {/* Pushed over the tabs from the Parser Lab; no tab bar. */}
           <Stack.Screen name="result" />
@@ -110,6 +132,23 @@ export default function RootLayout() {
       </Stack>
       <Toast />
     </SafeAreaProvider>
+  );
+}
+
+/** A build made without the Supabase settings: nobody could sign in. */
+function SignInMissing() {
+  return (
+    <Screen>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[3] }}>
+        <Text variant="h3" accessibilityRole="header">
+          Sign-in isn&apos;t set up
+        </Text>
+        <Text variant="small" tone="muted" style={{ textAlign: 'center' }}>
+          This copy of PesaIQ was built without its Supabase settings, so no one can sign in. Add
+          them to .env (see .env.example) and start the app again.
+        </Text>
+      </View>
+    </Screen>
   );
 }
 

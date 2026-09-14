@@ -5,11 +5,12 @@ import { router } from 'expo-router';
 import { ConfirmPanel, SettingRow, SettingsGroup } from '../../components/settings/SettingsList';
 import { Button, Screen, Tag, Text, toast } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
+import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
 
-type DataAction = 'transactions' | 'messages' | 'history' | 'demo' | 'rules';
+type DataAction = 'transactions' | 'messages' | 'history' | 'demo' | 'rules' | 'signout';
 type Busy = DataAction | 'replay' | null;
 
 const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
@@ -39,6 +40,8 @@ export default function Settings() {
   const forgetCategoryRules = useAppStore((s) => s.forgetCategoryRules);
   const ruleCount = useAppStore((s) => Object.keys(s.categoryRules).length);
   const resetOnboarding = useAppStore((s) => s.resetOnboarding);
+  const phone = useAuthStore((s) => s.session?.phone ?? null);
+  const signOut = useAuthStore((s) => s.signOut);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
@@ -89,6 +92,16 @@ export default function Settings() {
       go: async () => {
         await clearDemoData();
         return 'Demo data removed.';
+      },
+    },
+    signout: {
+      ask: 'Sign out on this phone? Your records stay here, and you can sign back in with your number.',
+      confirm: 'Sign out',
+      go: async () => {
+        const result = await signOut();
+        if (!result.ok) throw new Error(result.message);
+        router.replace('/');
+        return 'Signed out on this phone.';
       },
     },
     rules: {
@@ -166,6 +179,24 @@ export default function Settings() {
           {error}
         </Text>
       ) : null}
+
+      <SettingsGroup title="Account">
+        <SettingRow
+          label="Mobile number"
+          sub="Your PesaIQ account. Used only to sign you in."
+          right={
+            <Text variant="small" style={{ fontFamily: fonts.bold }}>
+              {phone ? formatTzMobile(phone) : '—'}
+            </Text>
+          }
+        />
+        {actionRow(
+          'signout',
+          'Sign out',
+          'Signs out on this phone only. Your records stay here.',
+          'Sign out',
+        )}
+      </SettingsGroup>
 
       <SettingsGroup title="Processing">
         <SettingRow

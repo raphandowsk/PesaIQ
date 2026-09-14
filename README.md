@@ -5,7 +5,8 @@ An Android-first app that turns the money SMS people in Tanzania already receive
 
 **Stage 1** runs in **Expo Go**. Paste a message and PesaIQ normalizes, classifies
 and parses it, scores its confidence, and lets you confirm or correct it. Then it
-saves it on the device. There is no native SMS reading, no account and no server.
+saves it on the device. You sign in with your mobile number; there is no native
+SMS reading.
 
 ## What Stage 1 does
 
@@ -37,7 +38,8 @@ messages, of app-store approval, or of regulatory compliance.
 
 ## Privacy
 
-Everything stays on the device. Messages are processed only when you paste them,
+Your messages and records stay on the device; only your mobile number is stored on
+the server, to sign you in. Messages are processed only when you paste them,
 full messages are never logged, account and phone numbers are masked, AI and cloud
 sync are off (and not implemented in Stage 1), and export happens only when you tap
 it. See [docs/PRIVACY.md](docs/PRIVACY.md).
@@ -57,8 +59,9 @@ Scan the QR code with Expo Go. The phone and computer must be on the same networ
 There is also a web preview for quick checks in a browser (`npm run web`). It keeps
 its database in the browser, which allows **one tab at a time**.
 
-No environment variables are needed for Stage 1. [.env.example](.env.example) lists
-placeholders for later stages; never commit a real `.env`.
+Signing in needs the Supabase settings: copy [.env.example](.env.example) to `.env`
+and fill in the project's address and publishable key (see
+[docs/BACKEND.md](docs/BACKEND.md)). Never commit a real `.env`.
 
 ## Checks
 

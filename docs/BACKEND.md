@@ -1,7 +1,7 @@
 # PesaIQ — Backend (Supabase)
 
-Status, 2026-09-13: the test project exists and has the first schema. The app
-is not connected yet: there is no sign-up or sync code.
+Status, 2026-09-14: the app signs in with a mobile number against the test
+project. There is no sync code yet.
 
 The backend holds accounts (a mobile number confirmed by SMS code) and the
 records that sync between a user's phones. Records are end-to-end encrypted on

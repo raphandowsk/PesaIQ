@@ -3,18 +3,21 @@ import { router } from 'expo-router';
 
 import { OnboardingFrame } from '../../components/onboarding/OnboardingFrame';
 import { Card, Text } from '../../components/ui';
+import { afterIntro, useAuthStore } from '../../features/auth';
 import { HOW_STEPS } from '../../features/onboarding/content';
 import { colors, fonts, radius, space } from '../../theme';
 
 const STEP_CIRCLE = 52;
 
 export default function HowItWorks() {
+  const signedIn = useAuthStore((s) => s.status === 'signedIn');
+
   return (
     <OnboardingFrame
       backTo="/welcome"
       title="How it works"
       subtitle="Four steps, all on your phone."
-      cta={{ label: 'Continue', onPress: () => router.push('/privacy') }}
+      cta={{ label: 'Continue', onPress: () => router.push(afterIntro(signedIn)) }}
     >
       <View style={{ gap: space[3] }}>
         {HOW_STEPS.map((step) => (

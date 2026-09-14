@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -47,53 +47,60 @@ export function OnboardingFrame({
       edges={['top', 'bottom', 'left', 'right']}
       style={{ flex: 1, backgroundColor: colors.bg }}
     >
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingHorizontal: space[4],
-          paddingTop: space[4],
-          paddingBottom: space[4],
-        }}
-        showsVerticalScrollIndicator={false}
+      {/* Keeps the call to action above the keyboard on the sign-in steps. */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {backTo ? (
-          <Pressable
-            onPress={goBack}
-            hitSlop={HIT_SLOP}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            style={({ pressed }) => ({
-              width: BACK_SIZE,
-              height: BACK_SIZE,
-              borderRadius: radius.pill,
-              backgroundColor: pressed ? colors.neutralRamp[300] : colors.neutralRamp[200],
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: space[4],
-            })}
-          >
-            <Icon name="back" />
-          </Pressable>
-        ) : null}
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: space[4],
+            paddingTop: space[4],
+            paddingBottom: space[4],
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {backTo ? (
+            <Pressable
+              onPress={goBack}
+              hitSlop={HIT_SLOP}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={({ pressed }) => ({
+                width: BACK_SIZE,
+                height: BACK_SIZE,
+                borderRadius: radius.pill,
+                backgroundColor: pressed ? colors.neutralRamp[300] : colors.neutralRamp[200],
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: space[4],
+              })}
+            >
+              <Icon name="back" />
+            </Pressable>
+          ) : null}
 
-        {badge}
+          {badge}
 
-        <Text variant="title" accessibilityRole="header">
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text variant="body" tone="muted" style={{ marginTop: space[1] }}>
-            {subtitle}
+          <Text variant="title" accessibilityRole="header">
+            {title}
           </Text>
-        ) : null}
+          {subtitle ? (
+            <Text variant="body" tone="muted" style={{ marginTop: space[1] }}>
+              {subtitle}
+            </Text>
+          ) : null}
 
-        <View style={{ flex: 1, marginTop: space[4] }}>{children}</View>
-      </ScrollView>
+          <View style={{ flex: 1, marginTop: space[4] }}>{children}</View>
+        </ScrollView>
 
-      <View style={{ paddingHorizontal: space[4], paddingBottom: space[4], gap: space[3] }}>
-        {footnote}
-        <Button label={cta.label} size="lg" onPress={cta.onPress} loading={cta.loading} />
-      </View>
+        <View style={{ paddingHorizontal: space[4], paddingBottom: space[4], gap: space[3] }}>
+          {footnote}
+          <Button label={cta.label} size="lg" onPress={cta.onPress} loading={cta.loading} />
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

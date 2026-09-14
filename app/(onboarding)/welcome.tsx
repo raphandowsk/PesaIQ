@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Text } from '../../components/ui';
+import { useAuthStore } from '../../features/auth';
 import { WELCOME } from '../../features/onboarding/content';
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, radius, space } from '../../theme';
@@ -16,10 +17,12 @@ const ACTIVE_DOT = 26;
 
 export default function Welcome() {
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
+  const signedIn = useAuthStore((s) => s.status === 'signedIn');
   const [skipping, setSkipping] = useState(false);
 
   // Skipping counts as finishing: the user chose it, and every screen they
-  // skipped is reachable again from Settings -> Replay onboarding.
+  // skipped is reachable again from Settings -> Replay onboarding. Someone not
+  // yet signed in still signs in first: the launch rule sends them there.
   const skip = async () => {
     setSkipping(true);
     try {
@@ -118,7 +121,7 @@ export default function Welcome() {
         <View style={{ gap: space[2] }}>
           <Button label="Get started" size="lg" onPress={() => router.push('/how-it-works')} />
           <Button
-            label="Skip to dashboard"
+            label={signedIn ? 'Skip to dashboard' : 'Skip to sign in'}
             variant="secondary"
             block
             loading={skipping}

@@ -777,3 +777,42 @@ Where it appears:
 
 The fee field is labelled **Fee as stated**. It is the message's own figure,
 with any VAT inside it.
+
+## Sign-in with a mobile number (2026-09-14)
+
+PesaIQ needs an account: a Tanzanian mobile number, confirmed by a 6-digit code
+sent by SMS. Supabase Auth makes the code and the `send-sms` hook sends it (see
+`docs/BACKEND.md`).
+
+- **Order:** Welcome → How it works → **Mobile number → Code** → Privacy →
+  Senders. Someone who has already seen the intro, or who signed out, goes
+  straight to the number screen and then into the app.
+- **One rule for where people can go** (`features/auth/routing.ts`):
+  - the intro, until signed in and onboarded
+  - sign-in, only while signed out
+  - Privacy and Senders, once signed in
+  - the app, only when both
+
+  The root layout's guards and the launch redirect both read it.
+
+- **Numbers** (`features/auth/phone.ts`): `0713…`, `713…`, `+255 713…` and
+  `255713…` are all accepted, and kept as 255 plus nine digits starting with 6
+  or 7. The server hook applies the same rule.
+- **Code screen:** checks the code as soon as six digits are in (phones can fill
+  it in from the SMS). A new code can be asked for once a minute, and the number
+  can be changed.
+- **Errors** (`features/auth/errors.ts`) say what to do next, never the
+  service's own words. Supabase's client calls both a lost connection and any
+  server error "retryable"; only status 0 is shown as a lost connection.
+- **Session:** kept in the phone's secure storage
+  (`features/auth/chunkedStorage.ts`), split into chunks because secure storage
+  refuses values over 2048 bytes on some iPhones. It refreshes only while the
+  app is in front. The web preview keeps it in the browser.
+- **Sign out** (Settings → Account) affects this phone only
+  (`scope: 'local'`). Records stay on the phone.
+- **Without the Supabase settings** in `.env`, the app says sign-in isn't set
+  up, instead of failing later.
+- **Service boundary:** `features/auth/store.ts` talks to an `AuthApi`.
+  `services/supabase/authApi.ts` is the Supabase one; tests use a fake.
+
+Not built yet: the PIN, encrypted sync, the profile screen and account deletion.
