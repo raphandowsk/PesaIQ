@@ -169,3 +169,20 @@ messages differently, so an AI read them first and the on-phone rules checked it
 - **Deletions reach every phone.** A deleted record's row keeps no content.
 - **One account per phone.** Records synced to one account are not uploaded to
   another; the second account can sync once they are deleted from the phone.
+
+## Bulk import (2026-09-14)
+
+- **Once per account:** up to 90 days of past messages, pasted at once
+  (Settings → Import past messages, or the Lab). After that, messages are
+  added one at a time.
+- **Read on the phone.** The pasted messages never leave it. The server keeps
+  only _when_ the account used its import (`bulk_imports`), so it holds across
+  phones and reinstalls.
+- **Nothing is saved until the person confirms.** They see every message and
+  what happens to it first, and can leave any out.
+- **One-time codes are never stored**: their text is dropped as soon as they
+  are recognized. Promotions, balance notices, failed payments and messages
+  older than 90 days are left out. A message the parser does not recognize is
+  saved for review rather than thrown away.
+- Imported messages are stored like pasted ones, marked "Imported message",
+  and go with "Delete all messages" and "Delete all transactions".

@@ -8,6 +8,7 @@ import { Switch } from '../../components/ui/Switch';
 import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { usePinStore } from '../../features/pin';
 import { useDevicesStore } from '../../features/devices';
+import { useImportStore } from '../../features/import';
 import { SYNC_MESSAGES, useSyncStore } from '../../features/sync';
 import { duplicatePairs, useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
@@ -59,6 +60,7 @@ export default function Settings() {
   const clearSyncNotice = useSyncStore((s) => s.clearNotice);
   const clearAndTurnOff = useSyncStore((s) => s.clearAndTurnOff);
   const forgetThisPhone = useDevicesStore((s) => s.forgetThisPhone);
+  const importUsedAt = useImportStore((s) => s.usedAt);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
   const [askSyncOff, setAskSyncOff] = useState(false);
@@ -392,6 +394,23 @@ export default function Settings() {
               variant="secondary"
               disabled={busy !== null}
               onPress={() => router.push('/export')}
+            />
+          }
+        />
+        <SettingRow
+          label="Import past messages"
+          sub={
+            importUsedAt
+              ? "This account's one import has been used. Add new messages in the Lab."
+              : 'Up to 90 days of messages, pasted at once. Once per account.'
+          }
+          right={
+            <Button
+              label={importUsedAt ? 'View' : 'Import'}
+              accessibilityLabel="Import past messages"
+              variant="secondary"
+              disabled={busy !== null}
+              onPress={() => router.push('/import')}
             />
           }
         />

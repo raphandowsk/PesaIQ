@@ -13,8 +13,11 @@ export interface StoredMessage {
   normalizedText: string;
   sender: string | null;
   receivedAt: string;
-  /** How it arrived. Stage 2 adds 'ANDROID_SMS' behind the same column. */
-  source: 'MANUAL' | 'ANDROID_SMS' | 'DEMO';
+  /**
+   * How it arrived: pasted in the Lab, part of the account's bulk import, or
+   * (Stage 2) read from the phone.
+   */
+  source: 'MANUAL' | 'IMPORT' | 'ANDROID_SMS' | 'DEMO';
   isDemo: boolean;
   createdAt: string;
 }

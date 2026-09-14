@@ -172,6 +172,8 @@ export default function RootLayout() {
           <Stack.Screen name="duplicates" />
           {/* Pushed from Settings -> Signed-in phones. */}
           <Stack.Screen name="devices" />
+          {/* Pushed from Settings -> Import past messages, and from the Lab. */}
+          <Stack.Screen name="import" />
         </Stack.Protected>
       </Stack>
       <Toast />

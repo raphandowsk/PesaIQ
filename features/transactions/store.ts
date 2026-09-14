@@ -62,6 +62,15 @@ const defaultMakeId = (prefix: string) => {
 export type SaveOutcome =
   { saved: true; transaction: Transaction } | { saved: false; duplicateOf: Transaction };
 
+/** What a bulk import saved. */
+export interface ImportSaveOutcome {
+  saved: number;
+  /** Of those saved, how many wait in the review queue. */
+  forReview: number;
+  /** Already saved before: skipped. */
+  repeats: number;
+}
+
 /** An edit would make a record repeat another (same transaction ID). */
 export class DuplicateRecordError extends Error {
   readonly existing: Transaction;
@@ -121,6 +130,16 @@ interface AppState {
   analyzeAndSave(text: string, sender?: string): Promise<SaveOutcome>;
 
   /**
+   * Save the bulk import's readings (features/import), each with its message,
+   * skipping any transaction already saved. Unattended, like `analyzeAndSave`:
+   * doubtful ones, and ones with no date, wait in the review queue.
+   */
+  saveImported(
+    results: readonly ParseResult[],
+    onProgress?: (done: number) => void,
+  ): Promise<ImportSaveOutcome>;
+
+  /**
    * Save a result a person has looked at in the Lab, possibly corrected.
    * Unlike `analyzeAndSave` — unattended processing, saved as PARSED — this can
    * save as CONFIRMED, because someone checked it. `build` decides the status.
@@ -137,7 +156,7 @@ interface AppState {
   /** The message a record came from, for its detail screen. Null once deleted. */
   getRecordSource(
     messageId: string | null,
-  ): Promise<{ text: string; sender: string | null } | null>;
+  ): Promise<{ text: string; sender: string | null; imported: boolean } | null>;
   /** Whether a record arrived through sync from another phone, so its SMS is not here. */
   isFromOtherPhone(id: string): Promise<boolean>;
 
@@ -213,9 +232,11 @@ export const useAppStore = create<AppState>((set, get) => {
       result: ParseResult;
       transaction: Transaction;
       timestamp: string;
+      /** Pasted in the Lab unless it came with the bulk import. */
+      source?: 'MANUAL' | 'IMPORT';
     },
   ) => {
-    const { messageId, parseId, result, transaction, timestamp } = rows;
+    const { messageId, parseId, result, transaction, timestamp, source = 'MANUAL' } = rows;
     await database.withTransactionAsync(async () => {
       await messageRepository.insert(database, {
         id: messageId,
@@ -223,7 +244,7 @@ export const useAppStore = create<AppState>((set, get) => {
         normalizedText: result.normalizedText,
         sender: result.sender ?? null,
         receivedAt: timestamp,
-        source: 'MANUAL',
+        source,
         isDemo: false,
         createdAt: timestamp,
       });
@@ -430,6 +451,69 @@ export const useAppStore = create<AppState>((set, get) => {
       return { saved: true, transaction };
     },
 
+    async saveImported(results, onProgress) {
+      const database = requireDb();
+      const counts: ImportSaveOutcome = { saved: 0, forReview: 0, repeats: 0 };
+
+      for (const [i, result] of results.entries()) {
+        const timestamp = now();
+        const messageId = makeId('msg');
+        const parseId = makeId('parse');
+        const transactionId = makeId('txn');
+
+        const drafted = transactionFromParseResult(result, {
+          id: transactionId,
+          now: timestamp,
+          sourceMessageId: messageId,
+          parseResultId: parseId,
+        });
+        // An old message with no date would land on today: it waits for one.
+        const transaction: Transaction = result.transactionDate
+          ? drafted
+          : {
+              ...drafted,
+              status: 'NEEDS_REVIEW',
+              lowFields: [...new Set([...drafted.lowFields, 'date'])],
+            };
+
+        const existing = await saveUnlessSaved(database, {
+          messageId,
+          parseId,
+          result,
+          transaction,
+          timestamp,
+          source: 'IMPORT',
+        });
+        if (existing) {
+          counts.repeats += 1;
+        } else {
+          counts.saved += 1;
+          if (transaction.status === 'NEEDS_REVIEW') counts.forReview += 1;
+          await processingEventRepository.record(database, {
+            id: makeId('evt'),
+            kind: 'TRANSACTION_SAVED',
+            messageId,
+            transactionId,
+            detail: `import; confidence ${result.confidence.toFixed(2)}`,
+            createdAt: timestamp,
+          });
+        }
+        onProgress?.(i + 1);
+      }
+
+      await processingEventRepository.record(database, {
+        id: makeId('evt'),
+        kind: 'BULK_IMPORT',
+        messageId: null,
+        transactionId: null,
+        // Counts only. Never message content.
+        detail: `saved ${counts.saved}; review ${counts.forReview}; repeats ${counts.repeats}`,
+        createdAt: now(),
+      });
+      await reload();
+      return counts;
+    },
+
     async saveFromLab(result, build) {
       const database = requireDb();
       const timestamp = now();
@@ -539,7 +623,13 @@ export const useAppStore = create<AppState>((set, get) => {
     async getRecordSource(messageId) {
       if (!messageId) return null;
       const message = await messageRepository.findById(requireDb(), messageId);
-      return message ? { text: message.originalText, sender: message.sender } : null;
+      return message
+        ? {
+            text: message.originalText,
+            sender: message.sender,
+            imported: message.source === 'IMPORT',
+          }
+        : null;
     },
 
     isFromOtherPhone(id) {

@@ -27,6 +27,9 @@ SMS reading.
   (VAT, EWURA, REA, levies), and what the money was for. Home shows fees and
   taxes apart from spending, with a breakdown by type and provider. A category
   you pick is remembered for that recipient.
+- **Import past messages:** once per account, paste up to 90 days of money
+  messages at once. You see what each one is and what will be saved before
+  anything is; one-time codes are never stored.
 - **Reports:** a monthly summary for any month or a custom range: money in,
   spent, fees and taxes, and net, each broken down by category and compared with
   the period before. Save it as a PDF to a folder you pick.

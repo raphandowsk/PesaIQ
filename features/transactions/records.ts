@@ -71,17 +71,25 @@ export function recordDate(t: Transaction): Date {
  * an empty cell instead of quietly becoming the day it was saved.
  */
 export function parsedRecordDate(t: Transaction): Date | null {
-  const m = /^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\s+(\d{4})$/.exec((t.transactionDate ?? '').trim());
+  return readWrittenDate(t.transactionDate, t.transactionTime);
+}
+
+/**
+ * "12 Mar 2026" and "14:22", the way the parser writes them, as a local date.
+ * Null when there is no date, or one that cannot exist.
+ */
+export function readWrittenDate(date: string | null, time: string | null): Date | null {
+  const m = /^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\s+(\d{4})$/.exec((date ?? '').trim());
   if (m) {
     const day = Number(m[1]);
     const month = MONTHS.indexOf(m[2].toLowerCase());
-    const time = /^(\d{1,2}):(\d{2})$/.exec((t.transactionTime ?? '').trim());
+    const clock = /^(\d{1,2}):(\d{2})$/.exec((time ?? '').trim());
     const d = new Date(
       Number(m[3]),
       month,
       day,
-      time ? Number(time[1]) : 0,
-      time ? Number(time[2]) : 0,
+      clock ? Number(clock[1]) : 0,
+      clock ? Number(clock[2]) : 0,
     );
     // Rejects impossible dates, which Date would otherwise roll over (31 Feb).
     if (month >= 0 && !Number.isNaN(d.getTime()) && d.getDate() === day) return d;

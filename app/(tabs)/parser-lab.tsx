@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { PIPELINE_STEPS, PipelineProgress } from '../../components/parser/PipelineProgress';
 import { Button, Card, Icon, Screen, Tag, Text } from '../../components/ui';
 import { AI_READING_ENABLED } from '../../features/ai/config';
+import { useImportStore } from '../../features/import';
 import { useLabStore } from '../../features/lab/store';
 import { MAX_MESSAGE_LENGTH, SAMPLES } from '../../features/parser';
 import { useAppStore } from '../../features/transactions';
@@ -40,6 +41,7 @@ export default function ParserLab() {
   const analyze = useLabStore((s) => s.analyze);
   const aiAccepted = useAppStore((s) => s.settings.aiReadingAccepted);
   const setSetting = useAppStore((s) => s.setSetting);
+  const importUsed = useImportStore((s) => s.usedAt != null);
   const reduceMotion = useReduceMotion();
 
   /** Stages finished so far; null when not analyzing. */
@@ -104,6 +106,19 @@ export default function ParserLab() {
         <Text variant="small" tone="muted">
           Paste a message to analyze
         </Text>
+        {importUsed ? null : (
+          <Pressable
+            onPress={() => router.push('/import')}
+            disabled={analyzing}
+            accessibilityRole="link"
+            accessibilityLabel="Import up to 90 days of past messages at once"
+            style={{ minHeight: MIN_TOUCH, justifyContent: 'center', alignSelf: 'flex-start' }}
+          >
+            <Text variant="small" style={{ fontFamily: fonts.bold, color: colors.accentRamp[700] }}>
+              Have older messages? Import up to 90 days at once →
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <Card style={{ padding: space[3], marginBottom: space[3] }}>

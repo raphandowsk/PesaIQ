@@ -29,7 +29,11 @@ describe('the source message behind a record', () => {
   it('returns the message a record came from', async () => {
     const t = DEMO_RECORDS[0].transaction;
     const source = await app().getRecordSource(t.sourceMessageId);
-    expect(source).toEqual({ text: DEMO_RECORDS[0].messageText, sender: DEMO_RECORDS[0].sender });
+    expect(source).toEqual({
+      text: DEMO_RECORDS[0].messageText,
+      sender: DEMO_RECORDS[0].sender,
+      imported: false,
+    });
   });
 
   it('returns nothing for a record with no stored message', async () => {

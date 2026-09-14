@@ -58,7 +58,7 @@ const STROKE = 5;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 type Busy = 'confirm' | 'save' | 'incorrect' | 'delete' | null;
-type Source = { text: string; sender: string | null } | null;
+type Source = { text: string; sender: string | null; imported: boolean } | null;
 
 const leave = () => (router.canGoBack() ? router.back() : router.replace('/transactions'));
 
@@ -233,7 +233,9 @@ export default function RecordDetail() {
     ? 'Demo sample'
     : fromOtherPhone
       ? 'Synced from another phone'
-      : 'Pasted message';
+      : source?.imported
+        ? 'Imported message'
+        : 'Pasted message';
   const sender = source?.sender ?? 'unknown sender';
 
   return (

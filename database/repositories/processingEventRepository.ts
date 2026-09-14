@@ -17,7 +17,9 @@ export type ProcessingEventKind =
   | 'DUPLICATE_DETECTED'
   | 'DEMO_DATA_REMOVED'
   /** The user said a Lab result was wrong. Carries parser id and category only. */
-  | 'PARSE_REJECTED';
+  | 'PARSE_REJECTED'
+  /** The account's bulk import ran. Carries counts only. */
+  | 'BULK_IMPORT';
 
 /** Events that count as the user doing something, for the streak. */
 export const USER_ACTIVITY_KINDS: readonly ProcessingEventKind[] = [

@@ -35,6 +35,7 @@ already applied to a project is never edited; a change goes in a new file.
 | `20260914000002_pull_records.sql`             | `pull_records` for sync, and its index                         |
 | `20260914000003_sync_clear_and_key_check.sql` | `sync_clear`, `pin_key_is_current`, `profiles.sync_cleared_at` |
 | `20260914000004_ai_usage.sql`                 | `ai_usage` and `ai_take`: the daily cap on AI reading          |
+| `20260914000005_bulk_import.sql`              | `bulk_imports` and `claim_bulk_import`: one import per account |
 
 What each table lets the server see:
 
@@ -48,6 +49,7 @@ What each table lets the server see:
 | `records`         | One locked record each, its fingerprint for duplicates, edit time, deletion marker             | Only ids, times and fingerprints         |
 | `synced_settings` | Remembered categories and provider choices, locked as one document                             | Nothing                                  |
 | `ai_usage`        | How many messages each account had read by AI, per day                                         | The counts                               |
+| `bulk_imports`    | When the account used its one bulk import. No messages                                         | That time                                |
 
 Rules the database enforces:
 
@@ -119,6 +121,15 @@ Rules the database enforces:
 - **`parse-sms`, deployed without `ANTHROPIC_API_KEY`:** in the web preview,
   the Lab shows the AI notice before a first message is read; "Not now" sends
   nothing.
+- **`bulk_imports` and `claim_bulk_import`, live and rolled back:**
+  - The first claim returned `true`; the second returned `false`, with the
+    same time.
+  - The account saw its own row, and could neither change nor delete it: the
+    table has a read policy only, so the import cannot be reset from the app.
+  - A signed-out caller could not run the function.
+  - Afterwards the table was empty: the check used no one's import.
+  - Security advisor: `claim_bulk_import` joins the other `security definer`
+    functions (WARN), as intended: it acts only on the caller's own row.
 
 ## App configuration
 

@@ -192,6 +192,31 @@ kept on the phone per account and a name from the platform (Android maker and
 model, iPhone or iPad, Web browser). Settings → Signed-in phones lists them,
 newest first. Signing out removes this phone's row.
 
+### Bulk import
+
+`features/import/`, decided 2026-09-14: each account gets one import of up to
+90 days of past messages, pasted at once (`app/import.tsx`).
+
+1. **Split** (`split.ts`): blank lines or a line of dashes separate messages. A
+   line that opens a message (an M-Pesa code, "Umepokea", "Txn Id",
+   "Utambulisho wa Muamala", …) starts a new one once the text before it holds
+   an amount, so a message spread over several lines stays whole.
+2. **Read** each with `useAppStore().analyze`, the same reading as the Lab. The
+   person can say which conversation the paste is from; that sender ID helps
+   tell operators apart. Parsing yields to the screen every 25 messages.
+3. **Plan** (`plan.ts`): money from the last 90 days is saved; money with no
+   date, and anything unrecognized that carries a number, is saved for review;
+   older messages, promotions, balance notices, failed or pending payments and
+   repeats are left out; a one-time code is dropped at once, text and all.
+4. **Preview**: counts per outcome and every message, each choosable one with a
+   box to leave it out.
+5. **Import**: `claim_bulk_import()` on the server first, so the one import is
+   used only when the person confirms and never twice. Then
+   `useAppStore().saveImported` saves each, with its message (source
+   `IMPORT`), skipping transactions already saved, and reloads once.
+
+Limits: 500,000 characters and 3,000 messages a paste.
+
 ### AI reading (paused)
 
 **Paused on 2026-09-14.** `AI_READING_ENABLED` in `features/ai/config.ts` is
