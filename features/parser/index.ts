@@ -50,7 +50,12 @@ export type {
   ConfidenceResult,
 } from './confidence';
 
-export { detectProvider, PROVIDERS } from './providers';
+export {
+  detectProvider,
+  isMobileMoneyProvider,
+  MOBILE_MONEY_PROVIDER_IDS,
+  PROVIDERS,
+} from './providers';
 export type { SmsProvider, ProviderMatch } from './providers';
 
 export { SAMPLES, getSample } from './samples';

@@ -5,8 +5,7 @@ import { router } from 'expo-router';
 import { OnboardingFrame } from '../../components/onboarding/OnboardingFrame';
 import { Tag, Text } from '../../components/ui';
 import { SETUP_COPY } from '../../features/onboarding/content';
-import { PROVIDERS, type SmsProvider } from '../../features/parser';
-import { OPERATOR_INFO } from '../../features/parser/tz';
+import { isMobileMoneyProvider, PROVIDERS, type SmsProvider } from '../../features/parser';
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 
@@ -16,9 +15,6 @@ const registryOrder = (p: SmsProvider) => {
   return i === -1 ? Number.MAX_SAFE_INTEGER : i;
 };
 
-/** Only the mobile-money operators are offered here; banks stay in Settings. */
-const MOBILE_MONEY: readonly string[] = Object.values(OPERATOR_INFO).map((o) => o.providerId);
-
 export default function Setup() {
   const providers = useAppStore((s) => s.providers);
   const setProviderEnabled = useAppStore((s) => s.setProviderEnabled);
@@ -27,8 +23,9 @@ export default function Setup() {
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Only the mobile-money operators are offered.
   const ordered = providers
-    .filter((p) => MOBILE_MONEY.includes(p.id))
+    .filter(isMobileMoneyProvider)
     .sort((a, b) => registryOrder(a) - registryOrder(b));
 
   const toggle = async (p: SmsProvider) => {

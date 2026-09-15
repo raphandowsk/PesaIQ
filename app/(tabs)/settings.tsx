@@ -9,6 +9,7 @@ import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { usePinStore } from '../../features/pin';
 import { useDevicesStore } from '../../features/devices';
 import { useImportStore } from '../../features/import';
+import { isMobileMoneyProvider } from '../../features/parser';
 import { SYNC_MESSAGES, useSyncStore } from '../../features/sync';
 import { duplicatePairs, useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
@@ -350,7 +351,7 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup title="Providers">
-        {providers.map((p) => (
+        {providers.filter(isMobileMoneyProvider).map((p) => (
           <SettingRow
             key={p.id}
             label={p.name}

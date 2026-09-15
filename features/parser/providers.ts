@@ -14,6 +14,7 @@
  * names) that are safe to look for.
  */
 import type { ProviderMaturity } from '../../types/domain';
+import { OPERATOR_INFO } from './tz/types/operator';
 
 export interface SmsProvider {
   id: string;
@@ -44,6 +45,17 @@ export const PROVIDERS: SmsProvider[] = [
     maturity: 'DEMO',
   },
 ];
+
+/**
+ * The mobile-money operators: the providers onboarding and Settings offer.
+ * The banks and generic providers stay in the registry, for the general rules.
+ */
+export const MOBILE_MONEY_PROVIDER_IDS: readonly string[] = Object.values(OPERATOR_INFO).map(
+  (o) => o.providerId,
+);
+
+export const isMobileMoneyProvider = (p: { id: string }): boolean =>
+  MOBILE_MONEY_PROVIDER_IDS.includes(p.id);
 
 interface ProviderHint {
   id: string;
