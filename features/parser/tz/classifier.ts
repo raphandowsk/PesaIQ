@@ -133,6 +133,9 @@ const WORDS = {
   // Upper-case LIPA only: "lipa" is also the ordinary verb "to pay".
   merchant: /\bLIPA\b|\bLipa\s+(?:kwa\s+Simu|Namba)\b|\bmerchant\b|\bpay\s+merchant\b|\btill\b/,
   merchantAnyCase: /\bmerchant\b|\blipa\s+kwa\s+simu\b|\bpay\s+merchant\b/i,
+  // Mixx paying a Lipa number: "Umelipa TSh … kwenda kwa NAME". A payment to a
+  // person reads "Umetuma", and a bill "Malipo yamekamilika kwenda".
+  lipaPaid: /\bumelipa\s+(?:TSh|TZS|Sh)\.?\s*[\d,.]+\s+kwenda\s+kwa\b/i,
   bill: /\bpay\s*bill\b|\bbill\s+(?:reference|number)\b|\bbili\b|\bmalipo\s+yamekamilika\s+kwenda\b|\bLUKU\b|\bDAWASA\b|\bDSTV\b|\bAZAM\b|\bGOtv\b|\bTANESCO\b|\bStarTimes\b/i,
   withdrawal:
     /\bumetoa\b|\bwithdraw(?:n|al)?\b|\bcash[\s-]?out\b|\bkutoa\s+pesa\b|\bada\s+ya\s+kutoa\b/i,
@@ -196,7 +199,9 @@ const RULES: Rule[] = [
     test: (c) =>
       c.hasAmount &&
       notIn(c) &&
-      (WORDS.merchant.test(c.text) || WORDS.merchantAnyCase.test(c.text)),
+      (WORDS.merchant.test(c.text) ||
+        WORDS.merchantAnyCase.test(c.text) ||
+        WORDS.lipaPaid.test(c.text)),
     reason: 'A Lipa number or merchant',
   },
   {

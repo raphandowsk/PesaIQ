@@ -126,6 +126,7 @@ describe('transaction IDs (§26)', () => {
   it.each([
     ['Kumbukumbu No: PP240910.1530.A98765', 'PP240910.1530.A98765'],
     ['Kumbukumbu Namba TP2409150001', 'TP2409150001'],
+    ['Kumbukumbu no.: 26100000000014. 15/09/26', '26100000000014'],
     ['Txn Id : ER240901.1234.B12345,', 'ER240901.1234.B12345'],
     ['Transaction ID: TX99887766', 'TX99887766'],
     ['Receipt Number TST4QWE9XY1', 'TST4QWE9XY1'],
@@ -163,6 +164,12 @@ describe('which operator (§27, §28)', () => {
 
   it('does not count the network the money went to', () => {
     const m = msg(TZ.mixxToOtherNetwork);
+    expect(operatorEvidence(m, HALOPESA_PATTERNS).score).toBe(0);
+    expect(operatorEvidence(m, MIXX_PATTERNS).score).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it('does not read Mixx\'s "Salio lako jipya ni" as HaloPesa', () => {
+    const m = msg(TZ.mixxLipaUmelipa);
     expect(operatorEvidence(m, HALOPESA_PATTERNS).score).toBe(0);
     expect(operatorEvidence(m, MIXX_PATTERNS).score).toBeGreaterThanOrEqual(0.5);
   });

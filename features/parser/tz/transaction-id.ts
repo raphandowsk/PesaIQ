@@ -9,8 +9,11 @@
  * customer's account at the biller, not the transaction, and is skipped here.
  */
 
-/** The value after a label: letters, digits and . _ -, with at least one digit. */
-const ID = String.raw`\s*[:#.-]?\s*(?=[A-Z0-9._-]*\d)([A-Z0-9][A-Z0-9._-]{5,40})`;
+/**
+ * The value after a label: letters, digits and . _ -, with at least one digit.
+ * Up to two separators may come first: Mixx writes "Kumbukumbu no.: 2610…".
+ */
+const ID = String.raw`\s*(?:[:#.-]\s*){0,2}(?=[A-Z0-9._-]*\d)([A-Z0-9][A-Z0-9._-]{5,40})`;
 
 /** §26's master regex, split so the most specific label wins. */
 export const TRANSACTION_ID_LABELS: readonly RegExp[] = [

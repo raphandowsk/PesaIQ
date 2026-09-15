@@ -20,7 +20,12 @@ export const MIXX_PATTERNS: OperatorPatterns = {
     },
     { match: /\bkwenda\s+kwa\s+mpokeaji\s+wa\b/i, reason: 'the "kwenda kwa mpokeaji wa" line' },
     { match: /\bumetuma\s+kikamilifu\b/i, reason: 'the "Umetuma kikamilifu" opening' },
-    { match: /\bkumbukumbu\s+no\.\d/i, reason: 'the "Kumbukumbu no." label' },
+    // "Kumbukumbu no.2610…" and "Kumbukumbu no.: 2610…" (both seen).
+    { match: /\bkumbukumbu\s+no\.\s*:?\s*\d/i, reason: 'the "Kumbukumbu no." label' },
+    {
+      match: /\bumelipa\s+TSh\s*[\d,.]+\s+kwenda\s+kwa\b/i,
+      reason: 'the "Umelipa … kwenda kwa" Lipa payment line',
+    },
   ],
   templates: [
     {
@@ -40,6 +45,13 @@ export const MIXX_PATTERNS: OperatorPatterns = {
       match: /\bmalipo\s+yamekamilika\s+kwenda\b/i,
       evidence: 'LOCAL',
       note: "The owner's own Mixx messages",
+    },
+    {
+      // Paying a Mixx Lipa number: "Umelipa TSh … kwenda kwa NAME. Ada … Kumbukumbu no.: …".
+      id: 'MIXX_LIPA_UMELIPA',
+      match: /\bumelipa\s+TSh\s*[\d,.]+\s+kwenda\s+kwa\b/i,
+      evidence: 'LOCAL',
+      note: "The owner's own Mixx messages (2026-09-15)",
     },
     {
       id: 'MIXX_GOVERNMENT',

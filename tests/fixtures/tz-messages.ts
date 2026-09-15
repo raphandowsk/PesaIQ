@@ -31,6 +31,18 @@ export const TZ = {
   mixxBettingSmall:
     'Malipo yamekamilika kwenda HELABET, Kiasi Tsh20,000. Salio jipya ni Tsh 9,500. Ada Tsh 500. VAT TSh 76. Kumbukumbu no.26700000000005. 12/09/26 09:21.',
 
+  /**
+   * "Umelipa ... kwenda kwa NAME": paying a Mixx Lipa number, reference as
+   * "Kumbukumbu no.: " with two separators (supplied 2026-09-15). The app links
+   * in the sign-off are replaced too.
+   */
+  mixxLipaUmelipa:
+    'Umelipa TSh 75,000 kwenda kwa NURU. Ada TSh 1,700. VAT TSh 259. Kumbukumbu no.: 26100000000014. 15/09/26 16:05. Salio lako jipya ni TSh 318,400. Kila Muamala ni Bao la Ushindi!. Bonyeza goo.gl/abcdef au iPhone apple.co/1abcDEF kupakua Mixx by Yas App',
+
+  /** "mpokeaji wa Vodacom LIPA": a shop's Vodacom Lipa number (supplied 2026-09-15). */
+  mixxLipaVodacomShop:
+    'Umetuma TSh 3,000 kwenda kwa mpokeaji wa Vodacom LIPA BARAKA GENERAL STORE - 54000123. Ada TSh 100. VAT TSh 15. Salio jipya ni TSh 404,120. Muamala: 26900000000023. 15/09/26 08:40. Tafadhali subiri. Furahia Punguzo kubwa la bei unapofanya miamala ya Mixx.LKS',
+
   /** A LUKU receipt: meter, reference, units, token, then itemised lines to the TOTAL. */
   lukuReceipt:
     'Malipo yamekamilika.14200000001\n9000000000000000001\n51.9KWH\n\n1111 2222 3333 4444 5555 \n\nCost 15,163.94\nVAT 18% 2729.50\nEWURA 1% 151.64\nREA 3% 454.92\nDebt Collected 1500.00\nTOTAL 20,000.00 12/09/26 08:16.LKS',

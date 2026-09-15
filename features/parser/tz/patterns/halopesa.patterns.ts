@@ -14,7 +14,8 @@ export const HALOPESA_PATTERNS: OperatorPatterns = {
     { match: /\butambulisho\s+wa\s+muamala\b/i, reason: 'the "Utambulisho wa Muamala" label' },
     { match: /\bgharama\s+TSH\b/i, reason: 'the "gharama TSH" charges line' },
     { match: /\btozo\s+ya\s+serikali\b/i, reason: 'the "TOZO ya serikali" levy line' },
-    { match: /\bsalio\s+lako\s+jipya\s+ni\b/i, reason: 'the "Salio lako jipya ni" balance line' },
+    // Not "Salio lako jipya ni": Mixx's Lipa payments use it too (2026-09-15),
+    // so it no longer points to HaloPesa. The balance is still read from it.
     { match: /\bwakati\s+\d{4}\/\d{2}\/\d{2}\b/i, reason: 'the "wakati yyyy/mm/dd" timestamp' },
     { match: /\bkiasi\s+ulicho\s*lipa\b/i, reason: 'the "Kiasi Ulicho lipa" line' },
   ],
