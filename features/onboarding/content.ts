@@ -8,7 +8,6 @@
 
 export const WELCOME = {
   title: 'Turn SMS notifications into organized financial records.',
-  body: 'Built for Tanzanian mobile money and bank messages. Amounts in TZS.',
 } as const;
 
 export interface HowStep {

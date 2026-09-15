@@ -87,9 +87,6 @@ export default function Welcome() {
           <Text variant="display" accessibilityRole="header">
             {WELCOME.title}
           </Text>
-          <Text variant="body" tone="muted">
-            {WELCOME.body}
-          </Text>
         </View>
 
         <View

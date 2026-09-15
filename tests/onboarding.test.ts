@@ -15,7 +15,6 @@ const NOW = '2026-09-11T12:00:00.000Z';
 describe('onboarding copy', () => {
   const everything = [
     WELCOME.title,
-    WELCOME.body,
     ...HOW_STEPS.flatMap((s) => [s.title, s.body]),
     ...PRIVACY_POINTS,
     PRIVACY_DISCLAIMER,
