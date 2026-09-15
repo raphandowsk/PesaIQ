@@ -3,13 +3,16 @@ import { randomBytes } from 'node:crypto';
 import type { SqlDatabase } from '../database/client';
 import {
   categoryRuleRepository,
+  profileRepository,
   providerRepository,
   syncRepository,
 } from '../database/repositories';
 import { openRecord, syncKeys } from '../features/sync/crypto';
 import { syncOnce, type SyncDeps } from '../features/sync/engine';
+import { toAsciiBytes } from '../features/sync/payload';
 import {
   decodePreferences,
+  encodePreferences,
   mergePreferences,
   PREFERENCES_ROW,
   type Preferences,
@@ -101,6 +104,40 @@ describe('merging preferences', () => {
       providers: {},
     };
     expect(mergePreferences(a, b).merged).toEqual(mergePreferences(b, a).merged);
+  });
+
+  it('keeps the later name, a removal included', () => {
+    const removedHere: Preferences = {
+      categories: {},
+      providers: {},
+      name: { name: null, at: T3 },
+    };
+    const namedOnServer: Preferences = {
+      categories: {},
+      providers: {},
+      name: { name: 'Asha', at: T2 },
+    };
+
+    const m = mergePreferences(removedHere, namedOnServer);
+    expect(m.merged.name).toEqual(removedHere.name);
+    expect(m.toApply.name).toBeNull();
+    expect(m.newerHere).toBe(true);
+
+    expect(mergePreferences(namedOnServer, removedHere).toApply.name).toEqual(removedHere.name);
+  });
+
+  it('reads a document written before names existed', () => {
+    const old = decodePreferences(toAsciiBytes({ v: 1, categories: {}, providers: {} }));
+    expect(old).toEqual({ categories: {}, providers: {} });
+  });
+
+  it('round-trips a name in any script', () => {
+    const doc: Preferences = {
+      categories: {},
+      providers: {},
+      name: { name: 'Zuhura Ñandú', at: T1 },
+    };
+    expect(decodePreferences(encodePreferences(doc))).toEqual(doc);
   });
 });
 
@@ -194,6 +231,30 @@ describe('syncing preferences between phones', () => {
     const doc = serverDoc(remote);
     expect(Object.keys(doc!)).toEqual(['categories', 'providers']);
     expect(Object.keys(doc!.providers)).toEqual(['mixx']);
+  });
+
+  it('brings the name to the other phone, unreadable to the server', async () => {
+    const [a, b] = [await phone(), await phone()];
+    const remote = new FakeRemote();
+    await profileRepository.setName(a, 'Asha', T1);
+
+    await expect(sync(a, remote)).resolves.toMatchObject({ sent: 1 });
+    await expect(sync(b, remote)).resolves.toMatchObject({ preferences: 1 });
+    expect(await profileRepository.getName(b)).toEqual({ name: 'Asha', at: T1 });
+    expect(JSON.stringify(remote.preferences)).not.toContain('Asha');
+  });
+
+  it('carries a removed name to the other phone', async () => {
+    const [a, b] = [await phone(), await phone()];
+    const remote = new FakeRemote();
+    await profileRepository.setName(a, 'Asha', T1);
+    await sync(a, remote);
+    await sync(b, remote);
+
+    await profileRepository.setName(b, null, T2);
+    await expect(sync(b, remote)).resolves.toMatchObject({ sent: 1 });
+    await expect(sync(a, remote)).resolves.toMatchObject({ preferences: 1 });
+    expect(await profileRepository.getName(a)).toEqual({ name: null, at: T2 });
   });
 
   it("is sent even when the server's copy is dated ahead of this phone's clock", async () => {

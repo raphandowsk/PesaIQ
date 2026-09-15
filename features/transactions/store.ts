@@ -12,6 +12,7 @@ import {
   categoryRuleRepository,
   messageRepository,
   processingEventRepository,
+  profileRepository,
   providerRepository,
   settingsRepository,
   transactionRepository,
@@ -28,6 +29,7 @@ import {
   type ParseResult,
   type SmsProvider,
 } from '../parser';
+import { cleanName } from '../profile/name';
 import { ManualSmsSource } from '../../services/sms';
 import { transactionFromParseResult, type Transaction } from './model';
 import { transactionKey } from './transactionKey';
@@ -110,6 +112,8 @@ interface AppState {
   reviewedAt: string[];
   /** The user's category choice per recipient (`partyKey` -> category). */
   categoryRules: Record<string, MoneyCategory>;
+  /** The optional name Home greets by (features/profile). */
+  displayName: string | null;
 
   smsSource: ManualSmsSource;
 
@@ -175,6 +179,8 @@ interface AppState {
   remove(id: string): Promise<void>;
 
   setSetting(key: keyof AppSettings, value: boolean): Promise<void>;
+  /** Set the name Home greets by. Empty or null removes it. */
+  setDisplayName(input: string | null): Promise<void>;
 
   /** Record whether a provider matters to the user (onboarding and Settings). */
   setProviderEnabled(id: string, enabled: boolean): Promise<void>;
@@ -341,6 +347,7 @@ export const useAppStore = create<AppState>((set, get) => {
     activity: [],
     reviewedAt: [],
     categoryRules: {},
+    displayName: null,
     smsSource: new ManualSmsSource(),
 
     async initialize(deps = {}) {
@@ -353,7 +360,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
         await seedDatabase(db, now());
 
-        const [settings, transactions, providers, activity, reviewedAt, categoryRules] =
+        const [settings, transactions, providers, activity, reviewedAt, categoryRules, name] =
           await Promise.all([
             settingsRepository.getAll(db),
             transactionRepository.list(db),
@@ -361,6 +368,7 @@ export const useAppStore = create<AppState>((set, get) => {
             processingEventRepository.activityTimestamps(db),
             processingEventRepository.reviewTimestamps(db),
             categoryRuleRepository.list(db),
+            profileRepository.getName(db),
           ]);
 
         await get().smsSource.start();
@@ -372,6 +380,7 @@ export const useAppStore = create<AppState>((set, get) => {
           activity,
           reviewedAt,
           categoryRules,
+          displayName: name?.name ?? null,
           ready: true,
           loading: false,
         });
@@ -387,12 +396,13 @@ export const useAppStore = create<AppState>((set, get) => {
     async refresh() {
       const database = requireDb();
       await reload();
-      // Sync can bring categories and provider choices from another phone.
-      const [providers, categoryRules] = await Promise.all([
+      // Sync can bring categories, provider choices and the name from another phone.
+      const [providers, categoryRules, name] = await Promise.all([
         providerRepository.list(database),
         categoryRuleRepository.list(database),
+        profileRepository.getName(database),
       ]);
-      set({ providers, categoryRules });
+      set({ providers, categoryRules, displayName: name?.name ?? null });
     },
 
     runSync(task) {
@@ -759,6 +769,14 @@ export const useAppStore = create<AppState>((set, get) => {
       const database = requireDb();
       await settingsRepository.set(database, key, value, now());
       set({ settings: await settingsRepository.getAll(database) });
+    },
+
+    async setDisplayName(input) {
+      const name = cleanName(input);
+      // Unchanged: nothing written, so no new time for sync to carry.
+      if (name === get().displayName) return;
+      await profileRepository.setName(requireDb(), name, now());
+      set({ displayName: name });
     },
 
     async setProviderEnabled(id, enabled) {

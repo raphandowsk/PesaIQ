@@ -62,7 +62,7 @@ export interface SyncReport {
   unreadable: number;
   /** A second server record for a transaction already here, kept for review. */
   conflicts: number;
-  /** Remembered categories and provider choices taken from other phones. */
+  /** Remembered categories, provider choices and the name taken from other phones. */
   preferences: number;
   /** Changes still waiting to be sent. */
   pending: number;
@@ -419,7 +419,8 @@ async function syncPreferences(deps: SyncDeps, report: SyncReport): Promise<void
   const here = await syncRepository.readPreferences(db);
   const { merged, toApply, newerHere } = mergePreferences(here, server);
 
-  if (toApply.categories.length + toApply.providers.length > 0) {
+  const applying = toApply.categories.length + toApply.providers.length + (toApply.name ? 1 : 0);
+  if (applying > 0) {
     await db.withTransactionAsync(async () => {
       for (const [key, entry] of toApply.categories) {
         await syncRepository.applyCategory(db, key, entry);
@@ -427,6 +428,10 @@ async function syncPreferences(deps: SyncDeps, report: SyncReport): Promise<void
       }
       for (const [id, entry] of toApply.providers) {
         if (await syncRepository.applyProvider(db, id, entry)) report.preferences += 1;
+      }
+      if (toApply.name) {
+        await syncRepository.applyName(db, toApply.name);
+        report.preferences += 1;
       }
     });
   }

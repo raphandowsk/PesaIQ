@@ -8,9 +8,16 @@ import {
   type Transaction,
   type TransactionRow,
 } from '../../features/transactions/model';
-import type { CategoryEntry, Preferences, ProviderEntry } from '../../features/sync/preferences';
+import { cleanName } from '../../features/profile/name';
+import type {
+  CategoryEntry,
+  NameEntry,
+  Preferences,
+  ProviderEntry,
+} from '../../features/sync/preferences';
 import { MONEY_CATEGORIES, type MoneyCategory } from '../../types/domain';
 import type { SqlDatabase } from '../client';
+import { profileRepository } from './profileRepository';
 
 type SyncRow = TransactionRow & { sync_id: string | null; synced_edit: string | null };
 
@@ -176,7 +183,10 @@ export const syncRepository = {
     await db.runAsync('DELETE FROM category_rule_deletions');
   },
 
-  /** This phone's remembered categories, forgotten ones included, and its provider choices. */
+  /**
+   * This phone's remembered categories, forgotten ones included, its provider
+   * choices, and its name (a removed one included).
+   */
   async readPreferences(db: SqlDatabase): Promise<Preferences> {
     const rules = await db.getAllAsync<{
       party_key: string;
@@ -203,7 +213,14 @@ export const syncRepository = {
 
     const choices: Preferences['providers'] = {};
     for (const p of providers) choices[p.id] = { enabled: p.enabled === 1, at: p.enabled_at };
-    return { categories, providers: choices };
+
+    const name = await profileRepository.getName(db);
+    return name ? { categories, providers: choices, name } : { categories, providers: choices };
+  },
+
+  /** Take the name from another phone, keeping the time it was set there. */
+  async applyName(db: SqlDatabase, entry: NameEntry): Promise<void> {
+    await profileRepository.setName(db, cleanName(entry.name), entry.at);
   },
 
   /** Take a category from another phone, keeping the time it was made there. */

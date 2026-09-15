@@ -1,6 +1,6 @@
 /**
- * Remembered categories and provider choices, synced as one locked document
- * per account (`synced_settings`).
+ * Remembered categories, provider choices and the optional name, synced as one
+ * locked document per account (`synced_settings`).
  *
  * Every entry carries the time it was made, and entries merge one by one: the
  * later one wins, a forgotten category included. Two phones that each learn a
@@ -28,11 +28,19 @@ export interface ProviderEntry {
   at: string;
 }
 
+export interface NameEntry {
+  /** Null: the user removed their name. */
+  name: string | null;
+  at: string;
+}
+
 export interface Preferences {
   /** By recipient (`partyKey`). */
   categories: Record<string, CategoryEntry>;
   /** By provider id. */
   providers: Record<string, ProviderEntry>;
+  /** The name Home greets by (features/profile). Absent until set or removed on some phone. */
+  name?: NameEntry;
 }
 
 export const NO_PREFERENCES: Preferences = { categories: {}, providers: {} };
@@ -44,10 +52,17 @@ const preferencesSchema = z.object({
     z.object({ category: z.enum(MONEY_CATEGORIES).nullable(), at: z.string() }),
   ),
   providers: z.record(z.string(), z.object({ enabled: z.boolean(), at: z.string() })),
+  // Optional: documents written before names existed have none.
+  name: z.object({ name: z.string().nullable(), at: z.string() }).optional(),
 });
 
 export const encodePreferences = (p: Preferences): Uint8Array =>
-  toAsciiBytes({ v: 1, categories: p.categories, providers: p.providers });
+  toAsciiBytes({
+    v: 1,
+    categories: p.categories,
+    providers: p.providers,
+    ...(p.name ? { name: p.name } : {}),
+  });
 
 /** The document, or null for anything this app did not write. */
 export function decodePreferences(bytes: Uint8Array): Preferences | null {
@@ -55,9 +70,9 @@ export function decodePreferences(bytes: Uint8Array): Preferences | null {
   if (text === null) return null;
   try {
     const parsed = preferencesSchema.safeParse(JSON.parse(text));
-    return parsed.success
-      ? { categories: parsed.data.categories, providers: parsed.data.providers }
-      : null;
+    if (!parsed.success) return null;
+    const { categories, providers, name } = parsed.data;
+    return name ? { categories, providers, name } : { categories, providers };
   } catch {
     return null;
   }
@@ -74,6 +89,8 @@ export interface PreferencesMerge {
   toApply: {
     categories: [string, CategoryEntry][];
     providers: [string, ProviderEntry][];
+    /** The server's name, when newer than this phone's. */
+    name: NameEntry | null;
   };
   /** This phone has entries the server lacks or has older: send the merge. */
   newerHere: boolean;
@@ -83,8 +100,9 @@ export function mergePreferences(here: Preferences, server: Preferences): Prefer
   const merged: Preferences = {
     categories: { ...server.categories },
     providers: { ...server.providers },
+    ...(server.name ? { name: server.name } : {}),
   };
-  const toApply: PreferencesMerge['toApply'] = { categories: [], providers: [] };
+  const toApply: PreferencesMerge['toApply'] = { categories: [], providers: [], name: null };
   let newerHere = false;
 
   for (const [key, entry] of Object.entries(here.categories)) {
@@ -106,6 +124,12 @@ export function mergePreferences(here: Preferences, server: Preferences): Prefer
   for (const [id, entry] of Object.entries(server.providers)) {
     if (beats(entry, here.providers[id])) toApply.providers.push([id, entry]);
   }
+
+  if (here.name && beats(here.name, server.name)) {
+    merged.name = here.name;
+    newerHere = true;
+  }
+  if (server.name && beats(server.name, here.name)) toApply.name = server.name;
 
   return { merged, toApply, newerHere };
 }
