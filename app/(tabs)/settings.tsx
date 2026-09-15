@@ -30,9 +30,7 @@ const FAILED = 'That could not be completed. Nothing was changed.';
 
 /**
  * Settings, grouped as in the design. Anything that deletes asks first, in
- * place. Automatic processing does not exist in Stage 1, so its switch is
- * shown locked off rather than pretending. Cloud sync is off until the user
- * turns it on.
+ * place. Cloud sync is off until the user turns it on.
  */
 export default function Settings() {
   const settings = useAppStore((s) => s.settings);
@@ -280,22 +278,6 @@ export default function Settings() {
       </SettingsGroup>
 
       <SettingsGroup title="Processing">
-        <SettingRow
-          label="Automatic processing"
-          sub="Off in Stage 1. Messages are analyzed only when you paste or share them."
-          right={
-            <Switch
-              value={settings.automaticProcessing}
-              disabled
-              accessibilityLabel="Automatic processing. Not available in Stage 1."
-            />
-          }
-        />
-        <SettingRow
-          label="SMS source"
-          sub="Messages you paste, or share to PesaIQ from your messages app. No SMS is read from your phone."
-          right={<Tag label="Stage 1" />}
-        />
         <SettingRow
           label="Cloud sync"
           sub={syncStatus()}
