@@ -51,7 +51,7 @@ export default function Setup() {
 
   return (
     <OnboardingFrame
-      backTo="/privacy"
+      backTo="/name"
       title={SETUP_COPY.title}
       subtitle={SETUP_COPY.body}
       cta={{ label: 'Open dashboard', onPress: () => void finish(), loading: finishing }}

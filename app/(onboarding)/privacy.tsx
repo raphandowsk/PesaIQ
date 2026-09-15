@@ -31,7 +31,7 @@ export default function Privacy() {
       }
       title="Your messages stay here"
       subtitle="Your financial data is sensitive."
-      cta={{ label: 'I understand', onPress: () => router.push('/setup') }}
+      cta={{ label: 'I understand', onPress: () => router.push('/name') }}
     >
       <View style={{ gap: space[2] }}>
         {PRIVACY_POINTS.map((point) => (

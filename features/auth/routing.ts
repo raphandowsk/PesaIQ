@@ -7,7 +7,7 @@
  * - Intro (welcome, how it works): until signed in and onboarded.
  * - Sign-in (number, code): only while signed out.
  * - PIN (create, or enter on a new phone): signed in, key not on this phone.
- * - Onboarding (privacy, senders): signed in with the key, not yet onboarded.
+ * - Onboarding (privacy, name, senders): signed in with the key, not yet onboarded.
  * - The app itself: signed in, key on this phone, onboarded.
  */
 export interface Access {

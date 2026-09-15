@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 
+import { NameField } from '../../components/profile/NameField';
 import { ConfirmPanel, SettingRow, SettingsGroup } from '../../components/settings/SettingsList';
 import { Button, Screen, Tag, Text, toast } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
@@ -16,7 +17,7 @@ import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
 
 type DataAction = 'transactions' | 'messages' | 'history' | 'demo' | 'rules' | 'signout';
-type Busy = DataAction | 'replay' | 'sync' | null;
+type Busy = DataAction | 'replay' | 'sync' | 'name' | null;
 
 const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
 
@@ -60,8 +61,12 @@ export default function Settings() {
   const clearAndTurnOff = useSyncStore((s) => s.clearAndTurnOff);
   const forgetThisPhone = useDevicesStore((s) => s.forgetThisPhone);
   const importUsedAt = useImportStore((s) => s.usedAt);
+  const displayName = useAppStore((s) => s.displayName);
+  const setDisplayName = useAppStore((s) => s.setDisplayName);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
+  // The name being edited; null while the row is closed.
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [askSyncOff, setAskSyncOff] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
@@ -194,7 +199,7 @@ export default function Settings() {
         : lastSyncedAt
           ? `Synced at ${new Date(lastSyncedAt).toTimeString().slice(0, 5)}${pending > 0 ? `, ${pending} waiting` : ''}.`
           : 'On.';
-    return `${state} Records, categories and provider choices are encrypted on this phone first. SMS messages never leave it.`;
+    return `${state} Records, categories, provider choices and your name are encrypted on this phone first. SMS messages never leave it.`;
   };
 
   // Turning on is immediate. Turning off asks whether to remove the server copy.
@@ -228,6 +233,16 @@ export default function Settings() {
       return null;
     });
 
+  const saveName = (value: string | null) =>
+    run('name', async () => {
+      const had = displayName;
+      await setDisplayName(value);
+      setNameDraft(null);
+      const saved = useAppStore.getState().displayName;
+      if (saved === had) return null;
+      return saved ? 'Name saved.' : 'Name removed.';
+    });
+
   return (
     <Screen scroll>
       <View style={{ paddingTop: space[4], marginBottom: space[4] }}>
@@ -248,6 +263,63 @@ export default function Settings() {
       ) : null}
 
       <SettingsGroup title="Account">
+        <SettingRow
+          label="Name"
+          sub={
+            displayName ? `${displayName} · shown on Home` : 'Optional. Home greets you by name.'
+          }
+          right={
+            nameDraft === null ? (
+              <Button
+                label={displayName ? 'Edit' : 'Add'}
+                accessibilityLabel={displayName ? 'Edit name' : 'Add name'}
+                variant="secondary"
+                disabled={busy !== null}
+                onPress={() => {
+                  setError(null);
+                  setNameDraft(displayName ?? '');
+                }}
+              />
+            ) : null
+          }
+        >
+          {nameDraft !== null ? (
+            <View style={{ marginTop: space[2], gap: space[3] }}>
+              <NameField
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                onSubmit={() => void saveName(nameDraft)}
+                autoFocus
+              />
+              <View style={{ flexDirection: 'row', gap: space[2] }}>
+                <Button
+                  label="Save"
+                  loading={busy === 'name'}
+                  disabled={busy !== null}
+                  onPress={() => void saveName(nameDraft)}
+                  style={{ flex: 1 }}
+                />
+                {displayName ? (
+                  <Button
+                    label="Remove"
+                    accessibilityLabel="Remove name"
+                    variant="secondary"
+                    disabled={busy !== null}
+                    onPress={() => void saveName(null)}
+                    style={{ flex: 1 }}
+                  />
+                ) : null}
+                <Button
+                  label="Cancel"
+                  variant="ghost"
+                  disabled={busy !== null}
+                  onPress={() => setNameDraft(null)}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
+          ) : null}
+        </SettingRow>
         <SettingRow
           label="Mobile number"
           sub="Your PesaIQ account. Used only to sign you in."
@@ -293,7 +365,7 @@ export default function Settings() {
         >
           {askSyncOff ? (
             <ConfirmPanel
-              message="Also remove your synced records, categories and provider choices from PesaIQ's server? That turns sync off on your other phones too. Everything stays on this phone."
+              message="Also remove your synced records, categories, provider choices and name from PesaIQ's server? That turns sync off on your other phones too. Everything stays on this phone."
               confirmLabel="Turn off and remove"
               alternative={{ label: 'Just turn off', onPress: () => void turnSyncOff(false) }}
               cancelLabel="Cancel"

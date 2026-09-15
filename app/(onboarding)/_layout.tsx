@@ -5,8 +5,8 @@ import { usePinStore } from '../../features/pin';
 import { colors } from '../../theme';
 
 /**
- * Welcome and How it works come before signing in; Privacy and the senders
- * picker come after, so they need an account and its PIN.
+ * Welcome and How it works come before signing in; Privacy, the optional name
+ * and the senders picker come after, so they need an account and its PIN.
  */
 export default function OnboardingLayout() {
   const signedIn = useAuthStore((s) => s.status === 'signedIn');
@@ -24,6 +24,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="how-it-works" />
       <Stack.Protected guard={signedIn && keyReady}>
         <Stack.Screen name="privacy" />
+        <Stack.Screen name="name" />
         <Stack.Screen name="setup" />
       </Stack.Protected>
     </Stack>
