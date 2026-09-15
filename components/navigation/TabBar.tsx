@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppStore } from '../../features/transactions';
-import { colors, radius, space } from '../../theme';
+import { colors, radius, shadow, space } from '../../theme';
 import { Icon, type IconName } from '../ui/Icon';
 import { Text } from '../ui/Text';
 
@@ -16,20 +16,20 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
   settings: { label: 'Settings', icon: 'settings' },
 };
 
-// Geometry from the design's bottom nav.
-const ITEM_HEIGHT = 56;
-const PILL = { width: 46, height: 26 };
+const ITEM_HEIGHT = 52;
+const BAR_PADDING = 6;
 const BADGE_SIZE = 15;
 
 const badgeText = (n: number) => (n > 99 ? '99+' : String(n));
 
 /**
- * The bottom navigation.
+ * The bottom navigation: a floating pill on the page ground, the active tab a
+ * dark filled pill.
  *
- * Custom rather than the stock bar because the design puts a tinted pill behind
- * the active icon and a count badge on Review, neither of which the default
- * draws. Tap semantics follow React Navigation's contract (emit `tabPress`,
- * respect `preventDefault`), so a screen can still intercept a tap.
+ * Custom rather than the stock bar because neither the pill nor the count
+ * badge on Review is something the default draws. Tap semantics follow React
+ * Navigation's contract (emit `tabPress`, respect `preventDefault`), so a
+ * screen can still intercept a tap.
  */
 export function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -39,97 +39,103 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View
-      accessibilityRole="tablist"
       style={{
-        flexDirection: 'row',
-        backgroundColor: colors.surface,
-        borderTopWidth: 1,
-        borderTopColor: colors.divider,
-        paddingTop: space[1],
-        paddingHorizontal: space[1],
-        paddingBottom: Math.max(insets.bottom, space[1]),
+        backgroundColor: colors.bg,
+        paddingHorizontal: space[4],
+        paddingTop: space[2],
+        paddingBottom: Math.max(insets.bottom, space[3]),
       }}
     >
-      {state.routes.map((route, index) => {
-        const meta = TABS[route.name];
-        if (!meta) return null;
+      <View
+        accessibilityRole="tablist"
+        style={[
+          {
+            flexDirection: 'row',
+            gap: 2,
+            backgroundColor: colors.surface,
+            borderRadius: radius.pill,
+            padding: BAR_PADDING,
+          },
+          shadow.md,
+        ]}
+      >
+        {state.routes.map((route, index) => {
+          const meta = TABS[route.name];
+          if (!meta) return null;
 
-        const focused = state.index === index;
-        const ink = focused ? colors.accentRamp[800] : colors.neutralRamp[700];
-        const badge = route.name === 'review' && reviewCount > 0 ? badgeText(reviewCount) : null;
+          const focused = state.index === index;
+          const ink = focused ? colors.surface : colors.neutralRamp[700];
+          const badge = route.name === 'review' && reviewCount > 0 ? badgeText(reviewCount) : null;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
-          }
-        };
-
-        const onLongPress = () => {
-          navigation.emit({ type: 'tabLongPress', target: route.key });
-        };
-
-        return (
-          <Pressable
-            key={route.key}
-            onPress={onPress}
-            onLongPress={onLongPress}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-            accessibilityLabel={
-              badge ? `${meta.label}, ${reviewCount} waiting for review` : meta.label
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name, route.params);
             }
-            style={({ pressed }) => ({
-              flex: 1,
-              minHeight: ITEM_HEIGHT,
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 3,
-              borderRadius: radius.md,
-              backgroundColor: pressed ? colors.neutralRamp[200] : 'transparent',
-            })}
-          >
-            <View
-              style={{
-                ...PILL,
-                borderRadius: radius.pill,
-                backgroundColor: focused ? colors.accentRamp[200] : 'transparent',
+          };
+
+          const onLongPress = () => {
+            navigation.emit({ type: 'tabLongPress', target: route.key });
+          };
+
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={
+                badge ? `${meta.label}, ${reviewCount} waiting for review` : meta.label
+              }
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: ITEM_HEIGHT,
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}
+                gap: 2,
+                borderRadius: radius.pill,
+                backgroundColor: focused
+                  ? colors.neutralRamp[900]
+                  : pressed
+                    ? colors.neutralRamp[200]
+                    : 'transparent',
+              })}
             >
-              <Icon name={meta.icon} size={19} color={ink} />
-              {badge ? (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: -1,
-                    right: 6,
-                    minWidth: BADGE_SIZE,
-                    height: BADGE_SIZE,
-                    borderRadius: radius.pill,
-                    backgroundColor: colors.accent,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingHorizontal: 3,
-                  }}
-                >
-                  <Text variant="badge" tone="inverse">
-                    {badge}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            <Text variant="tabLabel" style={{ color: ink }}>
-              {meta.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+              <View>
+                <Icon name={meta.icon} size={19} color={ink} />
+                {badge ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -10,
+                      minWidth: BADGE_SIZE,
+                      height: BADGE_SIZE,
+                      borderRadius: radius.pill,
+                      backgroundColor: colors.accent,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text variant="badge" tone="inverse">
+                      {badge}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text variant="tabLabel" style={{ color: ink }}>
+                {meta.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }

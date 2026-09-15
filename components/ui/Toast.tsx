@@ -39,8 +39,8 @@ export const useToastStore = create<ToastState>((set) => ({
 /** Show a short confirmation from anywhere, including outside React. */
 export const toast = (message: string) => useToastStore.getState().show(message);
 
-/** Keeps the toast clear of the tab bar. */
-const TAB_BAR_CLEARANCE = 72;
+/** Keeps the toast clear of the floating tab bar (84px tall with no bottom inset). */
+const TAB_BAR_CLEARANCE = 96;
 const TOAST_LAYER = 1000;
 
 /** Rendered once, at the root. Never intercepts touches. */
