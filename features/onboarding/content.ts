@@ -24,7 +24,7 @@ export const HOW_STEPS: readonly HowStep[] = [
 ];
 
 export const PRIVACY_POINTS: readonly string[] = [
-  'Stage 1 processes only the messages you paste in, or share to PesaIQ from your messages app.',
+  'The app processes only messages you paste in, or share to PesaIQ from your messages app.',
   'A future Android version may read incoming SMS, with your permission.',
   "Messages are read on this phone by PesaIQ's own rules, and never leave it. None is sent to an AI.",
   "PesaIQ's server holds your mobile number, to sign you in, and the list of phones signed in with it.",

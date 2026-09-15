@@ -28,7 +28,7 @@ describe('onboarding copy', () => {
   });
 
   it('says Stage 1 only handles messages the user pastes', () => {
-    expect(PRIVACY_POINTS.join(' ')).toMatch(/only the messages you paste/i);
+    expect(PRIVACY_POINTS.join(' ')).toMatch(/only messages you paste/i);
     expect(SETUP_COPY.note).toMatch(/nothing is intercepted/i);
   });
 
