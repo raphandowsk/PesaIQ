@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Text } from '../../components/ui';
+import { ScoreRing } from '../../components/dashboard/ScoreRing';
+import { StatTile } from '../../components/dashboard/StatTiles';
+import { Button, Tag, Text } from '../../components/ui';
 import { useAuthStore } from '../../features/auth';
 import { WELCOME } from '../../features/onboarding/content';
 import { useAppStore } from '../../features/transactions';
-import { colors, fonts, radius, space } from '../../theme';
+import { colors, fonts, money, radius, space } from '../../theme';
 
 // Geometry from the design's welcome screen.
 const BLOB = 300;
 const LOGO = 40;
 const DOT = 6;
 const ACTIVE_DOT = 26;
+const PREVIEW_RING = 96;
 
 export default function Welcome() {
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
@@ -51,13 +54,14 @@ export default function Welcome() {
         }}
       />
 
-      <View
-        style={{
-          flex: 1,
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
           paddingHorizontal: space[4],
           paddingTop: space[6],
           paddingBottom: space[4],
         }}
+        showsVerticalScrollIndicator={false}
       >
         <View
           style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}
@@ -83,12 +87,16 @@ export default function Welcome() {
           </Text>
         </View>
 
-        <View style={{ flex: 1, justifyContent: 'center', gap: space[4], paddingTop: space[8] }}>
+        <Preview />
+
+        <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: space[6] }}>
           <Text variant="display" accessibilityRole="header">
             {WELCOME.title}
           </Text>
         </View>
+      </ScrollView>
 
+      <View style={{ paddingHorizontal: space[4], paddingBottom: space[4] }}>
         <View
           style={{ flexDirection: 'row', gap: DOT, marginBottom: space[4] }}
           accessible
@@ -127,5 +135,70 @@ export default function Welcome() {
         </View>
       </View>
     </SafeAreaView>
+  );
+}
+
+/**
+ * A glimpse of Home, in its own tiles. The figures are invented and marked as
+ * an example: nobody's records exist yet.
+ */
+function Preview() {
+  return (
+    <View
+      accessible
+      accessibilityLabel="An example of what PesaIQ shows: a financial health score of 76, Steady, and money received and spent."
+      style={{ marginTop: space[6], gap: space[2] }}
+    >
+      <Tag label="Example" />
+      <View style={{ flexDirection: 'row', gap: space[2] }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: colors.accent2Ramp[200],
+            borderRadius: radius.lg,
+            padding: space[3],
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: space[2],
+          }}
+        >
+          <ScoreRing
+            size={PREVIEW_RING}
+            stroke={9}
+            value={76}
+            ink={colors.accent2Ramp[600]}
+            trackInk={colors.accent2Ramp[400]}
+          >
+            <Text variant="h1" style={{ color: colors.accent2Ramp[900] }}>
+              76
+            </Text>
+          </ScoreRing>
+          <Text
+            variant="bodyMedium"
+            style={{ fontFamily: fonts.heading, color: colors.accent2Ramp[900] }}
+          >
+            Steady
+          </Text>
+        </View>
+        <View style={{ flex: 1, gap: space[2] }}>
+          <StatTile
+            label="Received"
+            value="1,250,000"
+            icon="arrowIn"
+            tint={money.in.tint}
+            ink={money.in.ink}
+            style={{ flexBasis: 'auto' }}
+          />
+          <StatTile
+            label="Spent"
+            value="486,500"
+            icon="arrowOut"
+            tint={money.out.tint}
+            ink={money.out.ink}
+            style={{ flexBasis: 'auto' }}
+          />
+        </View>
+      </View>
+    </View>
   );
 }
