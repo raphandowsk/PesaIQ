@@ -2,11 +2,21 @@ import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { Health } from '../../features/insights';
 import { colors, fonts, money, radius, shadow, space } from '../../theme';
-import { formatAmount, formatTzs, MINUS } from '../../utils/format';
+import { formatAmount, formatCompact, formatTzs, MINUS } from '../../utils/format';
 import { Icon, type IconName } from '../ui/Icon';
 import { Text } from '../ui/Text';
 
 const ICON_CIRCLE = 34;
+/** Characters a note line holds on a phone-width tile. */
+const NOTE_FIT = 21;
+
+/** "Fee 6,846 + Tax 1,054", or "Fee 12K + Tax 2.1K" when the full figures would not fit one line. */
+function splitNote({ operatorFees, taxes }: { operatorFees: number; taxes: number }): string {
+  const exact = `Fee ${formatAmount(operatorFees)} + Tax ${formatAmount(taxes)}`;
+  return exact.length <= NOTE_FIT
+    ? exact
+    : `Fee ${formatCompact(operatorFees)} + Tax ${formatCompact(taxes)}`;
+}
 
 export interface StatTileProps {
   label: string;
@@ -88,7 +98,7 @@ export function StatTile({
         {note ? (
           <Text
             variant="small"
-            numberOfLines={2}
+            numberOfLines={1}
             style={{ fontSize: 11, lineHeight: 15, color: colors.neutralRamp[700] }}
           >
             {note}
@@ -162,7 +172,7 @@ export function StatTiles({
         icon="receipt"
         tint={colors.accentRamp[100]}
         ink={colors.accentRamp[800]}
-        note={`Operator ${formatAmount(chargeSplit.operatorFees)} + Taxes ${formatAmount(chargeSplit.taxes)}`}
+        note={splitNote(chargeSplit)}
         spoken={`Fees and taxes ${formatTzs(health.charges)}: operator fees ${formatTzs(chargeSplit.operatorFees)} plus taxes ${formatTzs(chargeSplit.taxes)}. Opens Fees and taxes.`}
         onPress={onOpenFees}
       />
