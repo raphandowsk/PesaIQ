@@ -22,6 +22,7 @@ Must run in Expo Go. No native modules. No Android Studio.
 | **1M** | Tanzania mobile-money parser, to the owner's specification: M-Pesa, Airtel Money, Mixx, HaloPesa and T-PESA, 16 transaction kinds, 54 anonymized fixtures; AI reading paused     | **Done** — 2026-09-14                            |
 | **1N** | Bulk import: once per account, up to 90 days of messages pasted at once, previewed before saving; one-time codes never stored                                                    | **Done** — 2026-09-14                            |
 | **1O** | Share to PesaIQ: a message shared from the Android messages app opens in the Lab (installed builds only; not Expo Go)                                                            | **Built** — 2026-09-15; not yet tried on a phone |
+| **1P** | Home and welcome restyled from the owner's inspiration: stat tiles, weekly bars, category split bar, dark recent list, floating pill tab bar; optional name, synced locked       | **Done** — 2026-09-15                            |
 
 ### Definition of done
 

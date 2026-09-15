@@ -171,13 +171,20 @@ messages differently, so an AI read them first and the on-phone rules checked it
 - **SMS messages are never uploaded**, encrypted or not. A record synced to
   another phone arrives without its message.
 - **Demo samples are never uploaded.**
-- **Remembered categories and provider choices sync too**, as one document
-  encrypted the same way (the categories hold recipient names). Forgetting
+- **Remembered categories, provider choices and the optional name sync too**,
+  as one document encrypted the same way (the categories hold recipient names). Forgetting
   categories on one phone forgets them on the others. Cloud sync itself, demo
   data and onboarding stay each phone's own.
 - **Deletions reach every phone.** A deleted record's row keeps no content.
 - **One account per phone.** Records synced to one account are not uploaded to
   another; the second account can sync once they are deleted from the phone.
+
+## The optional name (2026-09-15)
+
+- **Asked once during onboarding, and optional.** Leaving it empty skips it;
+  Settings → Account → Name changes or removes it. Home greets by it.
+- **Kept on the phone.** With Cloud sync on it travels inside the locked
+  preferences document above, which the server cannot read. It is never logged.
 
 ## Bulk import (2026-09-14)
 

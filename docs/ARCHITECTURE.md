@@ -311,7 +311,7 @@ links, as ASCII-only JSON.
 app/
   _layout.tsx        root Stack; holds the splash until fonts AND the database are ready
   index.tsx          the one place a launch is routed from
-  (onboarding)/      welcome → how-it-works → (sign-in) → privacy → setup
+  (onboarding)/      welcome → how-it-works → (sign-in) → privacy → name → setup
   (auth)/            phone → code                                    guard: signed out
   (tabs)/            dashboard · transactions · parser-lab · review · settings   guard: signed in and onboarded
 ```
@@ -330,8 +330,9 @@ away in Settings.
 
 ### The tab bar is custom
 
-The design puts a tinted pill behind the active icon and a count badge on Review;
-the stock bar draws neither. `TabBar` keeps React Navigation's tap contract (emits
+The bar floats: a white pill on the page ground, clear of the screen edges, the
+active tab a dark filled pill, and a count badge on Review (restyled 2026-09-15;
+see "Home restyle and optional name"). The stock bar draws neither. `TabBar` keeps React Navigation's tap contract (emits
 `tabPress`, honours `preventDefault`), so screens can still intercept taps.
 
 In expo-router 57, `Tabs` is imported from `expo-router/tabs`, not the main entry —
@@ -458,10 +459,15 @@ toast is also announced to screen readers, since it is otherwise purely visual.
 
 ### Layout
 
-Greeting and date · health card (score ring, band, streak, received / sent / net;
-tap the score for what builds it) · review nudge · spending / income by category ·
-"Spend smarter" tips · "Earn more" tips (one at a time, see the end of this file) ·
-recent transactions · by provider · demo notice.
+Date and welcome · health card (score ring, band, streak; its corner button opens
+what builds the score) · four tiles: received, spent, fees & taxes (opens Fees &
+taxes), net · review nudge · this week's spending, a bar a day · spending / income
+by category as a split bar · recent transactions on a dark card · fees this month ·
+monthly report · "Spend smarter" and "Earn more" tips (one at a time, see the end of
+this file) · by provider · demo notice.
+
+Restyled on 2026-09-15 from an inspiration dashboard the owner supplied, in
+PesaIQ's own colours: see "Home restyle and optional name" at the end of this file.
 
 Every figure comes from pure functions in `features/insights/` over the saved
 records; the screen only lays them out.
@@ -482,7 +488,7 @@ score **68, Steady**.
 | Empty ledger scores 20, "Strained"                      | "No score yet"                                            | A score built from no data misleads. |
 | Ignored records count toward everything                 | Left out of score, categories, providers                  | Same rule as every other total.      |
 | "6-day streak", hard-coded                              | Consecutive local days with a save or review; hidden at 0 | It should be true.                   |
-| "Hello, Deo"                                            | Time-of-day greeting                                      | PesaIQ never asks for a name.        |
+| "Hello, Deo"                                            | "Welcome, Asha", or "Welcome back" with no name           | The name is optional (2026-09-15).   |
 | Date line fixed at "Friday, 12 March 2026" (a Thursday) | Today's date                                              | —                                    |
 | Tip: "PesaIQ will tell you as you approach [a cap]"     | No promise of an alert                                    | There is no budget alert.            |
 | Tip: "…ready for a loan or a tax filing"                | "…ready when you need to show them"                       | No claim about lending or tax use.   |
@@ -971,12 +977,12 @@ sent by SMS. Supabase Auth makes the code and the `send-sms` hook sends it (see
 `docs/BACKEND.md`).
 
 - **Order:** Welcome → How it works → **Mobile number → Code** → Privacy →
-  Senders. Someone who has already seen the intro, or who signed out, goes
+  Name (optional, since 2026-09-15) → Senders. Someone who has already seen the intro, or who signed out, goes
   straight to the number screen and then into the app.
 - **One rule for where people can go** (`features/auth/routing.ts`):
   - the intro, until signed in and onboarded
   - sign-in, only while signed out
-  - Privacy and Senders, once signed in
+  - Privacy, Name and Senders, once signed in
   - the app, only when both
 
   The root layout's guards and the launch redirect both read it.
@@ -1010,7 +1016,7 @@ will lock the records that sync. A **4-digit PIN** unlocks it. There is no
 recovery key (decided 2026-09-14).
 
 - **Order:** Number → Code → **Create PIN** (entered twice) or **Enter PIN**
-  (a phone that doesn't hold the key yet) → Privacy → Senders. The routing
+  (a phone that doesn't hold the key yet) → Privacy → Name → Senders. The routing
   rule gained a third fact: whether this phone holds the key.
 - **Why a guess limit:** 10,000 PINs could all be tried in minutes against a
   copy of the database. So a PIN can only be tested through the `pin-oprf`
@@ -1044,3 +1050,42 @@ recovery key (decided 2026-09-14).
   doing the real maths: the same PIN gives the same secret under different
   blinds, a wrong PIN, salt or account opens nothing, and the store's create,
   unlock, wait and start-over paths.
+
+## Home restyle and optional name (2026-09-15)
+
+From an inspiration dashboard the owner supplied, with the instruction to ignore
+its colours: its layout ideas, in PesaIQ's palette. The one dark element (the
+recent list, the active tab) is PesaIQ's own darkest neutral.
+
+| Inspiration                      | PesaIQ                                                                                                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| "Welcome, Vanessa"               | `welcomeLine`: "Welcome, Asha" with the optional name, "Welcome back" without                             |
+| Stat tiles with round icons      | Received · Spent · Fees & taxes (opens Fees & taxes) · Net (`StatTiles`)                                  |
+| Time tracker ring                | The health score ring over a ticked track (`ScoreRing`), shared with the welcome screen                   |
+| Weekly progress bars             | This week's spending, Monday to Sunday, today in the accent with its figure (`weekSpending`, `WeekChart`) |
+| Segmented onboarding bar         | Spending or income by category: the three largest plus "Everything else" (`topCategories`, `SplitCard`)   |
+| Dark task list with ticks        | Recent transactions: lime tick confirmed, plain tick saved, open circle waiting for review (`RecentList`) |
+| Pill navigation, active tab dark | A floating pill tab bar, kept at the bottom where a thumb reaches (`TabBar`)                              |
+| ↗ buttons in card corners        | `CornerButton`: what builds the score; Records                                                            |
+
+- **The week** is the one "cleared this week" counts: `startOfWeek` now lives in
+  `features/insights/week.ts` and the review queue imports it. Spending there is
+  what the money bought, as the Spent tile counts it; fees and taxes stay apart.
+- **The welcome screen** shows a small example of Home in the same tiles, tagged
+  "Example". Its figures are invented.
+- **Gone:** the time-of-day greeting (`greetingFor`) and the category list card
+  (`CategoryCard`); the split card replaces it, with the amounts listed under
+  the bar.
+
+### The optional name
+
+- Asked once during onboarding (Privacy → **Name** → Senders), changed or
+  removed in Settings → Account → Name. Leaving it empty skips it and writes
+  nothing.
+- `cleanName` (`features/profile/name.ts`): trimmed, runs of spaces made one,
+  control characters dropped, 30 characters at most, never splitting an emoji.
+- Stored as text in the settings table (`profileRepository`). A removal keeps
+  the row, empty and dated, so the removal syncs too.
+- With Cloud sync on, the name travels inside the locked preferences document
+  with categories and provider choices; the later change wins. Documents
+  written before names existed still read.
