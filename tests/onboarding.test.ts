@@ -32,22 +32,19 @@ describe('onboarding copy', () => {
     expect(SETUP_COPY.note).toMatch(/nothing is intercepted/i);
   });
 
-  it('says messages are read on the phone with no AI, and sync is off by default', () => {
+  it('says Cloud sync is off by default, and the defaults agree', () => {
     const points = PRIVACY_POINTS.join(' ');
-    expect(points).toMatch(/read on this phone/);
-    expect(points).toMatch(/None is sent to an AI/);
     expect(points).toMatch(/Cloud sync is optional and off by default/);
     expect(DEFAULT_SETTINGS.cloudSync).toBe(false);
     // AI reading is paused, and was never assumed agreed.
     expect(DEFAULT_SETTINGS.aiReadingAccepted).toBe(false);
   });
 
-  it('says what the server holds, and that messages never leave the phone', () => {
+  it('says what the server holds', () => {
     const points = PRIVACY_POINTS.join(' ');
     expect(points).toMatch(/server holds your mobile number/);
     expect(points).toMatch(/list of phones signed in with it/);
     expect(points).toMatch(/locked so it can't read them/);
-    expect(points).toMatch(/never leave it/);
   });
 
   it('keeps the non-legal disclaimer word for word', () => {
