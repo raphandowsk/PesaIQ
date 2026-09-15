@@ -17,7 +17,7 @@ export interface HowStep {
 }
 
 export const HOW_STEPS: readonly HowStep[] = [
-  { n: '1', title: 'Message', body: 'A message arrives, or you paste one in' },
+  { n: '1', title: 'Message', body: 'Share or paste a message to the app' },
   { n: '2', title: 'Understand', body: 'The kind of transaction is recognized' },
   { n: '3', title: 'Extract', body: 'Amount, name, reference and date' },
   { n: '4', title: 'Organize', body: 'Clean records, held on your phone' },
