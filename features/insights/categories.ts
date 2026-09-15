@@ -84,3 +84,27 @@ export function categoryBreakdown(
 
   return { mode, total, rows };
 }
+
+/** The name of the row `topCategories` folds the smaller categories into. */
+export const EVERYTHING_ELSE = 'Everything else';
+
+/**
+ * The largest `keep` categories, and the rest folded into one "Everything
+ * else": Home's split bar. A list only one longer than `keep` stays as it is,
+ * since folding a single row would hide its name for nothing.
+ */
+export function topCategories(breakdown: CategoryBreakdown, keep = 3): CategoryRow[] {
+  if (breakdown.rows.length <= keep + 1) return breakdown.rows;
+
+  const rest = breakdown.rows.slice(keep);
+  const amount = Math.round(rest.reduce((sum, r) => sum + r.amount, 0) * 100) / 100;
+  return [
+    ...breakdown.rows.slice(0, keep),
+    {
+      name: EVERYTHING_ELSE,
+      amount,
+      count: rest.reduce((sum, r) => sum + r.count, 0),
+      pct: breakdown.total > 0 ? Math.round((amount / breakdown.total) * 100) : 0,
+    },
+  ];
+}

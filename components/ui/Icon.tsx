@@ -37,7 +37,9 @@ export type IconName =
   | 'download'
   | 'info'
   | 'pause'
-  | 'play';
+  | 'play'
+  | 'receipt'
+  | 'wallet';
 
 const GLYPHS: Record<IconName, ReactNode> = {
   back: (
@@ -175,6 +177,22 @@ const GLYPHS: Record<IconName, ReactNode> = {
     </>
   ),
   play: <Path d="M8 5l11 7-11 7z" />,
+  // Home's Fees & taxes and Net tiles. Drawn in the same hand as the rest,
+  // since the canvas has no glyph for either.
+  receipt: (
+    <>
+      <Path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+      <Path d="M9 8h6" />
+      <Path d="M9 12h6" />
+    </>
+  ),
+  wallet: (
+    <>
+      <Rect x="3" y="7" width="18" height="13" rx="3" />
+      <Path d="M6 7l10-3v3" />
+      <Path d="M16 13.5h.01" />
+    </>
+  ),
 };
 
 export interface IconProps {

@@ -6,6 +6,7 @@
  * ("2/7 cleared", "6-day streak"); these are computed from what the user
  * actually did.
  */
+import { startOfWeek } from '../insights/week';
 import { bandFor } from '../parser';
 import { isRecordEditable, type RecordEditableKey } from '../transactions/editRecord';
 import type { Transaction } from '../transactions/model';
@@ -22,12 +23,8 @@ export function reviewQueue(transactions: readonly Transaction[]): Transaction[]
     .sort((a, b) => recordDate(b).getTime() - recordDate(a).getTime());
 }
 
-/** Monday 00:00, local time: the start of "this week". */
-export function startOfWeek(now: Date): Date {
-  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
-}
+/** Monday 00:00, local time. Shared with Home's weekly chart, so both mean the same week. */
+export { startOfWeek };
 
 /** Review actions (confirm, correct, ignore) taken since Monday. */
 export function clearedThisWeek(timestamps: readonly string[], now: Date): number {

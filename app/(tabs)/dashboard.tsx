@@ -2,14 +2,16 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
-import { CategoryCard } from '../../components/dashboard/CategoryCard';
 import { FeesCard } from '../../components/dashboard/FeesCard';
 import { HealthCard } from '../../components/dashboard/HealthCard';
 import { ProviderSummary } from '../../components/dashboard/ProviderSummary';
+import { RecentList } from '../../components/dashboard/RecentList';
 import { ReportCard } from '../../components/dashboard/ReportCard';
 import { ScoreInfoModal } from '../../components/dashboard/ScoreInfoModal';
+import { SplitCard } from '../../components/dashboard/SplitCard';
+import { StatTiles } from '../../components/dashboard/StatTiles';
 import { TipCarousel } from '../../components/dashboard/TipCarousel';
-import { TransactionListItem } from '../../components/transactions/TransactionListItem';
+import { WeekChart } from '../../components/dashboard/WeekChart';
 import { Button, Card, Icon, Screen, Text, toast, type IconName } from '../../components/ui';
 import {
   activityStreak,
@@ -20,30 +22,33 @@ import {
   providerSummary,
   spendTips,
   splitCharges,
+  weekSpending,
   type CategoryMode,
 } from '../../features/insights';
+import { welcomeLine } from '../../features/profile/name';
 import { buildReport, monthOf } from '../../features/reports';
 import { needsReview, useAppStore } from '../../features/transactions';
 import { isCounted } from '../../features/transactions/selectors';
-import { colors, fonts, HIT_SLOP, MIN_TOUCH, radius, shadow, space } from '../../theme';
-import { formatLongDate, greetingFor } from '../../utils/format';
+import { colors, fonts, HIT_SLOP, radius, shadow, space } from '../../theme';
+import { formatLongDate } from '../../utils/format';
 import { useReduceMotion } from '../../utils/useReduceMotion';
 
 const HEADER_BUTTON = 44;
-const MARK = 44;
 const NUDGE_ICON = 40;
 const DOT = 9;
-const RECENT_COUNT = 3;
+const RECENT_COUNT = 4;
 
 /**
- * Home: financial health, what builds it, spending and income by category,
- * tips drawn from the user's own records, recent records, and providers.
- * Everything here is derived from saved records by pure functions in
- * `features/insights`, so the screen only lays them out.
+ * Home: a welcome, the health score, the four figures it is built from, this
+ * week's spending, spending and income by category, the latest records, then
+ * fees, the monthly report, tips and providers. Everything here is derived
+ * from saved records by pure functions in `features/insights`, so the screen
+ * only lays them out.
  */
 export default function Dashboard() {
   const transactions = useAppStore((s) => s.transactions);
   const activity = useAppStore((s) => s.activity);
+  const displayName = useAppStore((s) => s.displayName);
   const demoOn = useAppStore((s) => s.settings.demoDataEnabled);
   const clearDemoData = useAppStore((s) => s.clearDemoData);
   const reduceMotion = useReduceMotion();
@@ -54,7 +59,7 @@ export default function Dashboard() {
   // Counts openings, so the score bars grow again each time.
   const [scoreInfoOpens, setScoreInfoOpens] = useState(0);
   // Each visit to Home replays the count-up and bars, as the design does, and
-  // refreshes the clock that the greeting and the streak read.
+  // refreshes the clock that the date, the week and the streak read.
   const [visit, setVisit] = useState(0);
   const [now, setNow] = useState(() => new Date());
   useFocusEffect(
@@ -67,9 +72,10 @@ export default function Dashboard() {
   const health = useMemo(() => computeHealth(transactions), [transactions]);
   const spend = useMemo(() => categoryBreakdown(transactions, 'spend'), [transactions]);
   const earn = useMemo(() => categoryBreakdown(transactions, 'earn'), [transactions]);
+  const week = useMemo(() => weekSpending(transactions, now), [transactions, now]);
   const providers = useMemo(() => providerSummary(transactions), [transactions]);
   const fees = useMemo(() => feesSummary(transactions, 'month', now), [transactions, now]);
-  // The health card's fees & taxes, over the same records its total counts.
+  // The fees & taxes tile, over the same records the totals count.
   const chargeSplit = useMemo(() => splitCharges(transactions.filter(isCounted)), [transactions]);
   const monthReport = useMemo(() => buildReport(transactions, monthOf(now)), [transactions, now]);
 
@@ -97,41 +103,18 @@ export default function Dashboard() {
       <View
         style={{
           flexDirection: 'row',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           gap: space[2],
           paddingTop: space[4],
           marginBottom: space[4],
         }}
       >
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={{
-            width: MARK,
-            height: MARK,
-            borderRadius: radius.pill,
-            backgroundColor: colors.accent2Ramp[400],
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text
-            variant="bodyMedium"
-            style={{ fontFamily: fonts.heading, fontSize: 16, color: colors.accent2Ramp[900] }}
-          >
-            P
-          </Text>
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            variant="bodyMedium"
-            accessibilityRole="header"
-            style={{ fontFamily: fonts.heading, fontSize: 17, lineHeight: 21 }}
-          >
-            {greetingFor(now)}
-          </Text>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Text variant="small" tone="muted">
             {formatLongDate(now)}
+          </Text>
+          <Text variant="title" accessibilityRole="header" numberOfLines={2}>
+            {welcomeLine(displayName)}
           </Text>
         </View>
         <HeaderButton
@@ -155,7 +138,6 @@ export default function Dashboard() {
             streak={streak}
             animate={animate}
             replay={visit}
-            chargeSplit={chargeSplit}
             onExplain={() => {
               setScoreInfoOpens((n) => n + 1);
               setScoreInfoOpen(true);
@@ -168,6 +150,11 @@ export default function Dashboard() {
             animate={animate}
             replay={scoreInfoOpens}
           />
+          <StatTiles
+            health={health}
+            chargeSplit={chargeSplit}
+            onOpenFees={() => router.push('/fees')}
+          />
         </>
       ) : (
         <NoScoreYet />
@@ -176,13 +163,23 @@ export default function Dashboard() {
       {reviewCount > 0 ? <ReviewNudge count={reviewCount} /> : null}
 
       {health ? (
-        <CategoryCard
-          spend={spend}
-          earn={earn}
-          mode={mode}
-          onModeChange={setMode}
-          animate={animate}
-          replay={visit}
+        <>
+          <WeekChart
+            week={week}
+            animate={animate}
+            replay={visit}
+            onOpen={() => router.push('/transactions')}
+          />
+          <SplitCard spend={spend} earn={earn} mode={mode} onModeChange={setMode} />
+        </>
+      ) : null}
+
+      {recent.length > 0 ? (
+        <RecentList
+          transactions={recent}
+          total={transactions.length}
+          onOpen={(id) => router.push({ pathname: '/transactions/[id]', params: { id } })}
+          onOpenAll={() => router.push('/transactions')}
         />
       ) : null}
 
@@ -200,49 +197,6 @@ export default function Dashboard() {
         <Section title="Earn more">
           <TipCarousel tips={earnList} tone="earn" autoplay={animate} />
         </Section>
-      ) : null}
-
-      {recent.length > 0 ? (
-        <View style={{ marginBottom: space[4] }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: space[2],
-            }}
-          >
-            <SectionTitle>Recent transactions</SectionTitle>
-            <Pressable
-              onPress={() => router.push('/transactions')}
-              accessibilityRole="button"
-              accessibilityLabel={`All ${transactions.length} records`}
-              style={{
-                minHeight: MIN_TOUCH,
-                justifyContent: 'center',
-                paddingHorizontal: space[2],
-              }}
-            >
-              <Text
-                variant="small"
-                style={{ fontFamily: fonts.bold, color: colors.accentRamp[700] }}
-              >
-                All {transactions.length} →
-              </Text>
-            </Pressable>
-          </View>
-          <View style={{ gap: space[2] }}>
-            {recent.map((t) => (
-              <TransactionListItem
-                key={t.id}
-                transaction={t}
-                onPress={() =>
-                  router.push({ pathname: '/transactions/[id]', params: { id: t.id } })
-                }
-              />
-            ))}
-          </View>
-        </View>
       ) : null}
 
       <ProviderSummary rows={providers} />
@@ -369,7 +323,7 @@ function ReviewNudge({ count }: { count: number }) {
         backgroundColor: pressed ? colors.accentRamp[300] : colors.accentRamp[200],
         borderRadius: radius.lg,
         padding: space[4],
-        marginBottom: space[6],
+        marginBottom: space[3],
       })}
     >
       <View

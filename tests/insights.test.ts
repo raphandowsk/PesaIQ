@@ -5,15 +5,20 @@ import {
   categoryOf,
   computeHealth,
   earnTips,
+  EVERYTHING_ELSE,
   HEALTH_BANDS,
   HEALTH_WEIGHTS,
   providerSummary,
   spendTips,
+  topCategories,
   UNRECOGNIZED_PROVIDER,
+  weekSpending,
+  type CategoryBreakdown,
 } from '../features/insights';
+import { EMPTY_DETAILS } from '../features/parser';
 import { DEMO_RECORDS } from '../features/transactions/demoData';
 import type { Transaction } from '../features/transactions/model';
-import { formatLongDate, greetingFor } from '../utils/format';
+import { formatCompact, formatLongDate } from '../utils/format';
 
 const demo = (): Transaction[] => DEMO_RECORDS.map((r) => r.transaction);
 
@@ -282,20 +287,96 @@ describe('activityStreak', () => {
   });
 });
 
-describe('dashboard date and greeting', () => {
-  it('writes the date line in full', () => {
-    expect(formatLongDate(new Date(2026, 8, 11))).toBe('Friday, 11 September 2026');
-    expect(formatLongDate(new Date(2026, 2, 12))).toBe('Thursday, 12 March 2026');
+describe('weekSpending', () => {
+  // Thursday 17 September 2026, 15:00 local; the week runs Monday 14 to Sunday 20.
+  const now = new Date(2026, 8, 17, 15);
+  const on = (day: number, amount: number, over: Partial<Transaction> = {}) =>
+    t({
+      type: 'SENT',
+      amount,
+      fee: null,
+      details: EMPTY_DETAILS,
+      transactionDate: null,
+      transactionTime: null,
+      createdAt: new Date(2026, 8, day, 10).toISOString(),
+      ...over,
+    });
+
+  it('adds up each day, Monday first', () => {
+    const week = weekSpending([on(14, 1000), on(14, 500), on(16, 2000), on(17, 300)], now);
+    expect(week.days.map((d) => d.amount)).toEqual([1500, 0, 2000, 300, 0, 0, 0]);
+    expect(week.days.map((d) => d.short)).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
+    expect(week.total).toBe(3800);
+    expect(week.max).toBe(2000);
   });
 
+  it('marks today, and the days still to come', () => {
+    const { days } = weekSpending([], now);
+    expect(days.map((d) => d.isToday)).toEqual([false, false, false, true, false, false, false]);
+    expect(days.map((d) => d.isFuture)).toEqual([false, false, false, false, true, true, true]);
+  });
+
+  it('leaves out income, ignored records and last week', () => {
+    const week = weekSpending(
+      [on(13, 999), on(15, 700, { type: 'RECEIVED' }), on(15, 800, { status: 'IGNORED' })],
+      now,
+    );
+    expect(week.total).toBe(0);
+    expect(week.max).toBe(0);
+  });
+});
+
+describe('topCategories', () => {
+  const breakdown = (amounts: number[]): CategoryBreakdown => {
+    const total = amounts.reduce((a, b) => a + b, 0);
+    return {
+      mode: 'spend',
+      total,
+      rows: amounts.map((amount, i) => ({
+        name: `Category ${i + 1}`,
+        amount,
+        count: 1,
+        pct: Math.round((amount / total) * 100),
+      })),
+    };
+  };
+
+  it('keeps a short list as it is', () => {
+    const b = breakdown([40, 30, 20, 10]);
+    expect(topCategories(b)).toEqual(b.rows);
+  });
+
+  it('folds the smaller categories into one', () => {
+    const rows = topCategories(breakdown([50, 20, 10, 10, 5, 5]));
+    expect(rows.map((r) => r.name)).toEqual([
+      'Category 1',
+      'Category 2',
+      'Category 3',
+      EVERYTHING_ELSE,
+    ]);
+    expect(rows[3]).toMatchObject({ amount: 20, count: 3, pct: 20 });
+  });
+});
+
+describe('formatCompact', () => {
   it.each([
-    [6, 'Good morning'],
-    [11, 'Good morning'],
-    [12, 'Good afternoon'],
-    [16, 'Good afternoon'],
-    [17, 'Good evening'],
-    [23, 'Good evening'],
-  ])('greets at %p:00 with %p', (hour, greeting) => {
-    expect(greetingFor(new Date(2026, 8, 11, hour))).toBe(greeting);
+    [0, '0'],
+    [950, '950'],
+    [999.6, '1K'],
+    [1500, '1.5K'],
+    [45000, '45K'],
+    [512500, '513K'],
+    [999999, '1M'],
+    [1250000, '1.25M'],
+    [-45000, '−45K'],
+  ])('writes %p as %p', (value, text) => {
+    expect(formatCompact(value)).toBe(text);
+  });
+});
+
+describe('dashboard date line', () => {
+  it('writes the date in full', () => {
+    expect(formatLongDate(new Date(2026, 8, 11))).toBe('Friday, 11 September 2026');
+    expect(formatLongDate(new Date(2026, 2, 12))).toBe('Thursday, 12 March 2026');
   });
 });

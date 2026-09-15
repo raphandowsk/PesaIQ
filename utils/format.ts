@@ -26,6 +26,33 @@ export function formatSignedAmount(value: number | null, incoming: boolean): str
   return `${incoming ? '+' : MINUS}${formatAmount(Math.abs(value))}`;
 }
 
+const COMPACT_UNITS: readonly (readonly [string, number])[] = [
+  ['K', 1e3],
+  ['M', 1e6],
+  ['B', 1e9],
+];
+
+/** Three significant figures at most, with trailing zeros dropped: 1.25, 45, 513. */
+const shortNumber = (n: number): string =>
+  n
+    .toFixed(n < 10 ? 2 : n < 100 ? 1 : 0)
+    .replace(/(\.\d*?)0+$/, '$1')
+    .replace(/\.$/, '');
+
+/** Short figures for chart labels: 950, 45K, 1.25M. Never "1000K": that is 1M. */
+export function formatCompact(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  const sign = value < 0 ? MINUS : '';
+  const abs = Math.abs(value);
+  if (Math.round(abs) < 1000) return `${sign}${Math.round(abs)}`;
+
+  for (const [unit, size] of COMPACT_UNITS) {
+    const text = shortNumber(abs / size);
+    if (Number(text) < 1000 || unit === 'B') return `${sign}${text}${unit}`;
+  }
+  return formatAmount(value);
+}
+
 export function formatTzs(value: number | null): string {
   return value == null || !Number.isFinite(value) ? '—' : `TZS ${formatAmount(value)}`;
 }
@@ -66,14 +93,6 @@ const MONTHS = [
 /** "Friday, 11 September 2026": the dashboard's date line. Built by hand, like the amounts. */
 export function formatLongDate(d: Date): string {
   return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-/** Time-of-day greeting. The design greets the user by name; PesaIQ never asks for one. */
-export function greetingFor(d: Date): string {
-  const h = d.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
 }
 
 const SHORT_MONTHS = [

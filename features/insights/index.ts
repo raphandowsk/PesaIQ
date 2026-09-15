@@ -1,6 +1,12 @@
 export { computeHealth, bandForScore, HEALTH_WEIGHTS, HEALTH_BANDS } from './health';
 export type { Health, HealthBand, HealthPart, HealthPartKey } from './health';
-export { categoryOf, categoryBreakdown, moneyCategoryOf } from './categories';
+export {
+  categoryOf,
+  categoryBreakdown,
+  moneyCategoryOf,
+  topCategories,
+  EVERYTHING_ELSE,
+} from './categories';
 export type { CategoryBreakdown, CategoryMode, CategoryRow } from './categories';
 export { feesSummary, chargeLines, feePeriodRange, FEE_PERIODS } from './fees';
 export { splitCharges, chargesEquation, OPERATOR_FEES_LABEL, type ChargeSplit } from './fees';
@@ -8,5 +14,7 @@ export type { FeePeriod, FeesSummary, ChargeLine, ChargeRow } from './fees';
 export { spendTips, earnTips, TIP_THRESHOLDS } from './tips';
 export type { Tip } from './tips';
 export { activityStreak, localDayKey } from './streak';
+export { startOfWeek, weekSpending } from './week';
+export type { WeekDay, WeekSpending } from './week';
 export { providerSummary, UNRECOGNIZED_PROVIDER } from './providers';
 export type { ProviderSummaryRow } from './providers';
