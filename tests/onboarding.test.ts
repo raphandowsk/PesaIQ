@@ -20,9 +20,8 @@ describe('onboarding copy', () => {
     expect(HOW_STEPS.map((s) => s.title)).toEqual(['Message', 'Understand', 'Extract', 'Organize']);
   });
 
-  it('says Stage 1 only handles messages the user pastes', () => {
-    expect(PRIVACY_POINTS.join(' ')).toMatch(/only messages you paste/i);
-    expect(SETUP_COPY.note).toMatch(/nothing is intercepted/i);
+  it('says the app only handles messages the user pastes or shares', () => {
+    expect(PRIVACY_POINTS.join(' ')).toMatch(/only messages you paste in, or share/i);
   });
 
   it('says Cloud sync is off by default, and the defaults agree', () => {

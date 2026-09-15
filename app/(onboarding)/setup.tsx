@@ -51,15 +51,6 @@ export default function Setup() {
       backTo="/privacy"
       title={SETUP_COPY.title}
       subtitle={SETUP_COPY.body}
-      footnote={
-        <View
-          style={{ backgroundColor: colors.surface, borderRadius: radius.md, padding: space[3] }}
-        >
-          <Text variant="small" tone="muted">
-            {SETUP_COPY.note}
-          </Text>
-        </View>
-      }
       cta={{ label: 'Open dashboard', onPress: () => void finish(), loading: finishing }}
     >
       <Tag label={SETUP_COPY.maturity} tone="accent" style={{ marginBottom: space[4] }} />
