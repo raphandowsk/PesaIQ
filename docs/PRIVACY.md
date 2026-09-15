@@ -116,6 +116,12 @@ storage model above would not change: still local, still no upload by default.
   name for itself (the Android maker and model, "iPhone", "iPad" or "Web
   browser"), its platform and when it was last active, so Settings can list
   the account's phones. Signing out removes the phone from the list.
+- **Sign out other phones** (Signed-in phones, for a lost or replaced phone)
+  ends every other sign-in to the account and removes those phones from the
+  list; this phone stays signed in. Each other phone drops out when its
+  sign-in next renews, within the hour, and then deletes its copy of the
+  account key: it needs a code and the PIN to open the account again. Records
+  already on a phone stay on it.
 
 ## AI reading (paused)
 

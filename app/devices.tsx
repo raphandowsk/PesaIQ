@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 
+import { ConfirmPanel } from '../components/settings/SettingsList';
 import { BackButton } from '../components/ui/BackButton';
-import { Button, Card, Screen, Tag, Text } from '../components/ui';
+import { Button, Card, Screen, Tag, Text, toast } from '../components/ui';
 import { useAuthStore } from '../features/auth';
 import { useDevicesStore, type Device, type DevicePlatform } from '../features/devices';
 import { colors, fonts, space } from '../theme';
@@ -30,6 +31,28 @@ export default function Devices() {
   const status = useDevicesStore((s) => s.status);
   const checkIn = useDevicesStore((s) => s.checkIn);
   const load = useDevicesStore((s) => s.load);
+  const forgetOtherPhones = useDevicesStore((s) => s.forgetOtherPhones);
+  const signOutOthers = useAuthStore((s) => s.signOutOthers);
+
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onSignOutOthers = async () => {
+    if (!userId) return;
+    setBusy(true);
+    setError(null);
+    const result = await signOutOthers();
+    if (!result.ok) {
+      setBusy(false);
+      setError(result.message);
+      return;
+    }
+    await forgetOtherPhones(userId);
+    setBusy(false);
+    setAsking(false);
+    toast('Your other phones are signed out.');
+  };
 
   const refresh = async () => {
     if (!userId) return;
@@ -86,6 +109,37 @@ export default function Devices() {
           ))}
         </Card>
       )}
+
+      <View style={{ marginTop: space[4], gap: space[2] }}>
+        {asking ? (
+          <ConfirmPanel
+            message="Sign out every other phone on your account? Each stops syncing, forgets its copy of your account key, and needs a code and your PIN to sign in again. A phone open right now drops out within the hour, when its sign-in renews. Records already on a phone stay on it."
+            confirmLabel="Sign out other phones"
+            cancelLabel="Cancel"
+            busy={busy}
+            onConfirm={() => void onSignOutOthers()}
+            onCancel={() => setAsking(false)}
+          />
+        ) : (
+          <Button
+            label="Sign out other phones"
+            variant="secondary"
+            disabled={!userId}
+            onPress={() => {
+              setError(null);
+              setAsking(true);
+            }}
+          />
+        )}
+        {error ? (
+          <Text variant="small" tone="accent" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
+        <Text variant="small" tone="muted">
+          For a lost or replaced phone. This phone stays signed in.
+        </Text>
+      </View>
     </Screen>
   );
 }

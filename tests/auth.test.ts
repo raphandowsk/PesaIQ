@@ -227,7 +227,12 @@ describe('the sign-in store', () => {
   const ME: AuthSession = { userId: 'u1', phone: NUMBER };
 
   const fakeApi = (
-    opts: { session?: AuthSession | null; send?: AuthResult; verify?: AuthResult } = {},
+    opts: {
+      session?: AuthSession | null;
+      send?: AuthResult;
+      verify?: AuthResult;
+      others?: AuthResult;
+    } = {},
   ) => {
     let session = opts.session ?? null;
     let listener: ((s: AuthSession | null) => void) | null = null;
@@ -252,6 +257,10 @@ describe('the sign-in store', () => {
       signOut: async () => {
         session = null;
         return { ok: true };
+      },
+      signOutOthers: async () => {
+        calls.push('signOutOthers');
+        return opts.others ?? { ok: true };
       },
     };
     return { api, calls, emit: (s: AuthSession | null) => listener?.(s) };
@@ -330,6 +339,27 @@ describe('the sign-in store', () => {
     await store.getState().initialize();
     expect(await store.getState().signOut()).toEqual({ ok: true });
     expect(store.getState()).toMatchObject({ status: 'signedOut', session: null });
+  });
+
+  it('signs out the other phones and stays signed in here', async () => {
+    const { api, calls } = fakeApi({ session: ME });
+    const store = createAuthStore(api);
+    await store.getState().initialize();
+    expect(await store.getState().signOutOthers()).toEqual({ ok: true });
+    expect(calls).toContain('signOutOthers');
+    expect(store.getState()).toMatchObject({ status: 'signedIn', session: ME });
+  });
+
+  it('says why when the other phones could not be signed out', async () => {
+    const offline = { ok: false as const, message: AUTH_MESSAGES.noConnection };
+    const store = createAuthStore(fakeApi({ session: ME, others: offline }).api);
+    await store.getState().initialize();
+    expect(await store.getState().signOutOthers()).toEqual(offline);
+    expect(store.getState().status).toBe('signedIn');
+    expect(await createAuthStore(null).getState().signOutOthers()).toEqual({
+      ok: false,
+      message: SIGN_IN_UNAVAILABLE,
+    });
   });
 
   it('turns a service that throws into a plain failure', async () => {

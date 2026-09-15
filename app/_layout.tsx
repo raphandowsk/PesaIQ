@@ -73,7 +73,7 @@ export default function RootLayout() {
   const pinStatus = usePinStore((s) => s.status);
   const pinUser = usePinStore((s) => s.userId);
   const checkPin = usePinStore((s) => s.check);
-  const resetPin = usePinStore((s) => s.reset);
+  const forgetPin = usePinStore((s) => s.forget);
 
   // Once unlocked: confirm the key is still the account's, keep this phone in
   // the signed-in list, and sync while Cloud sync is on.
@@ -91,12 +91,13 @@ export default function RootLayout() {
     void initializeAuth();
   }, [initializeAuth]);
 
-  // Signed in: find out whether this phone holds the account key. Signed out:
-  // forget the key's state (the key itself is removed by Sign out).
+  // Signed in: find out whether this phone holds the account key. Signed out,
+  // here or from another phone ("Sign out other phones"): this phone's copy of
+  // the key goes too, so nothing opens again without the PIN.
   useEffect(() => {
     if (authStatus === 'signedIn' && userId && pinUser !== userId) void checkPin(userId);
-    if (authStatus === 'signedOut' && pinUser) resetPin();
-  }, [authStatus, userId, pinUser, checkPin, resetPin]);
+    if (authStatus === 'signedOut' && pinUser) void forgetPin(pinUser);
+  }, [authStatus, userId, pinUser, checkPin, forgetPin]);
 
   const signedIn = authStatus === 'signedIn';
 

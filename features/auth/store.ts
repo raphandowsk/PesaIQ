@@ -29,6 +29,11 @@ export interface AuthApi {
   verifyCode(phoneE164: string, code: string): Promise<AuthResult>;
   /** Signs out on this phone only. */
   signOut(): Promise<AuthResult>;
+  /**
+   * Ends the account's sign-ins on every other phone; this one stays signed
+   * in. Each drops out when its sign-in next renews (within the hour).
+   */
+  signOutOthers(): Promise<AuthResult>;
 }
 
 export interface AuthState {
@@ -41,6 +46,8 @@ export interface AuthState {
   requestCode(phone: string): Promise<AuthResult>;
   verifyCode(code: string): Promise<AuthResult>;
   signOut(): Promise<AuthResult>;
+  /** For a lost or replaced phone: signs out every other phone, not this one. */
+  signOutOthers(): Promise<AuthResult>;
 }
 
 export const SIGN_IN_UNAVAILABLE = "Sign-in isn't set up in this copy of PesaIQ.";
@@ -106,6 +113,11 @@ export function createAuthStore(api: AuthApi | null, now: () => number = Date.no
       const result = await guarded(() => api.signOut());
       if (result.ok) set({ session: null, status: 'signedOut', pending: null });
       return result;
+    },
+
+    async signOutOthers() {
+      if (!api) return { ok: false, message: SIGN_IN_UNAVAILABLE };
+      return guarded(() => api.signOutOthers());
     },
   }));
 }

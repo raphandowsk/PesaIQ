@@ -192,6 +192,14 @@ kept on the phone per account and a name from the platform (Android maker and
 model, iPhone or iPad, Web browser). Settings → Signed-in phones lists them,
 newest first. Signing out removes this phone's row.
 
+**Sign out other phones** ends every other session of the account
+(`auth.signOut({ scope: 'others' })`) and deletes the other phones' rows
+(`removeOthers`, limited to the account by row-level security). A phone whose
+session was ended keeps a valid access token until it expires (Supabase's
+default is an hour); its next renewal fails, the auth store reports it signed
+out, and the root layout then removes its copy of the account key
+(`usePinStore().forget`), as a local sign-out does.
+
 ### Bulk import
 
 `features/import/`, decided 2026-09-14: each account gets one import of up to

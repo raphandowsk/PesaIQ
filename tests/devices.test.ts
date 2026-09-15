@@ -47,6 +47,10 @@ function fakeServer(clock: () => number) {
       if (failing) throw new Error('offline');
       rows.delete(id);
     },
+    async removeOthers(keepId) {
+      if (failing) throw new Error('offline');
+      for (const id of [...rows.keys()]) if (id !== keepId) rows.delete(id);
+    },
   };
   return { api, rows, calls, fail: () => (failing = true) };
 }
@@ -105,6 +109,33 @@ describe('the signed-in phones list', () => {
     await store.getState().checkIn('u2');
     expect(await ids.idFor('u1')).not.toBe(await ids.idFor('u2'));
     expect(server.rows.size).toBe(2);
+  });
+
+  it('drops the other phones once they are signed out, keeping this one', async () => {
+    const server = fakeServer(clock);
+    server.rows.set('lost', {
+      id: 'lost',
+      label: 'Tecno Spark',
+      platform: 'android',
+      lastSeenAt: '2026-09-01T08:00:00.000Z',
+    });
+    const store = createDevicesStore(server.api, memoryIds(), () => PHONE, clock);
+    await store.getState().checkIn('u1');
+    await store.getState().load('u1');
+    expect(store.getState().devices).toHaveLength(2);
+
+    await store.getState().forgetOtherPhones('u1');
+    const { thisId, devices } = store.getState();
+    expect([...server.rows.keys()]).toEqual([thisId]);
+    expect(devices.map((d) => d.id)).toEqual([thisId]);
+  });
+
+  it('never fails when the other phones’ rows cannot be removed', async () => {
+    const server = fakeServer(clock);
+    const store = createDevicesStore(server.api, memoryIds(), () => PHONE, clock);
+    await store.getState().checkIn('u1');
+    server.fail();
+    await expect(store.getState().forgetOtherPhones('u1')).resolves.toBeUndefined();
   });
 
   it('leaves the list on sign-out, and never holds sign-out up', async () => {

@@ -27,6 +27,8 @@ export interface DevicesApi {
   /** Adds this phone or updates it, as active now. */
   checkIn(device: ThisPhone & { id: string }): Promise<void>;
   remove(id: string): Promise<void>;
+  /** Removes every row of the account's but this phone's. */
+  removeOthers(keepId: string): Promise<void>;
 }
 
 /** This phone's row id for an account, made on first use and kept. */
@@ -46,6 +48,11 @@ export interface DevicesState {
   load(userId: string): Promise<void>;
   /** Signing out: this phone leaves the list. Never throws. */
   forgetThisPhone(userId: string): Promise<void>;
+  /**
+   * After the account's other sign-ins were ended: their rows go, so only
+   * this phone is listed. Never throws.
+   */
+  forgetOtherPhones(userId: string): Promise<void>;
 }
 
 const newestFirst = (a: Device, b: Device) => b.lastSeenAt.localeCompare(a.lastSeenAt);
@@ -100,6 +107,17 @@ export function createDevicesStore(
       }
       lastCheckIn = { userId: '', at: -Infinity };
       set({ devices: [], thisId: null, status: 'idle' });
+    },
+
+    async forgetOtherPhones(userId) {
+      if (!api) return;
+      try {
+        const id = await ids.idFor(userId);
+        await api.removeOthers(id);
+        set((s) => ({ devices: s.devices.filter((d) => d.id === id), thisId: id }));
+      } catch {
+        // Their sign-ins are already ended; the rows only go stale.
+      }
     },
   }));
 }

@@ -48,5 +48,11 @@ export function supabaseDevicesApi(): DevicesApi | null {
       const { error } = await supabase.from('devices').delete().eq('id', id);
       if (error) throw error;
     },
+
+    async removeOthers(keepId) {
+      // Row-level security limits the delete to this account's phones.
+      const { error } = await supabase.from('devices').delete().neq('id', keepId);
+      if (error) throw error;
+    },
   };
 }

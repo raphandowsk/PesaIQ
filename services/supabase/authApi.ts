@@ -62,5 +62,15 @@ export function supabaseAuthApi(): AuthApi | null {
         return failed(e, 'signOut');
       }
     },
+
+    async signOutOthers() {
+      try {
+        // Ends every other sign-in to the account. This phone keeps its own.
+        const { error } = await supabase.auth.signOut({ scope: 'others' });
+        return error ? failed(error, 'signOut') : { ok: true };
+      } catch (e) {
+        return failed(e, 'signOut');
+      }
+    },
   };
 }
