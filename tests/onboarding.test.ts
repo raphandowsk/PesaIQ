@@ -1,12 +1,6 @@
 import type { SqlDatabase } from '../database/client';
 import { DEFAULT_SETTINGS } from '../database/repositories';
-import {
-  HOW_STEPS,
-  PRIVACY_DISCLAIMER,
-  PRIVACY_POINTS,
-  SETUP_COPY,
-  WELCOME,
-} from '../features/onboarding/content';
+import { HOW_STEPS, PRIVACY_POINTS, SETUP_COPY, WELCOME } from '../features/onboarding/content';
 import { useAppStore } from '../features/transactions/store';
 import { createMigratedDatabase } from './support/nodeSqlite';
 
@@ -17,7 +11,6 @@ describe('onboarding copy', () => {
     WELCOME.title,
     ...HOW_STEPS.flatMap((s) => [s.title, s.body]),
     ...PRIVACY_POINTS,
-    PRIVACY_DISCLAIMER,
     ...Object.values(SETUP_COPY),
   ]
     .join(' ')
@@ -45,12 +38,6 @@ describe('onboarding copy', () => {
     expect(points).toMatch(/server holds your mobile number/);
     expect(points).toMatch(/list of phones signed in with it/);
     expect(points).toMatch(/locked so it can't read them/);
-  });
-
-  it('keeps the non-legal disclaimer word for word', () => {
-    expect(PRIVACY_DISCLAIMER).toBe(
-      'This screen describes how the app behaves. It is not a legal, compliance or app-store approval statement.',
-    );
   });
 
   it('makes no compliance, certification or approval claim', () => {

@@ -30,9 +30,6 @@ export const PRIVACY_POINTS: readonly string[] = [
   'You can delete your transactions, messages and history at any time.',
 ];
 
-export const PRIVACY_DISCLAIMER =
-  'This screen describes how the app behaves. It is not a legal, compliance or app-store approval statement.';
-
 export const SETUP_COPY = {
   title: 'Which senders matter?',
   // "Watch", not "parse": in Stage 1 every pasted message is analyzed regardless.

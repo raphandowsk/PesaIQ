@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 
 import { OnboardingFrame } from '../../components/onboarding/OnboardingFrame';
 import { Icon, Text } from '../../components/ui';
-import { PRIVACY_DISCLAIMER, PRIVACY_POINTS } from '../../features/onboarding/content';
+import { PRIVACY_POINTS } from '../../features/onboarding/content';
 import { colors, radius, space } from '../../theme';
 
 const SHIELD = 60;
@@ -64,14 +64,6 @@ export default function Privacy() {
             </Text>
           </View>
         ))}
-
-        <Text
-          variant="small"
-          tone="muted"
-          style={{ paddingHorizontal: space[1], paddingTop: space[1] }}
-        >
-          {PRIVACY_DISCLAIMER}
-        </Text>
       </View>
     </OnboardingFrame>
   );
