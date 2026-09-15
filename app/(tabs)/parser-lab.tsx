@@ -8,6 +8,7 @@ import { AI_READING_ENABLED } from '../../features/ai/config';
 import { useImportStore } from '../../features/import';
 import { useLabStore } from '../../features/lab/store';
 import { MAX_MESSAGE_LENGTH, SAMPLES } from '../../features/parser';
+import { SHARE_AVAILABLE } from '../../features/share/availability';
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, shadow, space } from '../../theme';
 import { formatAmount } from '../../utils/format';
@@ -119,6 +120,11 @@ export default function ParserLab() {
             </Text>
           </Pressable>
         )}
+        {SHARE_AVAILABLE ? (
+          <Text variant="small" tone="muted" style={{ fontSize: 12 }}>
+            Or share a message to PesaIQ from your messages app.
+          </Text>
+        ) : null}
       </View>
 
       <Card style={{ padding: space[3], marginBottom: space[3] }}>

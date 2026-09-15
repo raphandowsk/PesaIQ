@@ -282,7 +282,7 @@ export default function Settings() {
       <SettingsGroup title="Processing">
         <SettingRow
           label="Automatic processing"
-          sub="Off in Stage 1. Messages are analyzed only when you paste them."
+          sub="Off in Stage 1. Messages are analyzed only when you paste or share them."
           right={
             <Switch
               value={settings.automaticProcessing}
@@ -293,7 +293,7 @@ export default function Settings() {
         />
         <SettingRow
           label="SMS source"
-          sub="Pasted messages only. No SMS is read from your phone."
+          sub="Messages you paste, or share to PesaIQ from your messages app. No SMS is read from your phone."
           right={<Tag label="Stage 1" />}
         />
         <SettingRow
@@ -472,9 +472,9 @@ export default function Settings() {
           PesaIQ · Stage 1
         </Text>
         <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
-          Pasted messages only. No SMS is intercepted, uploaded or logged in full. Mixx rules are
-          experimental, built from real message layouts; other providers are demo rules until
-          anonymized fixtures validate them.
+          Pasted or shared messages only. No SMS is intercepted, uploaded or logged in full.
+          Mobile-money rules are experimental, built from documented message layouts; bank rules are
+          demo rules until anonymized fixtures validate them.
         </Text>
         <Pressable
           onPress={() => void replay()}

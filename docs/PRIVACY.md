@@ -12,7 +12,8 @@ Last updated 2026-09-14.
 User → pasted message → on-phone rules (Tanzania mobile-money parser, then the general rules) → local SQLite → local UI
 ```
 
-Stage 1 processes **only messages the user pastes in**. Nothing is intercepted.
+Stage 1 processes **only messages the user pastes in, or shares to PesaIQ** from
+their messages app. Nothing is intercepted.
 No SMS permission is requested, and no native SMS code exists in the build.
 AI reading was added on 2026-09-14 and paused the same day: every message is
 read on the phone, and none is sent to an AI (see "AI reading (paused)").
@@ -186,3 +187,13 @@ messages differently, so an AI read them first and the on-phone rules checked it
   saved for review rather than thrown away.
 - Imported messages are stored like pasted ones, marked "Imported message",
   and go with "Delete all messages" and "Delete all transactions".
+
+## Sharing to PesaIQ (2026-09-15)
+
+- **Only what the person shares.** In the Android messages app they pick a
+  message and share it to PesaIQ. The app receives that text and nothing else:
+  it asks for no SMS permission and reads no other message.
+- **Handled like a pasted message.** It opens in the Lab, read on the phone.
+  Until the app is signed in and unlocked it waits in memory only, never
+  written anywhere, and nothing is saved unless the person saves the result.
+- **Installed builds only.** Expo Go and the web can't receive shares.

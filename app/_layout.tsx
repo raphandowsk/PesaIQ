@@ -19,6 +19,7 @@ import { AI_READING_ENABLED } from '../features/ai/config';
 import { aiReader } from '../features/ai/instance';
 import { useDeviceCheckIn } from '../features/devices';
 import { useKeyCheck, usePinStore } from '../features/pin';
+import { useShareCapture } from '../features/share';
 import { useAutoSync } from '../features/sync';
 import { useAppStore } from '../features/transactions';
 import { colors, space } from '../theme';
@@ -79,6 +80,8 @@ export default function RootLayout() {
   useKeyCheck();
   useDeviceCheckIn();
   useAutoSync();
+  // A message shared from another app is held until the app is open to read it.
+  useShareCapture();
 
   useEffect(() => {
     void initialize({ ai });

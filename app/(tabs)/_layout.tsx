@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router/tabs';
 
 import { TabBar } from '../../components/navigation/TabBar';
+import { useOpenSharedMessage } from '../../features/share';
 import { colors } from '../../theme';
 
 /**
@@ -8,8 +9,13 @@ import { colors } from '../../theme';
  *
  * The bar is custom (`TabBar`) because the design puts a pill behind the active
  * icon and a count badge on Review. Order here is the order on screen.
+ *
+ * Only reachable signed in and unlocked, so a message shared to PesaIQ opens
+ * from here.
  */
 export default function TabsLayout() {
+  useOpenSharedMessage();
+
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}

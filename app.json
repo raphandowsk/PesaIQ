@@ -36,7 +36,14 @@
       "expo-font",
       "expo-splash-screen",
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": ["text/*"],
+          "disableIOS": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

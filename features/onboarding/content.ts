@@ -25,7 +25,7 @@ export const HOW_STEPS: readonly HowStep[] = [
 ];
 
 export const PRIVACY_POINTS: readonly string[] = [
-  'Stage 1 processes only the messages you paste in.',
+  'Stage 1 processes only the messages you paste in, or share to PesaIQ from your messages app.',
   'A future Android version may read incoming SMS, with your permission.',
   "Messages are read on this phone by PesaIQ's own rules. None is sent to an AI.",
   'Cloud sync is optional and off by default. Your records stay on this phone unless you turn it on.',
@@ -41,5 +41,5 @@ export const SETUP_COPY = {
   // The choice decides which incoming senders Stage 2 will read. Decided 2026-09-11.
   body: 'Choose the providers PesaIQ should watch. You can change this later in Settings.',
   maturity: 'Mobile money EXPERIMENTAL · banks DEMO',
-  note: 'Stage 1 reads only messages you paste in. Nothing is intercepted.',
+  note: 'Stage 1 reads only messages you paste in or share to it. Nothing is intercepted.',
 } as const;

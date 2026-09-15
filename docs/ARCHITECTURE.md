@@ -217,6 +217,26 @@ newest first. Signing out removes this phone's row.
 
 Limits: 500,000 characters and 3,000 messages a paste.
 
+### Sharing a message to PesaIQ
+
+`features/share/`, added 2026-09-15. In the Android messages app, a message
+can be shared to PesaIQ, which opens it in the Lab.
+
+- **Native part:** `expo-share-intent` (config plugin in `app.json`, text only,
+  iOS off). It adds an `ACTION_SEND` `text/*` filter to the main activity and
+  makes it single-task, and reads the shared `EXTRA_TEXT`. Nothing else: no
+  SMS permission, and PesaIQ still reads no SMS on its own.
+- **Only in an installed build.** Expo Go and the web can't load the native
+  part, so `SHARE_AVAILABLE` is false there and the app is unchanged. The
+  module is optional, so the same JavaScript runs everywhere.
+- **Capture** (`useShareCapture`, in the root layout): the text is held in
+  memory (`useShareStore`) even while signed out or locked, and the share is
+  cleared so it opens once. A newer share replaces an unopened one.
+- **Open** (`useOpenSharedMessage`, in the tabs layout, which exists only
+  signed in and unlocked): `openSharedMessage` clears the Lab, reads the text
+  as if pasted, and shows the Result, or the Lab with the reason if it can't be
+  read. Nothing is saved until the person saves it.
+
 ### AI reading (paused)
 
 **Paused on 2026-09-14.** `AI_READING_ENABLED` in `features/ai/config.ts` is

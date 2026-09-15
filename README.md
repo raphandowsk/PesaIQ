@@ -43,8 +43,8 @@ provider's messages, of app-store approval, or of regulatory compliance.
 ## Privacy
 
 Your messages and records stay on the device; only your mobile number is stored on
-the server, to sign you in. Messages are processed only when you paste them, and
-are read on the phone: no AI reads them (AI reading is paused). Full messages are
+the server, to sign you in. Messages are processed only when you paste them or share
+them to PesaIQ, and are read on the phone: no AI reads them (AI reading is paused). Full messages are
 never logged, account and phone numbers are masked, Cloud sync is off until you
 turn it on (and then uploads encrypted records only), and export happens only when
 you tap it. See [docs/PRIVACY.md](docs/PRIVACY.md).
@@ -67,6 +67,21 @@ its database in the browser, which allows **one tab at a time**.
 Signing in needs the Supabase settings: copy [.env.example](.env.example) to `.env`
 and fill in the project's address and publishable key (see
 [docs/BACKEND.md](docs/BACKEND.md)). Never commit a real `.env`.
+
+### Sharing a message to PesaIQ
+
+In the messages app, long-press a message, tap **Share**, and pick PesaIQ: it
+opens in the Lab, read. This needs native code, so it works in an **installed
+build**, not in Expo Go (where everything else still works, by pasting). An
+installable Android APK is built in the cloud with EAS; no Android Studio:
+
+```bash
+npx eas-cli build --profile preview --platform android
+```
+
+That needs an Expo account, and the build needs the same two Supabase settings
+as `.env`, stored as EAS environment variables for the project (a `.env` file is
+not uploaded). iOS sharing is not set up yet.
 
 ## Checks
 
