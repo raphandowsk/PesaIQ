@@ -544,8 +544,15 @@ shipped platform.
 On web the database lives in the browser's origin-private file system under an
 exclusive lock, so a second tab cannot open it. The boot screen now says
 "PesaIQ is already open in another tab or window. Close the other one, then tap
-Try again." instead of showing the raw `NoModificationAllowedError`. This cannot
-happen on Android, where the app runs as a single instance.
+Try again." instead of showing the raw `NoModificationAllowedError`.
+
+The phone has a cousin of it (seen in Expo Go on Android, 2026-09-15): after a
+reload, a connection the earlier copy of the app left open can still hold a
+lock, and the new copy's first write failed at once with "database is locked".
+`getDatabase` now sets `PRAGMA busy_timeout = 5000`, so a write waits for a
+lock instead of failing; closes a connection that failed, so Try again starts
+fresh; and opens once even when asked twice. A lock that outlasts the wait
+shows "Close the app completely … Your saved records are safe."
 
 ### Web fixes that also tidy native
 
