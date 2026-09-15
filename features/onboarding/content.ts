@@ -35,5 +35,5 @@ export const SETUP_COPY = {
   // "Watch", not "parse": in Stage 1 every pasted message is analyzed regardless.
   // The choice decides which incoming senders Stage 2 will read. Decided 2026-09-11.
   body: 'Choose the providers PesaIQ should watch. You can change this later in Settings.',
-  maturity: 'Mobile money EXPERIMENTAL · banks DEMO',
+  maturity: 'Mobile money · EXPERIMENTAL',
 } as const;

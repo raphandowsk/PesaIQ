@@ -53,7 +53,7 @@ describe('onboarding copy', () => {
   });
 
   it('does not claim any provider is supported', () => {
-    expect(SETUP_COPY.maturity).toMatch(/demo/i);
+    expect(SETUP_COPY.maturity).toMatch(/experimental/i);
     expect(everything).not.toMatch(/fully supported|officially supported/);
   });
 });
