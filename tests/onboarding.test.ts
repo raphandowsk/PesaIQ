@@ -43,6 +43,14 @@ describe('onboarding copy', () => {
     expect(DEFAULT_SETTINGS.aiReadingAccepted).toBe(false);
   });
 
+  it('says what the server holds, and that messages never leave the phone', () => {
+    const points = PRIVACY_POINTS.join(' ');
+    expect(points).toMatch(/server holds your mobile number/);
+    expect(points).toMatch(/list of phones signed in with it/);
+    expect(points).toMatch(/locked so it can't read them/);
+    expect(points).toMatch(/never leave it/);
+  });
+
   it('keeps the non-legal disclaimer word for word', () => {
     expect(PRIVACY_DISCLAIMER).toBe(
       'This screen describes how the app behaves. It is not a legal, compliance or app-store approval statement.',

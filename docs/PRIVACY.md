@@ -100,8 +100,10 @@ storage model above would not change: still local, still no upload by default.
   turned on (see "Cloud sync").
 - **The sign-in session** is kept in the phone's secure storage. Signing out
   affects this phone only and keeps the records on it.
-- **The in-app privacy wording:** with AI reading paused, the onboarding privacy
-  screen and Settings say again that messages are read on the phone.
+- **The in-app privacy wording:** the onboarding privacy screen says messages are
+  read on the phone and never leave it, that the server holds the mobile number
+  and the list of signed-in phones, and that records reach it only with Cloud
+  sync, locked. Settings says the same.
 - **The PIN never leaves the phone.** The server only sees a blinded value
   that reveals nothing about it, and it counts every guess: 5 tries, then
   waits. The account key it unlocks is stored on the server only in locked

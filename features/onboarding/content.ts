@@ -27,8 +27,9 @@ export const HOW_STEPS: readonly HowStep[] = [
 export const PRIVACY_POINTS: readonly string[] = [
   'Stage 1 processes only the messages you paste in, or share to PesaIQ from your messages app.',
   'A future Android version may read incoming SMS, with your permission.',
-  "Messages are read on this phone by PesaIQ's own rules. None is sent to an AI.",
-  'Cloud sync is optional and off by default. Your records stay on this phone unless you turn it on.',
+  "Messages are read on this phone by PesaIQ's own rules, and never leave it. None is sent to an AI.",
+  "PesaIQ's server holds your mobile number, to sign you in, and the list of phones signed in with it.",
+  "Cloud sync is optional and off by default. Turned on, your records are kept on the server too, locked so it can't read them.",
   'You can delete your transactions, messages and history at any time.',
 ];
 
