@@ -455,9 +455,9 @@ export default function Settings() {
           PesaIQ · Stage 1
         </Text>
         <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
-          Pasted or shared messages only. No SMS is intercepted, uploaded or logged in full.
-          Mobile-money rules are experimental, built from documented message layouts; bank rules are
-          demo rules until anonymized fixtures validate them.
+          Pasted or shared messages only. No SMS is intercepted, uploaded or logged in full. The
+          mobile-money rules are experimental: built from documented message layouts, and still
+          being checked against real messages.
         </Text>
         <Pressable
           onPress={() => void replay()}
