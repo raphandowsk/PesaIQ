@@ -10,6 +10,7 @@ export { providerRepository } from './providerRepository';
 export { processingEventRepository } from './processingEventRepository';
 export { categoryRuleRepository } from './categoryRuleRepository';
 export { profileRepository } from './profileRepository';
+export { phoneDataRepository } from './phoneDataRepository';
 export { isUnsent, syncRepository } from './syncRepository';
 export type { LocalRecord, SyncStateKey } from './syncRepository';
 export type { ProcessingEvent, ProcessingEventKind } from './processingEventRepository';

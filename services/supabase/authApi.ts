@@ -63,6 +63,17 @@ export function supabaseAuthApi(): AuthApi | null {
       }
     },
 
+    async deleteAccount() {
+      try {
+        // The server deletes the signed-in account and every row tied to it
+        // (supabase/migrations/20260916000001_delete_account.sql).
+        const { error } = await supabase.rpc('delete_account');
+        return error ? failed(error, 'deleteAccount') : { ok: true };
+      } catch (e) {
+        return failed(e, 'deleteAccount');
+      }
+    },
+
     async signOutOthers() {
       try {
         // Ends every other sign-in to the account. This phone keeps its own.

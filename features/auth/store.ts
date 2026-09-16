@@ -34,6 +34,8 @@ export interface AuthApi {
    * in. Each drops out when its sign-in next renews (within the hour).
    */
   signOutOthers(): Promise<AuthResult>;
+  /** Deletes the signed-in account, and everything the server holds for it. */
+  deleteAccount(): Promise<AuthResult>;
 }
 
 export interface AuthState {
@@ -48,6 +50,12 @@ export interface AuthState {
   signOut(): Promise<AuthResult>;
   /** For a lost or replaced phone: signs out every other phone, not this one. */
   signOutOthers(): Promise<AuthResult>;
+  /**
+   * Deletes the account on the server. Only once the server has done so does
+   * `afterDeleted` run (clearing this phone); then this phone signs out. If the
+   * server refuses, nothing changes here.
+   */
+  deleteAccount(afterDeleted?: () => Promise<void>): Promise<AuthResult>;
 }
 
 export const SIGN_IN_UNAVAILABLE = "Sign-in isn't set up in this copy of PesaIQ.";
@@ -118,6 +126,22 @@ export function createAuthStore(api: AuthApi | null, now: () => number = Date.no
     async signOutOthers() {
       if (!api) return { ok: false, message: SIGN_IN_UNAVAILABLE };
       return guarded(() => api.signOutOthers());
+    },
+
+    async deleteAccount(afterDeleted) {
+      if (!api) return { ok: false, message: SIGN_IN_UNAVAILABLE };
+      const result = await guarded(() => api.deleteAccount());
+      if (!result.ok) return result;
+      try {
+        await afterDeleted?.();
+      } catch {
+        // The caller reports what it could not clear. The account is gone
+        // either way, so this phone still signs out.
+      }
+      // Its session goes too, even if the service can no longer confirm it.
+      await guarded(() => api.signOut());
+      set({ session: null, status: 'signedOut', pending: null });
+      return result;
     },
   }));
 }

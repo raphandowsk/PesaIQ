@@ -232,6 +232,7 @@ describe('the sign-in store', () => {
       send?: AuthResult;
       verify?: AuthResult;
       others?: AuthResult;
+      deleted?: AuthResult;
     } = {},
   ) => {
     let session = opts.session ?? null;
@@ -255,12 +256,17 @@ describe('the sign-in store', () => {
         return result;
       },
       signOut: async () => {
+        calls.push('signOut');
         session = null;
         return { ok: true };
       },
       signOutOthers: async () => {
         calls.push('signOutOthers');
         return opts.others ?? { ok: true };
+      },
+      deleteAccount: async () => {
+        calls.push('deleteAccount');
+        return opts.deleted ?? { ok: true };
       },
     };
     return { api, calls, emit: (s: AuthSession | null) => listener?.(s) };
@@ -360,6 +366,49 @@ describe('the sign-in store', () => {
       ok: false,
       message: SIGN_IN_UNAVAILABLE,
     });
+  });
+
+  it('deletes the account, clears this phone only after the server agrees, then signs out', async () => {
+    const { api, calls } = fakeApi({ session: ME });
+    const store = createAuthStore(api);
+    await store.getState().initialize();
+
+    const result = await store.getState().deleteAccount(async () => {
+      calls.push('clear this phone');
+    });
+    expect(result).toEqual({ ok: true });
+    expect(calls.slice(1)).toEqual(['deleteAccount', 'clear this phone', 'signOut']);
+    expect(store.getState()).toMatchObject({ status: 'signedOut', session: null });
+  });
+
+  it('changes nothing when the server cannot delete the account', async () => {
+    const offline = { ok: false as const, message: AUTH_MESSAGES.noConnection };
+    const { api, calls } = fakeApi({ session: ME, deleted: offline });
+    const store = createAuthStore(api);
+    await store.getState().initialize();
+
+    const result = await store.getState().deleteAccount(async () => {
+      calls.push('clear this phone');
+    });
+    expect(result).toEqual(offline);
+    expect(calls).not.toContain('clear this phone');
+    expect(calls).not.toContain('signOut');
+    expect(store.getState()).toMatchObject({ status: 'signedIn', session: ME });
+    expect(await createAuthStore(null).getState().deleteAccount()).toEqual({
+      ok: false,
+      message: SIGN_IN_UNAVAILABLE,
+    });
+  });
+
+  it('still signs out when clearing this phone fails: the account is already gone', async () => {
+    const store = createAuthStore(fakeApi({ session: ME }).api);
+    await store.getState().initialize();
+
+    const result = await store.getState().deleteAccount(async () => {
+      throw new Error('disk full');
+    });
+    expect(result).toEqual({ ok: true });
+    expect(store.getState().status).toBe('signedOut');
   });
 
   it('turns a service that throws into a plain failure', async () => {

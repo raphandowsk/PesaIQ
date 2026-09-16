@@ -11,6 +11,7 @@ import { describeOpenError, getDatabase, type SqlDatabase } from '../../database
 import {
   categoryRuleRepository,
   messageRepository,
+  phoneDataRepository,
   processingEventRepository,
   profileRepository,
   providerRepository,
@@ -197,6 +198,11 @@ interface AppState {
   clearDemoData(): Promise<void>;
   /** Forget every remembered category choice. Returns how many went. */
   forgetCategoryRules(): Promise<number>;
+  /**
+   * After Delete account: every record, message, setting and choice on this
+   * phone goes, and the phone is as a fresh install would be.
+   */
+  eraseThisPhone(): Promise<void>;
 
   /**
    * Run sync's database work (features/sync). Nothing is reloaded: the caller
@@ -227,6 +233,29 @@ export const useAppStore = create<AppState>((set, get) => {
       processingEventRepository.reviewTimestamps(database),
     ]);
     set({ transactions, activity, reviewedAt });
+  };
+
+  /** Everything the store shows, read fresh: on opening, and after erasing the phone. */
+  const readAll = async (database: SqlDatabase) => {
+    const [settings, transactions, providers, activity, reviewedAt, categoryRules, name] =
+      await Promise.all([
+        settingsRepository.getAll(database),
+        transactionRepository.list(database),
+        providerRepository.list(database),
+        processingEventRepository.activityTimestamps(database),
+        processingEventRepository.reviewTimestamps(database),
+        categoryRuleRepository.list(database),
+        profileRepository.getName(database),
+      ]);
+    return {
+      settings,
+      transactions,
+      providers,
+      activity,
+      reviewedAt,
+      categoryRules,
+      displayName: name?.name ?? null,
+    };
   };
 
   /** The message, its parse result and the transaction land together or not at all. */
@@ -359,31 +388,11 @@ export const useAppStore = create<AppState>((set, get) => {
         db = deps.database ?? (await getDatabase());
 
         await seedDatabase(db, now());
-
-        const [settings, transactions, providers, activity, reviewedAt, categoryRules, name] =
-          await Promise.all([
-            settingsRepository.getAll(db),
-            transactionRepository.list(db),
-            providerRepository.list(db),
-            processingEventRepository.activityTimestamps(db),
-            processingEventRepository.reviewTimestamps(db),
-            categoryRuleRepository.list(db),
-            profileRepository.getName(db),
-          ]);
+        const state = await readAll(db);
 
         await get().smsSource.start();
 
-        set({
-          settings,
-          transactions,
-          providers,
-          activity,
-          reviewedAt,
-          categoryRules,
-          displayName: name?.name ?? null,
-          ready: true,
-          loading: false,
-        });
+        set({ ...state, ready: true, loading: false });
       } catch (e) {
         set({
           loading: false,
@@ -840,6 +849,14 @@ export const useAppStore = create<AppState>((set, get) => {
       const removed = await categoryRuleRepository.removeAll(requireDb());
       set({ categoryRules: {} });
       return removed;
+    },
+
+    async eraseThisPhone() {
+      const database = requireDb();
+      await database.withTransactionAsync(() => phoneDataRepository.eraseAll(database));
+      // What a first launch puts in: the provider registry and the defaults.
+      await seedDatabase(database, now());
+      set(await readAll(database));
     },
   };
 });

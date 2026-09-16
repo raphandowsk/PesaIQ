@@ -16,7 +16,8 @@ import { duplicatePairs, useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 import type { ProviderMaturity } from '../../types/domain';
 
-type DataAction = 'transactions' | 'messages' | 'history' | 'demo' | 'rules' | 'signout';
+type DataAction =
+  'transactions' | 'messages' | 'history' | 'demo' | 'rules' | 'signout' | 'deleteAccount';
 type Busy = DataAction | 'replay' | 'sync' | 'name' | null;
 
 const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
@@ -63,6 +64,8 @@ export default function Settings() {
   const importUsedAt = useImportStore((s) => s.usedAt);
   const displayName = useAppStore((s) => s.displayName);
   const setDisplayName = useAppStore((s) => s.setDisplayName);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const eraseThisPhone = useAppStore((s) => s.eraseThisPhone);
 
   const [confirming, setConfirming] = useState<DataAction | null>(null);
   // The name being edited; null while the row is closed.
@@ -132,6 +135,29 @@ export default function Settings() {
         await forgetKey(userId);
         router.replace('/');
         return 'Signed out on this phone.';
+      },
+    },
+    deleteAccount: {
+      ask: "Delete your PesaIQ account? PesaIQ's server deletes everything it holds for your number: synced records, categories, provider choices, your name, your PIN and the list of signed-in phones. Every record, message and setting on this phone is deleted too. Your other phones are signed out, and keep what is already on them. Export your data first if you want a copy. This cannot be undone.",
+      confirm: 'Delete my account',
+      go: async () => {
+        // Read before deleting: signing out clears the PIN state.
+        const userId = usePinStore.getState().userId ?? undefined;
+        let phoneCleared = true;
+        // The server goes first: if it refuses, nothing on this phone is touched.
+        const result = await deleteAccount(async () => {
+          try {
+            await eraseThisPhone();
+          } catch {
+            phoneCleared = false;
+          }
+          await forgetKey(userId);
+        });
+        if (!result.ok) throw new Error(result.message);
+        router.replace('/');
+        return phoneCleared
+          ? 'Your account is deleted.'
+          : 'Your account is deleted, but some data on this phone could not be cleared. Uninstall PesaIQ to remove it.';
       },
     },
     rules: {
@@ -347,6 +373,13 @@ export default function Settings() {
           'Sign out',
           'Signs out on this phone only. Your records stay here.',
           'Sign out',
+        )}
+        {actionRow(
+          'deleteAccount',
+          'Delete account',
+          'Deletes your account and everything PesaIQ holds for it, on the server and on this phone.',
+          'Delete',
+          { danger: true },
         )}
       </SettingsGroup>
 

@@ -14,7 +14,7 @@ export interface AuthErrorLike {
   name?: string;
 }
 
-export type AuthStep = 'send' | 'verify' | 'signOut';
+export type AuthStep = 'send' | 'verify' | 'signOut' | 'deleteAccount';
 
 export const AUTH_MESSAGES = {
   noConnection: 'No internet connection. Check it and try again.',
