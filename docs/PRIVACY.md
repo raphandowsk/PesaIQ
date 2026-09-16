@@ -122,6 +122,17 @@ storage model above would not change: still local, still no upload by default.
   sign-in next renews, within the hour, and then deletes its copy of the
   account key: it needs a code and the PIN to open the account again. Records
   already on a phone stay on it.
+- **Delete account** (Settings → Account, 2026-09-16) deletes the account on
+  the server, and with it everything the server holds for the number: the
+  profile and name, the locked account key and PIN guard, the signed-in phones
+  list, synced records and preferences, AI usage counts and the bulk-import
+  row. Only once the server has deleted it does the phone erase its own
+  records, messages, settings, categories and account key, then sign out; if
+  the server can't be reached, nothing is deleted anywhere. Other phones are
+  signed out when their sign-in next renews (within the hour) and keep what is
+  already on them. Deleting cannot be undone; the confirmation suggests
+  exporting first. Signing up again with the same number starts a new, empty
+  account, with its own bulk import.
 
 ## AI reading (paused)
 

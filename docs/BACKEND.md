@@ -36,6 +36,7 @@ already applied to a project is never edited; a change goes in a new file.
 | `20260914000003_sync_clear_and_key_check.sql` | `sync_clear`, `pin_key_is_current`, `profiles.sync_cleared_at` |
 | `20260914000004_ai_usage.sql`                 | `ai_usage` and `ai_take`: the daily cap on AI reading          |
 | `20260914000005_bulk_import.sql`              | `bulk_imports` and `claim_bulk_import`: one import per account |
+| `20260916000001_delete_account.sql`           | `delete_account`: Delete account, removing every row with it   |
 
 What each table lets the server see:
 
@@ -130,6 +131,16 @@ Rules the database enforces:
   - Afterwards the table was empty: the check used no one's import.
   - Security advisor: `claim_bulk_import` joins the other `security definer`
     functions (WARN), as intended: it acts only on the caller's own row.
+
+## Checks run on the test project (2026-09-16)
+
+- **`delete_account`, live and rolled back** (two throwaway accounts with
+  invented numbers):
+  - A signed-out caller could not run it.
+  - Run by the first account, it deleted that account, and with it its
+    profile, its signed-in phone and its bulk-import row.
+  - The second account, and its rows, were untouched.
+  - Afterwards neither throwaway account existed: the check changed nothing.
 
 ## App configuration
 
