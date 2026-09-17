@@ -4,6 +4,7 @@
   },
   "build": {
     "preview": {
+      "node": "24.19.0",
       "environment": "preview",
       "distribution": "internal",
       "android": {
@@ -11,6 +12,7 @@
       }
     },
     "production": {
+      "node": "24.19.0",
       "environment": "production",
       "android": {
         "buildType": "app-bundle"
