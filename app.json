@@ -40,13 +40,22 @@
       [
         "expo-share-intent",
         {
-          "androidIntentFilters": ["text/*"],
+          "androidIntentFilters": [
+            "text/*"
+          ],
           "disableIOS": true
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "04470b17-1e1d-45f5-a924-396446e153d7"
+      }
+    },
+    "owner": "raphandowski"
   }
 }
