@@ -9,6 +9,9 @@ import { isMobileMoneyProvider, PROVIDERS, type SmsProvider } from '../../featur
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
 
+/** Operators the senders screen leaves out. */
+const NOT_OFFERED: readonly string[] = ['tpesa'];
+
 /** The database lists providers by name; the design lists them by prominence. */
 const registryOrder = (p: SmsProvider) => {
   const i = PROVIDERS.findIndex((x) => x.id === p.id);
@@ -23,9 +26,10 @@ export default function Setup() {
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Only the mobile-money operators are offered.
+  // Only the mobile-money operators are offered, T-PESA aside (owner's call,
+  // 2026-09-17). Its messages are still read like any other.
   const ordered = providers
-    .filter(isMobileMoneyProvider)
+    .filter((p) => isMobileMoneyProvider(p) && !NOT_OFFERED.includes(p.id))
     .sort((a, b) => registryOrder(a) - registryOrder(b));
 
   const toggle = async (p: SmsProvider) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 
 import { NameField } from '../../components/profile/NameField';
@@ -10,24 +10,13 @@ import { formatTzMobile, useAuthStore } from '../../features/auth';
 import { usePinStore } from '../../features/pin';
 import { useDevicesStore } from '../../features/devices';
 import { useImportStore } from '../../features/import';
-import { isMobileMoneyProvider } from '../../features/parser';
 import { SYNC_MESSAGES, useSyncStore } from '../../features/sync';
 import { duplicatePairs, useAppStore } from '../../features/transactions';
-import { colors, fonts, MIN_TOUCH, radius, space } from '../../theme';
-import type { ProviderMaturity } from '../../types/domain';
+import { fonts, space } from '../../theme';
 
 type DataAction =
   'transactions' | 'messages' | 'history' | 'demo' | 'rules' | 'signout' | 'deleteAccount';
-type Busy = DataAction | 'replay' | 'sync' | 'name' | null;
-
-const COUNTRIES: Record<string, string> = { TZ: 'Tanzania' };
-
-// Never more than the registry says: a demo parser is labelled a demo.
-const MATURITY: Record<ProviderMaturity, { tag: string; rules: string }> = {
-  DEMO: { tag: 'Demo', rules: 'demo rules' },
-  EXPERIMENTAL: { tag: 'Experimental', rules: 'experimental rules' },
-  SUPPORTED: { tag: 'Supported', rules: 'validated rules' },
-};
+type Busy = DataAction | 'sync' | 'name' | null;
 
 const FAILED = 'That could not be completed. Nothing was changed.';
 
@@ -37,7 +26,6 @@ const FAILED = 'That could not be completed. Nothing was changed.';
  */
 export default function Settings() {
   const settings = useAppStore((s) => s.settings);
-  const providers = useAppStore((s) => s.providers);
   const recordCount = useAppStore((s) => s.transactions.length);
   const demoCount = useAppStore((s) => s.transactions.filter((t) => t.isDemo).length);
   const deleteAllTransactions = useAppStore((s) => s.deleteAllTransactions);
@@ -47,7 +35,6 @@ export default function Settings() {
   const forgetCategoryRules = useAppStore((s) => s.forgetCategoryRules);
   const ruleCount = useAppStore((s) => Object.keys(s.categoryRules).length);
   const duplicateCount = useAppStore((s) => duplicatePairs(s.transactions).length);
-  const resetOnboarding = useAppStore((s) => s.resetOnboarding);
   const phone = useAuthStore((s) => s.session?.phone ?? null);
   const signOut = useAuthStore((s) => s.signOut);
   const forgetKey = usePinStore((s) => s.forget);
@@ -253,13 +240,6 @@ export default function Settings() {
         : 'Cloud sync is off. What was synced stays on the server.';
     });
 
-  const replay = () =>
-    run('replay', async () => {
-      await resetOnboarding();
-      router.replace('/');
-      return null;
-    });
-
   const saveName = (value: string | null) =>
     run('name', async () => {
       const had = displayName;
@@ -456,22 +436,6 @@ export default function Settings() {
         )}
       </SettingsGroup>
 
-      <SettingsGroup title="Providers">
-        {providers.filter(isMobileMoneyProvider).map((p) => (
-          <SettingRow
-            key={p.id}
-            label={p.name}
-            sub={`${COUNTRIES[p.country] ?? p.country} · ${MATURITY[p.maturity].rules} · ${p.enabled ? 'watching' : 'not watching'}`}
-            right={
-              <Tag
-                label={MATURITY[p.maturity].tag}
-                tone={p.maturity === 'SUPPORTED' ? 'positive' : 'neutral'}
-              />
-            }
-          />
-        ))}
-      </SettingsGroup>
-
       <SettingsGroup title="Data">
         <SettingRow
           label="Export my data"
@@ -542,40 +506,6 @@ export default function Settings() {
             })
           : null}
       </SettingsGroup>
-
-      <View
-        style={{
-          backgroundColor: colors.neutralRamp[200],
-          borderRadius: radius.lg,
-          padding: space[4],
-          gap: space[1],
-        }}
-      >
-        <Text variant="bodyMedium" style={{ fontFamily: fonts.heading, fontSize: 15 }}>
-          PesaIQ · Stage 1
-        </Text>
-        <Text variant="small" tone="muted" style={{ fontSize: 12, lineHeight: 18 }}>
-          Pasted or shared messages only. No SMS is intercepted, uploaded or logged in full. The
-          mobile-money rules are experimental: built from documented message layouts, and still
-          being checked against real messages.
-        </Text>
-        <Pressable
-          onPress={() => void replay()}
-          disabled={busy !== null}
-          accessibilityRole="button"
-          accessibilityLabel="Replay onboarding. Your records are kept."
-          style={({ pressed }) => ({
-            minHeight: MIN_TOUCH,
-            justifyContent: 'center',
-            alignSelf: 'flex-start',
-            opacity: pressed || busy === 'replay' ? 0.6 : 1,
-          })}
-        >
-          <Text variant="small" style={{ fontFamily: fonts.bold, color: colors.accentRamp[700] }}>
-            Replay onboarding →
-          </Text>
-        </Pressable>
-      </View>
     </Screen>
   );
 }

@@ -23,9 +23,8 @@ export default function Welcome() {
   const signedIn = useAuthStore((s) => s.status === 'signedIn');
   const [skipping, setSkipping] = useState(false);
 
-  // Skipping counts as finishing: the user chose it, and every screen they
-  // skipped is reachable again from Settings -> Replay onboarding. Someone not
-  // yet signed in still signs in first: the launch rule sends them there.
+  // Skipping counts as finishing: the user chose it. Someone not yet signed in
+  // still signs in first: the launch rule sends them there.
   const skip = async () => {
     setSkipping(true);
     try {

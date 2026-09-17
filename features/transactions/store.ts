@@ -186,7 +186,7 @@ interface AppState {
   /** Record whether a provider matters to the user (onboarding and Settings). */
   setProviderEnabled(id: string, enabled: boolean): Promise<void>;
   completeOnboarding(): Promise<void>;
-  /** Send the user back through onboarding: Settings -> Replay onboarding. */
+  /** Send the user back through onboarding. (Settings no longer offers it, since 2026-09-17.) */
   resetOnboarding(): Promise<void>;
 
   /** Every record, with its source message. Returns how many records went. */

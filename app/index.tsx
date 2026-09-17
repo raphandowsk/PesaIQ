@@ -7,8 +7,8 @@ import { useAppStore } from '../features/transactions';
 /**
  * The one place that decides where a launch lands (features/auth/routing.ts).
  *
- * Signing in, the PIN, onboarding's finish and Settings' "Replay onboarding"
- * all end with `router.replace('/')` back here, so the rule is never
+ * Signing in, the PIN, onboarding's finish, signing out and deleting the
+ * account all end with `router.replace('/')` back here, so the rule is never
  * duplicated. The root layout's `Stack.Protected` guards enforce the same rule.
  */
 export default function Index() {

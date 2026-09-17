@@ -321,12 +321,13 @@ Since 2026-09-14 the guards come from one rule, `features/auth/routing.ts` (see
 
 Both groups sit behind `Stack.Protected`, so the rule is structural: Back cannot
 return to onboarding once it is finished, and a deep link cannot reach the tabs
-before it. Finishing onboarding, skipping it, and Settings → Replay onboarding all
-flip the flag and then `router.replace('/')`; `index.tsx` re-decides. The routing
-rule lives in exactly one place.
+before it. Finishing onboarding and skipping it both flip the flag and then
+`router.replace('/')`; `index.tsx` re-decides. The routing rule lives in exactly
+one place.
 
-**Skip counts as finishing.** The user chose it, and every skipped screen is one tap
-away in Settings.
+**Skip counts as finishing.** The user chose it. Settings → Replay onboarding was
+removed on 2026-09-17 (owner's call); the name the onboarding asks for is still
+changed in Settings → Account.
 
 ### The tab bar is custom
 
@@ -702,6 +703,12 @@ unchanged, and with nothing flagged the label reads exactly as before.
 
 The design's groups, in order: Processing, Privacy, AI · fallback, Providers,
 Data, then the Stage 1 card with **Replay onboarding →**.
+
+**Since 2026-09-17** (owner's call, after the first installed build): no
+Providers card, no Stage 1 card and no Replay onboarding. Settings is Account,
+Processing, Privacy and Data. The Demo data rows show only while demo records
+are present, and the onboarding senders screen no longer offers T-PESA (its
+messages are still read).
 
 | Row                                           | Behaviour                                                                                                                                                                                                       |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
