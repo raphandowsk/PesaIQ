@@ -3,11 +3,11 @@ import { Keyboard, Pressable, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
 import { PIPELINE_STEPS, PipelineProgress } from '../../components/parser/PipelineProgress';
-import { Button, Card, Icon, Screen, Tag, Text } from '../../components/ui';
+import { Button, Card, Icon, Screen, Text } from '../../components/ui';
 import { AI_READING_ENABLED } from '../../features/ai/config';
 import { useImportStore } from '../../features/import';
 import { useLabStore } from '../../features/lab/store';
-import { MAX_MESSAGE_LENGTH, SAMPLES } from '../../features/parser';
+import { MAX_MESSAGE_LENGTH } from '../../features/parser';
 import { SHARE_AVAILABLE } from '../../features/share/availability';
 import { useAppStore } from '../../features/transactions';
 import { colors, fonts, MIN_TOUCH, radius, shadow, space } from '../../theme';
@@ -24,20 +24,12 @@ const STEP_MS = 400;
 const AI_NOTICE =
   "PesaIQ sends each message you analyze to Claude, an AI from Anthropic, to read the amount, fee, reference and other details. Phone, account and card numbers are masked on this phone first, and PesaIQ's server keeps no copy.";
 
-const SAMPLE_TINTS = [
-  { tint: colors.accent2Ramp[200], ink: colors.accent2Ramp[800] },
-  { tint: colors.accentRamp[200], ink: colors.accentRamp[800] },
-  { tint: colors.neutralRamp[300], ink: colors.neutralRamp[800] },
-];
-
-const SAMPLE_BADGE = 32;
 const INPUT_MIN_HEIGHT = 150;
 
 export default function ParserLab() {
   const text = useLabStore((s) => s.text);
   const error = useLabStore((s) => s.error);
   const setText = useLabStore((s) => s.setText);
-  const loadSample = useLabStore((s) => s.loadSample);
   const clear = useLabStore((s) => s.clear);
   const analyze = useLabStore((s) => s.analyze);
   const aiAccepted = useAppStore((s) => s.settings.aiReadingAccepted);
@@ -225,7 +217,7 @@ export default function ParserLab() {
         </Card>
       ) : null}
 
-      {/* Right under the message box, so it is in reach without scrolling past the samples. */}
+      {/* Right under the message box, in reach without scrolling. */}
       <View style={{ marginBottom: space[6] }}>
         <Button
           label="Analyze message"
@@ -241,69 +233,6 @@ export default function ParserLab() {
             <PipelineProgress completed={completed} />
           </View>
         ) : null}
-      </View>
-
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: space[2],
-          marginBottom: space[2],
-        }}
-      >
-        <Text variant="kicker" tone="muted">
-          Sample messages
-        </Text>
-        <Tag label="Demo · anonymized" tone="positive" />
-      </View>
-
-      <View style={{ gap: space[2], marginBottom: space[4] }}>
-        {SAMPLES.map((sample, i) => {
-          const tone = SAMPLE_TINTS[i % SAMPLE_TINTS.length];
-          return (
-            <Pressable
-              key={sample.id}
-              onPress={() => loadSample(sample)}
-              disabled={analyzing}
-              accessibilityRole="button"
-              accessibilityLabel={`Load sample: ${sample.name}. ${sample.hint}`}
-              style={({ pressed }) => ({
-                minHeight: MIN_TOUCH,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: space[3],
-                borderWidth: 1,
-                borderColor: colors.neutralRamp[300],
-                backgroundColor: pressed ? colors.accentRamp[100] : colors.surface,
-                borderRadius: radius.md,
-                padding: space[3],
-              })}
-            >
-              <View
-                style={{
-                  width: SAMPLE_BADGE,
-                  height: SAMPLE_BADGE,
-                  borderRadius: radius.sm,
-                  backgroundColor: tone.tint,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text variant="small" style={{ fontFamily: fonts.heading, color: tone.ink }}>
-                  {sample.badge}
-                </Text>
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text variant="small" style={{ fontFamily: fonts.bold }}>
-                  {sample.name}
-                </Text>
-                <Text variant="small" tone="muted" numberOfLines={1} style={{ fontSize: 11 }}>
-                  {sample.hint}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        })}
       </View>
     </Screen>
   );

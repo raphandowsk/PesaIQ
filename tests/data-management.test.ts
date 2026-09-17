@@ -1,7 +1,7 @@
 import type { SqlDatabase } from '../database/client';
 import { SAMPLES } from '../features/parser';
 import { useAppStore } from '../features/transactions/store';
-import { createMigratedDatabase } from './support/nodeSqlite';
+import { createDatabaseWithSamples } from './support/nodeSqlite';
 
 const NOW = '2026-09-12T08:00:00.000Z';
 const app = () => useAppStore.getState();
@@ -13,7 +13,7 @@ const rows = async (table: 'messages' | 'parse_results' | 'transactions') =>
   (await db.getFirstAsync<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`))?.n ?? 0;
 
 beforeEach(async () => {
-  db = await createMigratedDatabase();
+  db = await createDatabaseWithSamples();
   n = 0;
   await app().initialize({ database: db, now: () => NOW, makeId: (p) => `${p}-${++n}` });
   // Six demo records plus one of the user's.

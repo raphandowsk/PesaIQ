@@ -57,12 +57,18 @@ export async function seedDatabase(db: SqlDatabase, now: string): Promise<SeedRe
  * Remove generated samples and remember the choice.
  *
  * Deletes demo messages as well as demo transactions — leaving the source text
- * behind would keep the most sensitive part of what the user asked to remove.
+ * behind would keep the most sensitive part of what the user asked to remove —
+ * and the history of what was done to them.
  */
 export async function removeDemoData(db: SqlDatabase, now: string): Promise<number> {
   let removed = 0;
 
   await db.withTransactionAsync(async () => {
+    // What was done to the samples goes with them, so the streak and "cleared
+    // this week" count only the user's own records.
+    await db.runAsync(
+      'DELETE FROM processing_events WHERE transaction_id IN (SELECT id FROM transactions WHERE is_demo = 1)',
+    );
     removed = await transactionRepository.removeDemo(db);
     await db.runAsync('DELETE FROM messages WHERE is_demo = 1');
     await settingsRepository.set(db, 'demoDataEnabled', false, now);

@@ -45,7 +45,10 @@ export default function Review() {
         </Text>
       </View>
 
-      <ReviewProgress cleared={cleared} target={REVIEW_WEEKLY_TARGET} streak={streak} />
+      {/* Nothing to count on a new account: no records waiting, and nothing done yet. */}
+      {queue.length > 0 || cleared > 0 || streak > 0 ? (
+        <ReviewProgress cleared={cleared} target={REVIEW_WEEKLY_TARGET} streak={streak} />
+      ) : null}
 
       {queue.length === 0 ? (
         <QueueClear />

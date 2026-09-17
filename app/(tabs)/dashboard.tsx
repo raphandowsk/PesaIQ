@@ -49,7 +49,8 @@ export default function Dashboard() {
   const transactions = useAppStore((s) => s.transactions);
   const activity = useAppStore((s) => s.activity);
   const displayName = useAppStore((s) => s.displayName);
-  const demoOn = useAppStore((s) => s.settings.demoDataEnabled);
+  // Samples actually present: new installs have none, older ones until removed.
+  const demoOn = useAppStore((s) => s.transactions.some((t) => t.isDemo));
   const clearDemoData = useAppStore((s) => s.clearDemoData);
   const reduceMotion = useReduceMotion();
 

@@ -4,7 +4,7 @@ import { SAMPLES } from '../features/parser';
 import { DEMO_RECORDS } from '../features/transactions/demoData';
 import { useAppStore } from '../features/transactions/store';
 import { ManualSmsSource } from '../services/sms';
-import { createMigratedDatabase } from './support/nodeSqlite';
+import { createDatabaseWithSamples, createMigratedDatabase } from './support/nodeSqlite';
 import { saveNew } from './support/save';
 
 const NOW = '2026-09-11T12:00:00.000Z';
@@ -13,7 +13,7 @@ let db: SqlDatabase;
 let idCounter = 0;
 
 const initStore = async () => {
-  db = await createMigratedDatabase();
+  db = await createDatabaseWithSamples();
   idCounter = 0;
   await useAppStore.getState().initialize({
     database: db,
@@ -34,6 +34,14 @@ describe('store initialization', () => {
     expect(s.ready).toBe(true);
     expect(s.error).toBeNull();
     expect(s.transactions.length).toBe(DEMO_RECORDS.length);
+  });
+
+  it('opens a new install with no records at all', async () => {
+    const fresh = await createMigratedDatabase();
+    await useAppStore.getState().initialize({ database: fresh, now: () => NOW });
+    expect(useAppStore.getState().transactions).toEqual([]);
+    expect(useAppStore.getState().settings.demoDataEnabled).toBe(false);
+    await fresh.closeAsync();
   });
 
   it('starts with the privacy-sensitive settings off', () => {

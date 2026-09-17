@@ -22,7 +22,10 @@ export interface AppSettings {
   aiReadingAccepted: boolean;
   /** Off by default. On: encrypted records sync with the account (features/sync). */
   cloudSync: boolean;
-  /** Whether generated sample records are present. */
+  /**
+   * Whether generated sample records are seeded. Off for new installs since
+   * 2026-09-17: a phone starts with only the user's own records.
+   */
   demoDataEnabled: boolean;
   onboardingComplete: boolean;
 }
@@ -32,7 +35,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiFallback: false,
   aiReadingAccepted: false,
   cloudSync: false,
-  demoDataEnabled: true,
+  demoDataEnabled: false,
   onboardingComplete: false,
 };
 

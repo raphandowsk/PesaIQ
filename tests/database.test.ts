@@ -14,7 +14,11 @@ import { parseMessage, SAMPLES } from '../features/parser';
 import { DEMO_RECORDS } from '../features/transactions/demoData';
 import { EMPTY_DETAILS } from '../features/parser/schema';
 import { transactionFromParseResult, type Transaction } from '../features/transactions/model';
-import { createMigratedDatabase, createTestDatabase } from './support/nodeSqlite';
+import {
+  createDatabaseWithSamples,
+  createMigratedDatabase,
+  createTestDatabase,
+} from './support/nodeSqlite';
 
 const NOW = '2026-09-11T12:00:00.000Z';
 
@@ -422,9 +426,38 @@ describe('processingEventRepository', () => {
 describe('seeding', () => {
   let db: SqlDatabase;
   beforeEach(async () => {
-    db = await createMigratedDatabase();
+    db = await createDatabaseWithSamples();
   });
   afterEach(() => db.closeAsync());
+
+  it('seeds no demo records on a new install', async () => {
+    const fresh = await createMigratedDatabase();
+    const result = await seedDatabase(fresh, NOW);
+    expect(result.demoRecordsInserted).toBe(0);
+    expect(await transactionRepository.list(fresh)).toEqual([]);
+    expect(await messageRepository.count(fresh)).toBe(0);
+    await fresh.closeAsync();
+  });
+
+  it('removes what was done to the samples, and keeps the history of the user’s own records', async () => {
+    await seedDatabase(db, NOW);
+    await transactionRepository.insert(db, draft({ id: 'mine', isDemo: false }));
+    const event = (id: string, transactionId: string) => ({
+      id,
+      kind: 'TRANSACTION_CONFIRMED' as const,
+      messageId: null,
+      transactionId,
+      detail: null,
+      createdAt: NOW,
+    });
+    await processingEventRepository.record(db, event('e-demo', DEMO_RECORDS[0].transaction.id));
+    await processingEventRepository.record(db, event('e-mine', 'mine'));
+
+    await removeDemoData(db, NOW);
+    expect(await processingEventRepository.reviewTimestamps(db)).toHaveLength(1);
+    expect((await processingEventRepository.list(db)).map((e) => e.id)).toContain('e-mine');
+    expect((await processingEventRepository.list(db)).map((e) => e.id)).not.toContain('e-demo');
+  });
 
   it('inserts the demo records and their source messages', async () => {
     const result = await seedDatabase(db, NOW);

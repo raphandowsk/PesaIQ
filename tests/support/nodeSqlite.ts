@@ -81,3 +81,16 @@ export async function createMigratedDatabase(): Promise<SqlDatabase> {
   await migrate(db);
   return db;
 }
+
+/**
+ * A migrated database with demo samples switched on, so the store seeds them
+ * on opening as installs before 2026-09-17 did. For tests that use the samples
+ * as ready-made records; new installs get none.
+ */
+export async function createDatabaseWithSamples(): Promise<SqlDatabase> {
+  const db = await createMigratedDatabase();
+  await db.runAsync(
+    `INSERT INTO settings (key, value, updated_at) VALUES ('demoDataEnabled', '1', '2026-09-11T00:00:00.000Z')`,
+  );
+  return db;
+}

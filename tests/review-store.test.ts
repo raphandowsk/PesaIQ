@@ -4,7 +4,7 @@ import { SAMPLES } from '../features/parser';
 import { reviewQueue } from '../features/review/queue';
 import { summarize } from '../features/transactions/selectors';
 import { useAppStore } from '../features/transactions/store';
-import { createMigratedDatabase } from './support/nodeSqlite';
+import { createDatabaseWithSamples } from './support/nodeSqlite';
 
 const NOW = '2026-09-11T12:00:00.000Z';
 const app = () => useAppStore.getState();
@@ -13,7 +13,7 @@ let db: SqlDatabase;
 let n = 0;
 
 beforeEach(async () => {
-  db = await createMigratedDatabase();
+  db = await createDatabaseWithSamples();
   n = 0;
   await app().initialize({ database: db, now: () => NOW, makeId: (p) => `${p}-${++n}` });
 });

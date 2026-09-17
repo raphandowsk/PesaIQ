@@ -39,6 +39,7 @@ export default function Settings() {
   const settings = useAppStore((s) => s.settings);
   const providers = useAppStore((s) => s.providers);
   const recordCount = useAppStore((s) => s.transactions.length);
+  const demoCount = useAppStore((s) => s.transactions.filter((t) => t.isDemo).length);
   const deleteAllTransactions = useAppStore((s) => s.deleteAllTransactions);
   const deleteAllMessages = useAppStore((s) => s.deleteAllMessages);
   const clearProcessingHistory = useAppStore((s) => s.clearProcessingHistory);
@@ -527,21 +528,15 @@ export default function Settings() {
           'Forget',
           { disabled: ruleCount === 0 },
         )}
-        <SettingRow
-          label="Demo data"
-          sub={
-            settings.demoDataEnabled
-              ? 'Sample records are included. They are invented, not real messages.'
-              : 'Removed. Only records you saved remain.'
-          }
-          right={
-            <Tag
-              label={settings.demoDataEnabled ? 'On' : 'Off'}
-              tone={settings.demoDataEnabled ? 'positive' : 'neutral'}
-            />
-          }
-        />
-        {settings.demoDataEnabled
+        {/* New installs have no samples; older ones keep this until they remove them. */}
+        {demoCount > 0 ? (
+          <SettingRow
+            label="Demo data"
+            sub={`${demoCount} sample ${demoCount === 1 ? 'record is' : 'records are'} included. They are invented, not real messages.`}
+            right={<Tag label="On" tone="positive" />}
+          />
+        ) : null}
+        {demoCount > 0
           ? actionRow('demo', 'Remove demo data', 'Deletes generated sample records.', 'Remove', {
               danger: true,
             })

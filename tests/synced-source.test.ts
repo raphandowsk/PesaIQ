@@ -5,7 +5,7 @@ import { syncKeys } from '../features/sync/crypto';
 import { syncOnce } from '../features/sync/engine';
 import { useAppStore } from '../features/transactions/store';
 import { FakeRemote } from './support/fakeRemote';
-import { createMigratedDatabase } from './support/nodeSqlite';
+import { createDatabaseWithSamples } from './support/nodeSqlite';
 import { saveNew } from './support/save';
 
 // Invented account, key and message.
@@ -25,7 +25,7 @@ afterEach(async () => {
 
 /** Open a phone's database in the app store, as the app does on launch. */
 async function openPhone(): Promise<SqlDatabase> {
-  const db = await createMigratedDatabase();
+  const db = await createDatabaseWithSamples();
   opened.push(db);
   await app().initialize({ database: db, now: () => T1 });
   return db;
