@@ -11,15 +11,14 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#f7f6fc"
+      "backgroundColor": "#FEFEFE"
     },
     "android": {
       "package": "tz.svl.pesaiq",
       "adaptiveIcon": {
-        "backgroundColor": "#f7f6fc",
+        "backgroundColor": "#FEFEFE",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false
     },
