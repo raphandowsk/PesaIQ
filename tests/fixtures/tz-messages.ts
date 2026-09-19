@@ -43,6 +43,17 @@ export const TZ = {
   mixxLipaVodacomShop:
     'Umetuma TSh 3,000 kwenda kwa mpokeaji wa Vodacom LIPA BARAKA GENERAL STORE - 54000123. Ada TSh 100. VAT TSh 15. Salio jipya ni TSh 404,120. Muamala: 26900000000023. 15/09/26 08:40. Tafadhali subiri. Furahia Punguzo kubwa la bei unapofanya miamala ya Mixx.LKS',
 
+  /**
+   * Cash-out at an agent ("Umetuma pesa kwa Wakala - NAME"): the total charges
+   * are the fee plus a government levy ("Jumla ya Makato … (Ada …, Tozo …)"),
+   * and the VAT is 18% of the fee alone (supplied 2026-09-19).
+   */
+  mixxCashOut:
+    'Salio lako jipya ni TSh 88,300. Umetuma pesa kwa Wakala - BARAKA AGENCIES, kiasi TSh 15,000. Jumla ya Makato TSh 1,645. (Ada TSh 1,450, Tozo TSh 195), VAT TSh 221. Kumbukumbu No.: 26700000000021. 18/09/26 10:49.',
+
+  mixxCashOutLarge:
+    'Salio lako jipya ni TSh 520. Umetuma pesa kwa Wakala - HALIMA JUMA, kiasi TSh 50,000. Jumla ya Makato TSh 3,273. (Ada TSh 2,700, Tozo TSh 573), VAT TSh 412. Kumbukumbu No.: 26600000000022. 19/09/26 07:50.',
+
   /** A LUKU receipt: meter, reference, units, token, then itemised lines to the TOTAL. */
   lukuReceipt:
     'Malipo yamekamilika.14200000001\n9000000000000000001\n51.9KWH\n\n1111 2222 3333 4444 5555 \n\nCost 15,163.94\nVAT 18% 2729.50\nEWURA 1% 151.64\nREA 3% 454.92\nDebt Collected 1500.00\nTOTAL 20,000.00 12/09/26 08:16.LKS',

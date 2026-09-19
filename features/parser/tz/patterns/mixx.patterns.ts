@@ -54,6 +54,14 @@ export const MIXX_PATTERNS: OperatorPatterns = {
       note: "The owner's own Mixx messages (2026-09-15)",
     },
     {
+      // Cash-out at an agent: "Umetuma pesa kwa Wakala - NAME, kiasi … Jumla ya
+      // Makato … (Ada …, Tozo …), VAT …". The Tozo is a government levy.
+      id: 'MIXX_WITHDRAWAL_WAKALA',
+      match: /\bumetuma\s+pesa\s+kwa\s+wakala\b/i,
+      evidence: 'LOCAL',
+      note: "The owner's own Mixx messages (2026-09-19)",
+    },
+    {
       id: 'MIXX_GOVERNMENT',
       match: /\bGePG\b|\bcontrol\s*(?:number|no)\b/i,
       evidence: 'B',

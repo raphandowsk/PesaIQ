@@ -184,3 +184,40 @@ describe('a LUKU receipt', () => {
     expect(r.confidence).toBeGreaterThan(0.9);
   });
 });
+
+describe('a Mixx cash-out at an agent', () => {
+  const r = parseMessage(TZ.mixxCashOut);
+
+  it('reads a cash withdrawal to the named agent, not money sent to a person', () => {
+    expect(r.type).toBe('WITHDRAWAL');
+    expect(r.moneyCategory).toBe('CASH_WITHDRAWAL');
+    expect(r.counterparty).toBe('BARAKA AGENCIES');
+    expect(r.amount).toBe(15000);
+    expect(r.transactionReference).toBe('26700000000021');
+  });
+
+  it('keeps the total charges, with the VAT and the Tozo levy inside them', () => {
+    expect(r.fee).toBe(1645);
+    expect(r.taxes).toEqual([
+      { code: 'VAT', amount: 221, ratePct: null, within: 'fee' },
+      { code: 'LEVY', amount: 195, ratePct: null, within: 'fee' },
+    ]);
+    // The VAT is 18% of the fee (Ada) alone, not of the total with the levy.
+    expect(r.warnings).toEqual([]);
+    expect(r.reasons).toContain(
+      'VAT is 18% of the fee, already included in it; the levy is charged beside it',
+    );
+  });
+
+  it('reads a larger withdrawal the same way', () => {
+    const b = parseMessage(TZ.mixxCashOutLarge);
+    expect(b.type).toBe('WITHDRAWAL');
+    expect(b.counterparty).toBe('HALIMA JUMA');
+    expect(b.fee).toBe(3273);
+    expect(b.taxes.map((t) => [t.code, t.amount])).toEqual([
+      ['VAT', 412],
+      ['LEVY', 573],
+    ]);
+    expect(b.warnings).toEqual([]);
+  });
+});

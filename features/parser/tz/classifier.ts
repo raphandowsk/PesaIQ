@@ -139,6 +139,9 @@ const WORDS = {
   bill: /\bpay\s*bill\b|\bbill\s+(?:reference|number)\b|\bbili\b|\bmalipo\s+yamekamilika\s+kwenda\b|\bLUKU\b|\bDAWASA\b|\bDSTV\b|\bAZAM\b|\bGOtv\b|\bTANESCO\b|\bStarTimes\b/i,
   withdrawal:
     /\bumetoa\b|\bwithdraw(?:n|al)?\b|\bcash[\s-]?out\b|\bkutoa\s+pesa\b|\bada\s+ya\s+kutoa\b/i,
+  // Mixx's cash-out: money sent to an agent ("Umetuma pesa kwa Wakala - NAME").
+  // Outgoing only: money from an agent ("kutoka kwa Wakala") is a deposit.
+  agentOut: /\b(?:umetuma|imetumwa)\s+(?:pesa\s+)?kwa\s+wakala\b/i,
   deposit: /\bdeposit(?:ed)?\b|\bumeweka\b|\bumewekewa\b|\bcash[\s-]?in\b|\bkuweka\s+pesa\b/i,
   airtime: /\bairtime\b|\bmuda\s+wa\s+maongezi\b|\bvocha\b/i,
   bundle: /\bbundles?\b|\bbando\b|\bkifurushi\b|\bvifurushi\b|\b(?:data|internet)\s+package\b/i,
@@ -211,7 +214,8 @@ const RULES: Rule[] = [
   },
   {
     type: 'WITHDRAWAL',
-    test: (c) => c.hasAmount && WORDS.withdrawal.test(c.text),
+    test: (c) =>
+      c.hasAmount && (WORDS.withdrawal.test(c.text) || (notIn(c) && WORDS.agentOut.test(c.text))),
     reason: 'Cash withdrawal wording',
   },
   {

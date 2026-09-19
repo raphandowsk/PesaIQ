@@ -170,11 +170,19 @@ export function checkCharges(input: {
   const { fee, receipt } = input;
 
   const vat = taxes.find((t) => t.code === 'VAT' && t.within === 'fee');
+  // A total that also carries a government levy ("Jumla ya Makato … (Ada …,
+  // Tozo …)") charges VAT on the fee part only.
+  const levy = taxes
+    .filter((t) => t.code === 'LEVY' && t.within === 'fee')
+    .reduce((sum, t) => sum + t.amount, 0);
   if (fee != null && vat) {
     const inside = (fee * VAT_RATE_PCT) / (100 + VAT_RATE_PCT);
     const onTop = (fee * VAT_RATE_PCT) / 100;
+    const insideBeforeLevy = ((fee - levy) * VAT_RATE_PCT) / (100 + VAT_RATE_PCT);
     if (near(vat.amount, inside, VAT_TOLERANCE)) {
       reasons.push('VAT is 18% of the fee, already included in it');
+    } else if (levy > 0 && levy < fee && near(vat.amount, insideBeforeLevy, VAT_TOLERANCE)) {
+      reasons.push('VAT is 18% of the fee, already included in it; the levy is charged beside it');
     } else if (near(vat.amount, onTop, VAT_TOLERANCE)) {
       taxes = taxes.map((t) => (t === vat ? { ...t, within: 'extra' as const } : t));
       reasons.push('VAT is 18% charged on top of the fee');

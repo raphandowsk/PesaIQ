@@ -83,7 +83,8 @@ export const COMMON_PATTERNS = {
   ],
   /** "Ada ----": the layout's way of saying no fee. */
   noFee: /\bada\s*:?\s*-{2,}/i,
-  levy: [re(String.raw`\btozo\s+(?:ya|la)\s+serikali\s*:?\s*${CUR}\s*${NUM}`)],
+  // HaloPesa's "TOZO ya serikali TSH …" and Mixx's plain "Tozo TSh …".
+  levy: [re(String.raw`\btozo(?:\s+(?:ya|la)\s+serikali)?\s*:?\s*${CUR}\s*${NUM}`)],
   balance: [
     re(String.raw`\bsalio\s+lako\s+jipya\s+ni\s*:?\s*${CUR}\s*${NUM}`),
     re(String.raw`\bsalio\s+lako\s+la\s+[\w-]+(?:\s+pesa)?\s+ni\s*:?\s*${CUR}\s*${NUM}`),
@@ -101,6 +102,8 @@ export const COMMON_PATTERNS = {
     re(String.raw`\bfrom\s+(.+?)${END}`),
   ],
   recipient: [
+    // An agent: "Umetuma pesa kwa Wakala - NAME, kiasi …" names the agent after the dash.
+    re(String.raw`\bumetuma\s+pesa\s+kwa\s+wakala\s*-?\s*([^,\n]+?)\s*,\s*kiasi`),
     re(String.raw`\bumetuma\s+pesa\s+kwa\s+([^,\n]+?)\s*,\s*kiasi`),
     re(String.raw`\bjina\s+la\s+mpokeaji\s*:?\s*(.+?)${END}`),
     // "kwenda M-PESA, jina NAME": the network, then the person.
