@@ -109,19 +109,6 @@ export function HowWeGotThis({
               <FactorBar key={factor.label} factor={factor} maxWeight={maxWeight} />
             ))}
           </Section>
-
-          <Text
-            variant="small"
-            tone="muted"
-            style={{ borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: space[3] }}
-          >
-            Parser{' '}
-            <Text variant="small" style={{ fontFamily: fonts.bold }}>
-              {result.parserId}
-            </Text>{' '}
-            . On-phone rules, no AI. Parsed from SMS, not verified with the provider: low-confidence
-            fields are never treated as verified.
-          </Text>
         </Card>
       ) : null}
     </View>
