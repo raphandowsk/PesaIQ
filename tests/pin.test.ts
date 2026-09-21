@@ -16,6 +16,7 @@ import {
   wrappingKey,
   type Random,
 } from '../features/pin/crypto';
+import { lockVerifier, lockWaitMs, memoryLockRecords, sameBytes } from '../features/pin/lock';
 import { pinProblem, retryText, triesLeft } from '../features/pin/rules';
 import {
   createPinStore,
@@ -377,5 +378,166 @@ describe('the PIN store', () => {
     await store.getState().verify();
     expect(store.getState()).toMatchObject({ status: 'ready', verified: false, replaced: false });
     expect(map.has(USER)).toBe(true);
+  });
+});
+
+describe('the app lock', () => {
+  it('waits longer after each wrong PIN past the free tries', () => {
+    expect([0, 4, 5, 6, 7, 8, 20].map(lockWaitMs)).toEqual([
+      0, 0, 60_000, 300_000, 900_000, 3_600_000, 3_600_000,
+    ]);
+    const key = new Uint8Array(32).fill(3);
+    expect(lockVerifier(key, USER, '2580')).toEqual(lockVerifier(key, USER, '2580'));
+    expect(lockVerifier(key, USER, '2581')).not.toEqual(lockVerifier(key, USER, '2580'));
+    expect(lockVerifier(key, 'someone-else', '2580')).not.toEqual(lockVerifier(key, USER, '2580'));
+    expect(sameBytes(new Uint8Array([1, 2]), new Uint8Array([1, 2]))).toBe(true);
+    expect(sameBytes(new Uint8Array([1, 2]), new Uint8Array([1, 3]))).toBe(false);
+    expect(sameBytes(new Uint8Array([1]), new Uint8Array([1, 0]))).toBe(false);
+  });
+});
+
+describe('the PIN store app lock', () => {
+  const offlineApi = (): PinApi => {
+    const fail = async (): Promise<never> => {
+      throw new Error('offline');
+    };
+    return {
+      fetchKey: fail,
+      saveKey: fail,
+      evaluate: fail,
+      confirm: fail,
+      startOver: fail,
+      isKeyCurrent: fail,
+    };
+  };
+
+  const phone = () => {
+    const keys = new Map<string, Uint8Array>();
+    const local: LocalKeys = {
+      get: async (id) => keys.get(id) ?? null,
+      set: async (id, key) => {
+        keys.set(id, key);
+      },
+      remove: async (id) => {
+        keys.delete(id);
+      },
+    };
+    return { keys, local, locks: memoryLockRecords() };
+  };
+
+  let clock = Date.parse('2026-09-21T08:00:00Z');
+  const now = () => clock;
+
+  /** A PIN created on this phone, then the app closed and opened again. */
+  const reopened = async (seed: string) => {
+    const device = phone();
+    const store = createPinStore(realServer(), device.local, seeded(seed), now, device.locks);
+    await store.getState().check(USER);
+    expect(await store.getState().create('2580')).toEqual({ ok: true });
+    expect(store.getState().locked).toBe(false);
+
+    // Opened again: same phone, no connection needed.
+    const again = createPinStore(offlineApi(), device.local, seeded(`${seed}!`), now, device.locks);
+    await again.getState().check(USER);
+    return { device, store: again };
+  };
+
+  /** A minimal real server: just enough to create a PIN. */
+  const realServer = (): PinApi => {
+    const k = serverKey('lock-server');
+    let record: KeyRecord | null = null;
+    return {
+      fetchKey: async () => record,
+      saveKey: async (r) => {
+        record = r;
+      },
+      evaluate: async (blinded) => ({
+        kind: 'evaluated',
+        evaluated: evaluateOn(k, blinded),
+        failures: 0,
+      }),
+      confirm: async () => true,
+      startOver: async () => {
+        record = null;
+      },
+      isKeyCurrent: async () => true,
+    };
+  };
+
+  it('asks for the PIN when the app is opened with the key already here, offline too', async () => {
+    const { store } = await reopened('l1');
+    expect(store.getState()).toMatchObject({ status: 'ready', locked: true });
+
+    expect(await store.getState().openLock('0852')).toEqual({
+      ok: false,
+      message: "That PIN isn't right. 4 tries left before a wait.",
+    });
+    expect(store.getState().locked).toBe(true);
+    expect(await store.getState().openLock('2580')).toEqual({ ok: true });
+    expect(store.getState().locked).toBe(false);
+  });
+
+  it('locks again on request, and only once the key is here', async () => {
+    const { store } = await reopened('l2');
+    await store.getState().openLock('2580');
+    store.getState().lock();
+    expect(store.getState().locked).toBe(true);
+
+    const empty = createPinStore(null, phone().local, seeded('l2x'), now);
+    empty.getState().lock();
+    expect(empty.getState().locked).toBe(false);
+  });
+
+  it('makes people wait after five wrong PINs, and remembers it across restarts', async () => {
+    const { device, store } = await reopened('l3');
+    for (let i = 0; i < 4; i++) await store.getState().openLock('0852');
+    expect(await store.getState().openLock('0852')).toEqual({
+      ok: false,
+      message: "That PIN isn't right. Try again in 1 minute.",
+      retryAt: '2026-09-21T08:01:00.000Z',
+    });
+    // Even the right PIN waits.
+    expect(await store.getState().openLock('2580')).toMatchObject({
+      ok: false,
+      message: 'Too many tries. Try again in 1 minute.',
+    });
+
+    // Closing and opening the app does not clear the count.
+    const again = createPinStore(offlineApi(), device.local, seeded('l3!'), now, device.locks);
+    await again.getState().check(USER);
+    expect(again.getState().lockRetryAt).toBe('2026-09-21T08:01:00.000Z');
+
+    clock += 60_000;
+    expect(await again.getState().openLock('0852')).toMatchObject({
+      message: "That PIN isn't right. Try again in 5 minutes.",
+    });
+    clock += 5 * 60_000;
+    expect(await again.getState().openLock('2580')).toEqual({ ok: true });
+    expect((await device.locks.get(USER))?.failures).toBe(0);
+  });
+
+  it('checks the PIN with the server once when this phone has no verifier yet', async () => {
+    const server = realServer();
+    const device = phone();
+    const first = createPinStore(server, device.local, seeded('l4'), now);
+    await first.getState().check(USER);
+    await first.getState().create('2580');
+    // A phone from before the app lock: the key is kept, the verifier is not.
+    const again = createPinStore(server, device.local, seeded('l4!'), now, device.locks);
+    await again.getState().check(USER);
+    expect(again.getState().locked).toBe(true);
+    expect(await device.locks.get(USER)).toBeNull();
+
+    expect(await again.getState().openLock('0852')).toMatchObject({ ok: false });
+    expect(await again.getState().openLock('2580')).toEqual({ ok: true });
+    expect(await device.locks.get(USER)).toMatchObject({ failures: 0, retryAt: null });
+  });
+
+  it('forgets the lock with the key on sign-out', async () => {
+    const { device, store } = await reopened('l5');
+    await store.getState().forget();
+    expect(await device.locks.get(USER)).toBeNull();
+    expect(device.keys.has(USER)).toBe(false);
+    expect(store.getState().locked).toBe(false);
   });
 });

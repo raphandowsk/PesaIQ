@@ -21,6 +21,7 @@ import {
   wrappingKey,
   type Random,
 } from './crypto';
+import { lockVerifier, lockWaitMs, memoryLockRecords, sameBytes, type LockRecords } from './lock';
 import { pinProblem, retryText, triesLeft } from './rules';
 
 export type PinStatus = 'idle' | 'checking' | 'needsCreate' | 'needsUnlock' | 'ready' | 'offline';
@@ -75,6 +76,10 @@ export interface PinState {
   verified: boolean;
   /** The key here was replaced from another phone ("Forgot PIN" there). */
   replaced: boolean;
+  /** The app lock is shown: the key is here, but the PIN has not been entered since opening. */
+  locked: boolean;
+  /** No guess at the app lock is checked before this time (ISO). */
+  lockRetryAt: string | null;
   check(userId: string): Promise<void>;
   /**
    * Asks the server whether the key here is still the account's. If another
@@ -85,6 +90,10 @@ export interface PinState {
   create(pin: string): Promise<PinResult>;
   unlock(pin: string): Promise<PinResult>;
   startOver(): Promise<PinResult>;
+  /** Shows the app lock again (back from a while in the background). */
+  lock(): void;
+  /** Opens the app lock with the PIN, checked on the phone. */
+  openLock(pin: string): Promise<PinResult>;
   /** Removes this phone's copy of the key (sign-out) and clears the state. */
   forget(userId?: string): Promise<void>;
   /** Clears the state only (signed out elsewhere). */
@@ -98,6 +107,8 @@ const SIGNED_OUT = {
   record: null,
   verified: false,
   replaced: false,
+  locked: false,
+  lockRetryAt: null,
 } as const;
 
 const wrongPin = (failures: number) => {
@@ -112,6 +123,7 @@ export function createPinStore(
   local: LocalKeys,
   random: Random,
   now: () => number = Date.now,
+  locks: LockRecords = memoryLockRecords(),
 ) {
   const evaluate = async (blinded: Uint8Array): Promise<Evaluation> => {
     if (!api) return { kind: 'failed', message: PIN_MESSAGES.offline };
@@ -139,6 +151,43 @@ export function createPinStore(
     }
   };
 
+  // The app lock's verifier: written whenever the PIN has just been entered.
+  const rememberPin = async (userId: string, key: Uint8Array, pin: string) => {
+    try {
+      await locks.set(userId, {
+        verifier: toBase64(lockVerifier(key, userId, pin)),
+        failures: 0,
+        retryAt: null,
+      });
+    } catch {
+      // Not kept: the next app lock asks the server to check the PIN instead.
+    }
+  };
+
+  /** The account key the PIN opens, through the server; a null key for a wrong PIN. */
+  const openWithServer = async (
+    userId: string,
+    record: KeyRecord,
+    pin: string,
+  ): Promise<{ key: Uint8Array | null; failures: number } | PinResult> => {
+    const input = pinInput(userId, pin);
+    const blind = randomScalar(random);
+    const evaluation = await evaluate(blindPin(input, blind));
+    if (evaluation.kind !== 'evaluated') return refused(evaluation);
+    try {
+      const secret = finishPin(input, blind, evaluation.evaluated);
+      const key = openAccountKey(
+        fromBase64(record.wrappedKey),
+        wrappingKey(secret, fromBase64(record.salt)),
+        fromBase64(record.nonce),
+        userId,
+      );
+      return { key, failures: evaluation.failures };
+    } catch {
+      return { ok: false, message: PIN_MESSAGES.failed };
+    }
+  };
+
   let verifying: Promise<void> | null = null;
 
   return create<PinState>()((set, get) => ({
@@ -148,6 +197,8 @@ export function createPinStore(
     record: null,
     verified: false,
     replaced: false,
+    locked: false,
+    lockRetryAt: null,
 
     async check(userId) {
       set({
@@ -157,11 +208,20 @@ export function createPinStore(
         record: null,
         verified: false,
         replaced: false,
+        locked: false,
+        lockRetryAt: null,
       });
       try {
         const kept = await local.get(userId);
         if (kept) {
-          set({ status: 'ready', accountKey: kept });
+          // Opening the app with the key already here: the PIN first.
+          let lockRetryAt: string | null = null;
+          try {
+            lockRetryAt = (await locks.get(userId))?.retryAt ?? null;
+          } catch {
+            // Unreadable: the first guess finds out.
+          }
+          set({ status: 'ready', accountKey: kept, locked: true, lockRetryAt });
           return;
         }
       } catch {
@@ -214,7 +274,8 @@ export function createPinStore(
         return { ok: false, message: PIN_MESSAGES.offline };
       }
       await keepOnPhone(userId, accountKey);
-      set({ status: 'ready', accountKey, record, verified: true, replaced: false });
+      await rememberPin(userId, accountKey, pin);
+      set({ status: 'ready', accountKey, record, verified: true, replaced: false, locked: false });
       return { ok: true };
     },
 
@@ -225,24 +286,10 @@ export function createPinStore(
       }
       if (!/^\d{4}$/.test(pin)) return { ok: false, message: PIN_MESSAGES.enterPin };
 
-      const input = pinInput(userId, pin);
-      const blind = randomScalar(random);
-      const evaluation = await evaluate(blindPin(input, blind));
-      if (evaluation.kind !== 'evaluated') return refused(evaluation);
-
-      let accountKey: Uint8Array | null = null;
-      try {
-        const secret = finishPin(input, blind, evaluation.evaluated);
-        accountKey = openAccountKey(
-          fromBase64(record.wrappedKey),
-          wrappingKey(secret, fromBase64(record.salt)),
-          fromBase64(record.nonce),
-          userId,
-        );
-      } catch {
-        return { ok: false, message: PIN_MESSAGES.failed };
-      }
-      if (!accountKey) return { ok: false, message: wrongPin(evaluation.failures) };
+      const opened = await openWithServer(userId, record, pin);
+      if ('ok' in opened) return opened;
+      const accountKey = opened.key;
+      if (!accountKey) return { ok: false, message: wrongPin(opened.failures) };
 
       try {
         await api.confirm(pinVerifier(accountKey));
@@ -250,7 +297,93 @@ export function createPinStore(
         // The count resets on the next correct PIN; the key is already open.
       }
       await keepOnPhone(userId, accountKey);
-      set({ status: 'ready', accountKey, verified: true, replaced: false });
+      await rememberPin(userId, accountKey, pin);
+      set({ status: 'ready', accountKey, verified: true, replaced: false, locked: false });
+      return { ok: true };
+    },
+
+    lock() {
+      if (get().status === 'ready') set({ locked: true });
+    },
+
+    async openLock(pin) {
+      const { userId, accountKey, status, locked } = get();
+      if (!userId || !accountKey || status !== 'ready') {
+        return { ok: false, message: PIN_MESSAGES.failed };
+      }
+      if (!locked) return { ok: true };
+      if (!/^\d{4}$/.test(pin)) return { ok: false, message: PIN_MESSAGES.enterPin };
+
+      let kept = null;
+      try {
+        kept = await locks.get(userId);
+      } catch {
+        // Unreadable: the server checks the PIN instead.
+      }
+      let expected: Uint8Array | null = null;
+      try {
+        expected = kept ? fromBase64(kept.verifier) : null;
+      } catch {
+        // Damaged: the server checks the PIN instead.
+      }
+      const at = now();
+
+      if (kept && expected) {
+        if (kept.retryAt && Date.parse(kept.retryAt) > at) {
+          set({ lockRetryAt: kept.retryAt });
+          return {
+            ok: false,
+            message: `Too many tries. ${retryText(kept.retryAt, at)}`,
+            retryAt: kept.retryAt,
+          };
+        }
+        if (sameBytes(lockVerifier(accountKey, userId, pin), expected)) {
+          try {
+            await locks.set(userId, { ...kept, failures: 0, retryAt: null });
+          } catch {
+            // The count stays; the next right PIN clears it.
+          }
+          set({ locked: false, lockRetryAt: null });
+          return { ok: true };
+        }
+        const failures = kept.failures + 1;
+        const wait = lockWaitMs(failures);
+        const retryAt = wait > 0 ? new Date(at + wait).toISOString() : null;
+        try {
+          await locks.set(userId, { ...kept, failures, retryAt });
+        } catch {
+          // Not counted; nothing opens without the right PIN either way.
+        }
+        set({ lockRetryAt: retryAt });
+        return retryAt
+          ? { ok: false, message: `That PIN isn't right. ${retryText(retryAt, at)}`, retryAt }
+          : { ok: false, message: wrongPin(failures) };
+      }
+
+      // No verifier on this phone yet (its key was kept before the app lock
+      // existed): the server checks this PIN once, with its own guess count.
+      if (!api) return { ok: false, message: PIN_MESSAGES.offline };
+      let record = get().record;
+      if (!record) {
+        try {
+          record = await api.fetchKey();
+        } catch {
+          return { ok: false, message: PIN_MESSAGES.offline };
+        }
+      }
+      if (!record) return { ok: false, message: PIN_MESSAGES.failed };
+      const opened = await openWithServer(userId, record, pin);
+      if ('ok' in opened) return opened;
+      if (!opened.key) return { ok: false, message: wrongPin(opened.failures) };
+      // A PIN set on another phone opens a different key: `verify` deals with that.
+      if (!sameBytes(opened.key, accountKey)) return { ok: false, message: PIN_MESSAGES.failed };
+      try {
+        await api.confirm(pinVerifier(accountKey));
+      } catch {
+        // The count resets on the next correct PIN.
+      }
+      await rememberPin(userId, accountKey, pin);
+      set({ locked: false, lockRetryAt: null, record });
       return { ok: true };
     },
 
@@ -286,9 +419,16 @@ export function createPinStore(
             accountKey: null,
             verified: false,
             replaced: true,
+            locked: false,
           });
         } catch {
-          set({ status: 'offline', accountKey: null, verified: false, replaced: true });
+          set({
+            status: 'offline',
+            accountKey: null,
+            verified: false,
+            replaced: true,
+            locked: false,
+          });
         }
       })().finally(() => {
         verifying = null;
@@ -303,7 +443,13 @@ export function createPinStore(
       } catch {
         return { ok: false, message: PIN_MESSAGES.offline };
       }
-      set({ status: 'needsCreate', record: null, accountKey: null, verified: false });
+      set({
+        status: 'needsCreate',
+        record: null,
+        accountKey: null,
+        verified: false,
+        locked: false,
+      });
       return { ok: true };
     },
 
@@ -313,6 +459,11 @@ export function createPinStore(
           await local.remove(userId);
         } catch {
           // Nothing kept, or unreadable: either way it is not used again.
+        }
+        try {
+          await locks.remove(userId);
+        } catch {
+          // Useless without the key.
         }
       }
       set({ ...SIGNED_OUT });

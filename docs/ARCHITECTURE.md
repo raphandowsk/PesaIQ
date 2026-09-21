@@ -1054,8 +1054,19 @@ recovery key (decided 2026-09-14).
   - `pin_reset` handles "Forgot PIN?" by deleting everything synced to the
     account.
 - **On the phone:** the opened key is kept in secure storage, on this device
-  only (`services/keyStore.ts`), so the PIN isn't asked for on every launch.
-  Sign out removes it.
+  only (`services/keyStore.ts`), so opening the app needs no server. Sign out
+  removes it.
+- **App lock (2026-09-21):** the PIN is asked for each time PesaIQ is opened, and
+  when it returns after a minute or more in the background (`AWAY_MS`; a quick
+  trip out to copy a message does not lock it). `components/pin/LockScreen.tsx`
+  is a modal over the screens, which stay as they were. The PIN is checked on the
+  phone, offline too, against an HMAC of it under the account key
+  (`features/pin/lock.ts`), kept in secure storage beside the key: whoever could
+  read it could read the key already. Wrong guesses are counted there: five
+  free, then waits of 1, 5, 15 and 60 minutes, kept across restarts. A phone that
+  kept its key before the lock existed has the server check the PIN once, then
+  keeps the verifier. "Forgot PIN?" on the lock signs out; after the SMS code,
+  the PIN screen's own "Forgot PIN?" starts over.
 - **Common PINs** are refused: four of a digit, runs like 1234, and pairs like 1212.
 - **Libraries:** `@noble/curves`, `@noble/hashes` and `@noble/ciphers`. They are
   audited, pure JavaScript, and run in Expo Go. Randomness comes from

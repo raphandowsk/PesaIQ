@@ -109,6 +109,9 @@ storage model above would not change: still local, still no upload by default.
   waits. The account key it unlocks is stored on the server only in locked
   form. The unlocked key stays in this phone's secure storage and is removed
   on sign-out.
+- **App lock.** The PIN is asked for each time PesaIQ opens and after a minute
+  or more away. It is checked on the phone against a code made from it and the
+  account key, kept in secure storage; wrong guesses lead to growing waits.
 - **There is no recovery key.** A forgotten PIN means the records synced to the
   account are deleted from the server and a new PIN is set. The records on the
   phone are kept.

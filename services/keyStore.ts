@@ -10,6 +10,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 import { fromBase64, toBase64 } from '../features/pin/bytes';
+import type { LockRecord, LockRecords } from '../features/pin/lock';
 import type { LocalKeys } from '../features/pin/store';
 
 const keyName = (userId: string) => `pesaiq.account-key.${userId}`;
@@ -43,3 +44,44 @@ const phone: LocalKeys = {
 };
 
 export const localKeys: LocalKeys = Platform.OS === 'web' ? browser : phone;
+
+const lockName = (userId: string) => `pesaiq.app-lock.${userId}`;
+
+const parseLock = (value: string | null): LockRecord | null => {
+  if (!value) return null;
+  const parsed = JSON.parse(value) as Partial<LockRecord>;
+  if (typeof parsed.verifier !== 'string') return null;
+  return {
+    verifier: parsed.verifier,
+    failures: typeof parsed.failures === 'number' ? parsed.failures : 0,
+    retryAt: typeof parsed.retryAt === 'string' ? parsed.retryAt : null,
+  };
+};
+
+/** The app lock's PIN verifier and guess count, kept beside the account key. */
+export const lockRecords: LockRecords =
+  Platform.OS === 'web'
+    ? {
+        async get(userId) {
+          return parseLock(globalThis.localStorage?.getItem(lockName(userId)) ?? null);
+        },
+        async set(userId, record) {
+          globalThis.localStorage?.setItem(lockName(userId), JSON.stringify(record));
+        },
+        async remove(userId) {
+          globalThis.localStorage?.removeItem(lockName(userId));
+        },
+      }
+    : {
+        async get(userId) {
+          return parseLock(await SecureStore.getItemAsync(lockName(userId)));
+        },
+        async set(userId, record) {
+          await SecureStore.setItemAsync(lockName(userId), JSON.stringify(record), {
+            keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+          });
+        },
+        async remove(userId) {
+          await SecureStore.deleteItemAsync(lockName(userId));
+        },
+      };

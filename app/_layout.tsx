@@ -13,12 +13,13 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 
+import { LockScreen } from '../components/pin/LockScreen';
 import { Button, Screen, Text, Toast } from '../components/ui';
 import { accessFor, useAuthStore } from '../features/auth';
 import { AI_READING_ENABLED } from '../features/ai/config';
 import { aiReader } from '../features/ai/instance';
 import { useDeviceCheckIn } from '../features/devices';
-import { useKeyCheck, usePinStore } from '../features/pin';
+import { useAppLock, useKeyCheck, usePinStore } from '../features/pin';
 import { useShareCapture } from '../features/share';
 import { useAutoSync } from '../features/sync';
 import { useAppStore } from '../features/transactions';
@@ -74,10 +75,13 @@ export default function RootLayout() {
   const pinUser = usePinStore((s) => s.userId);
   const checkPin = usePinStore((s) => s.check);
   const forgetPin = usePinStore((s) => s.forget);
+  const locked = usePinStore((s) => s.locked);
 
   // Once unlocked: confirm the key is still the account's, keep this phone in
   // the signed-in list, and sync while Cloud sync is on.
   useKeyCheck();
+  // The PIN again after a while away (opening the app from closed always asks).
+  useAppLock();
   useDeviceCheckIn();
   useAutoSync();
   // A message shared from another app is held until the app is open to read it.
@@ -181,6 +185,7 @@ export default function RootLayout() {
         </Stack.Protected>
       </Stack>
       <Toast />
+      <LockScreen visible={signedIn && pinStatus === 'ready' && locked} />
     </SafeAreaProvider>
   );
 }
