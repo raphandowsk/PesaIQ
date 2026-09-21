@@ -16,7 +16,7 @@
     "android": {
       "package": "tz.svl.pesaiq",
       "adaptiveIcon": {
-        "backgroundColor": "#FEFEFE",
+        "backgroundColor": "#F8F6FF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png"
       },

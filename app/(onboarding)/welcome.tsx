@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import MARK from '../../assets/images/mark.png';
 import { ScoreRing } from '../../components/dashboard/ScoreRing';
 import { StatTile } from '../../components/dashboard/StatTiles';
 import { Button, Tag, Text } from '../../components/ui';
@@ -67,20 +68,12 @@ export default function Welcome() {
           accessible
           accessibilityLabel="PesaIQ"
         >
-          <View
-            style={{
-              width: LOGO,
-              height: LOGO,
-              borderRadius: radius.pill,
-              backgroundColor: colors.accent,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text variant="h3" style={{ fontFamily: fonts.heading, color: colors.bg }}>
-              P
-            </Text>
-          </View>
+          <Image
+            source={MARK}
+            style={{ width: LOGO, height: LOGO }}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
           <Text variant="h3" style={{ fontFamily: fonts.heading }}>
             PesaIQ
           </Text>
