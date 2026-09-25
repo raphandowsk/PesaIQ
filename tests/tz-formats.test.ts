@@ -221,3 +221,109 @@ describe('a Mixx cash-out at an agent', () => {
     expect(b.warnings).toEqual([]);
   });
 });
+
+describe("HaloPesa's English layout", () => {
+  it('reads a Lipa payment made through M-Pesa', () => {
+    const r = parseMessage(TZ.haloSentMpesaLipa);
+
+    expect(r.provider).toBe('HaloPesa');
+    expect(r.type).toBe('SENT');
+    expect(r.amount).toBe(1000);
+    expect(r.fee).toBe(60);
+    expect(r.counterparty).toBe('ZAINABU HAMZA KILEO');
+    // The Lipa number comes after "Ref"; only its last four digits are kept.
+    expect(r.details.merchant).toBe(true);
+    expect(r.maskedAccountOrPhone).toBe('**** 0321');
+    // The network is the other side's, and the message is still HaloPesa's.
+    expect(r.details.network).toBe('M-Pesa');
+    expect(r.transactionReference).toBe('6260000000000011');
+    expect(r.balanceAfter).toBe(3780);
+    expect(r.transactionDate).toBe('22 Sep 2026');
+    expect(r.transactionTime).toBe('07:58');
+    expect(r.moneyCategory).toBe('FOOD_SHOPPING');
+    expect(r.band).toBe('Very high');
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('reads LUKU bought for a meter', () => {
+    const r = parseMessage(TZ.haloLuku);
+
+    expect(r.type).toBe('BILL_PAYMENT');
+    expect(r.amount).toBe(4000);
+    expect(r.fee).toBe(80);
+    expect(r.counterparty).toBe('LUKU');
+    expect(r.maskedAccountOrPhone).toBe('**** 0111');
+    expect(r.moneyCategory).toBe('ELECTRICITY_WATER');
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('reads money sent to, and received from, another network', () => {
+    const sent = parseMessage(TZ.haloSentMixx);
+    expect(sent.type).toBe('SENT');
+    expect(sent.counterparty).toBe('NEEMA KIMARO');
+    expect(sent.maskedAccountOrPhone).toBe('07** *** 123');
+    expect(sent.details.network).toBe('Mixx by Yas');
+    expect(sent.moneyCategory).toBe('SENT_TO_PEOPLE');
+
+    const received = parseMessage(TZ.haloReceivedAirtel);
+    expect(received.provider).toBe('HaloPesa');
+    expect(received.type).toBe('RECEIVED');
+    expect(received.amount).toBe(1000);
+    expect(received.counterparty).toBe('NEEMA DANIEL KIMARO');
+    expect(received.maskedAccountOrPhone).toBe('06** *** 456');
+    expect(received.details.network).toBe('Airtel Money');
+    expect(received.balanceAfter).toBe(5880);
+    expect(received.warnings).toEqual([]);
+  });
+});
+
+describe("Airtel Money's TID layouts", () => {
+  it('reads a payment to a person, with the levy inside the charges', () => {
+    const r = parseMessage(TZ.airtelPaidPerson);
+
+    expect(r.provider).toBe('Airtel Money');
+    expect(r.type).toBe('SENT');
+    expect(r.amount).toBe(1000);
+    expect(r.fee).toBe(45);
+    expect(r.counterparty).toBe('NEEMA DANIEL KIMARO');
+    expect(r.maskedAccountOrPhone).toBe('06** *** 789');
+    expect(r.transactionReference).toBe('XX260921.1940.C33333');
+    expect(r.balanceAfter).toBe(7910);
+    expect(r.band).toBe('Very high');
+    // Airtel's messages carry no date of their own.
+    expect(r.transactionDate).toBeNull();
+    expect(r.warnings).toEqual(['No date in the message - capture time will be used instead.']);
+  });
+
+  it('reads a Lipa number paid by QR code', () => {
+    const r = parseMessage(TZ.airtelLipaQr);
+
+    expect(r.type).toBe('SENT');
+    expect(r.amount).toBe(2000);
+    expect(r.fee).toBe(70);
+    expect(r.counterparty).toBe('ZAINABU HAMZA KILEO');
+    expect(r.details.merchant).toBe(true);
+    expect(r.maskedAccountOrPhone).toBe('**** 0321');
+    expect(r.balanceAfter).toBe(6840);
+  });
+
+  it('reads money received', () => {
+    const r = parseMessage(TZ.airtelReceived);
+
+    expect(r.type).toBe('RECEIVED');
+    expect(r.amount).toBe(1000);
+    expect(r.counterparty).toBe('NEEMA DANIEL KIMARO');
+    expect(r.balanceAfter).toBe(8910);
+    expect(r.transactionReference).toBe('XX260921.1942.B22222');
+    expect(r.band).toBe('Very high');
+  });
+
+  it('gives the same payment the same reference through TIPS, so it is a repeat', () => {
+    const english = parseMessage(TZ.airtelPaidPerson);
+    const swahili = parseMessage(TZ.airtelTipsSmall);
+
+    expect(swahili.transactionReference).toBe(english.transactionReference);
+    expect(swahili.amount).toBe(english.amount);
+    expect(swahili.fee).toBe(english.fee);
+  });
+});

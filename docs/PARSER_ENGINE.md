@@ -169,6 +169,32 @@ because they are tariff amounts and the arithmetic checks rely on them.
 Mixx is now **EXPERIMENTAL**. The LUKU receipt's sender is left unrecognized
 until a message shows which wallet sent it.
 
+## Real HaloPesa and Airtel Money layouts (2026-09-22)
+
+More of the owner's own messages, anonymized the same way. Both operators write
+layouts the specification does not document.
+
+| Layout                                      | Signature                             | What is read                                                                             |
+| ------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| HaloPesa "SUCCESSFUL! Tnx … Sent … to"      | "Tnx" and an English body             | amount; the other network; the payee, with a Lipa number after "Ref"; fee; balance; date |
+| HaloPesa "Tnx … Received … from … via"      | "Received … via NETWORK"              | amount; sender name and number; the network it came from                                 |
+| HaloPesa "Tnx … Bought LUKU … for meter"    | "Bought … for meter"                  | amount, the meter (masked) as the payee, fee, balance                                    |
+| Airtel "Paid … to NUMBER NAME. Charges …"   | "TID:", "Service charge", "Govt Levy" | amount; payee number and name; fee, with the levy inside it; balance                     |
+| Airtel "Umelipa … kwa VODALIPA … LIPA NAME" | "TID:" and a Lipa number              | amount; the merchant and its Lipa number; "Makato" as the fee; balance                   |
+| Airtel "Umepokea Tsh … kutoka kwa NAME"     | "TID:"                                | amount, sender, balance                                                                  |
+
+Notes:
+
+- **The other side's network is not the operator.** "Sent … to M-Pesa", "via
+  Airtel Money" and "(0713000123, Mixx by Yas)" are blanked out before the
+  operator is weighed, so a HaloPesa message is not read as M-Pesa's.
+- **An Airtel payment arrives twice**, once in English and once in Swahili
+  through TIPS, with the same "TID:". The second is skipped as a repeat,
+  because the transaction ID is the same.
+- **Airtel's messages carry no date**, so the time the message reached the phone
+  is used, with a warning. The TID looks like a timestamp
+  (`XX260922.0754.…`), but nothing documents that, so it is not read as one.
+
 ### Fees and taxes (`charges.ts`)
 
 - **Fee:** "Jumla ya makato", "Ada", "Ada ya kutoa" (a withdrawal), or "Fee",
@@ -294,7 +320,10 @@ Shared fragments: currency `(?:TZS|Tshs?|TSH)\.?`; number
   others) with transfer wording.
 - **Airtel Money** (`airtel.patterns.ts`): `txn\s*id\s*[:-]?\s*(ID)`;
   `umepokea\s*NUM\s*Tshs?`; `kutoka\s*\(\s*jina\s+la\s+akaunti\s*:\s*(NAME)\)`;
-  `salio\s+lako\s+ni\s*NUM\s*Tshs?`; "Kwenda Kwa No" and "Jina La Mpokeaji".
+  `salio\s+lako\s+ni\s*NUM\s*Tshs?`; "Kwenda Kwa No" and "Jina La Mpokeaji";
+  `TID\s*[:-]?\s*(ID)`; `(?:paid|umelipa)\s+NUM\s*TZS`; `makato\s+TSH\s*NUM`;
+  `govt\s+levy … NUM`; `paid … to NUMBER NAME`; a Lipa number paid by QR
+  ("kwa VODALIPA TNQR.LIPA NAME. 54000321").
 - **Mixx by Yas** (`mixx.patterns.ts`, `recipient.ts`): "Jumla ya makato",
   "Salio jipya ni", "Namba ya muamala", "Malipo yamekamilika kwenda NAME, Kiasi",
   `kwenda kwa (mpokeaji wa)? NETWORK (LIPA)? NAME - number`, "Risiti"; a GePG
@@ -302,7 +331,10 @@ Shared fragments: currency `(?:TZS|Tshs?|TSH)\.?`; number
 - **HaloPesa** (`halopesa.patterns.ts`): `utambulisho\s+wa\s+muamala\s*:\s*(ID)`;
   `umetuma\s+TSH\s*NUM`; "kwenda NETWORK, jina NAME"; `gharama\s+TSH\s*NUM`;
   `tozo\s+(?:ya|la)\s+serikali … NUM` (a government levy, kept as a tax inside
-  the fee); `wakati\s+yyyy/mm/dd hh:mm:ss`; `salio\s+lako\s+jipya\s+ni …`.
+  the fee); `wakati\s+yyyy/mm/dd hh:mm:ss`; `salio\s+lako\s+jipya\s+ni …`; the
+  English layout: `tnx\s*(ID)`, `(?:sent|received)\s+NUM\s*TZS`,
+  `bought\s+LUKU … for meter (NUMBER)`, `fee\s*:?\s*NUM\s*TZS`, "to NETWORK,
+  name NAME (Ref NUMBER)", "to NAME (NUMBER, NETWORK)".
 - **T-PESA** (`tpesa.patterns.ts`): the shared layout, reported as
   `TPESA_PATTERN_CONFIRMED_PUBLIC_EXAMPLE`, with a caution that T-PESA is known
   from one public example.
@@ -310,7 +342,7 @@ Shared fragments: currency `(?:TZS|Tshs?|TSH)\.?`; number
 ### Tests
 
 `tests/tz-fixtures.test.ts` runs every fixture in `tests/fixtures/tz/` (at least
-ten per operator, 54 in all). It checks each reading field by field, that it
+ten per operator, 69 in all). It checks each reading field by field, that it
 says parsed and never verified, and that no field holds a full phone number.
 `tests/tz-parser.test.ts` covers each part (amounts, phones, dates, IDs, operator
 evidence, the kind order, confidence, the master parser, §46's security rules)

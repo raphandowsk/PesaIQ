@@ -9,6 +9,9 @@ import type { Operator } from '../types/operator';
 
 const re = (source: string) => new RegExp(source, 'i');
 
+/** The five operators as messages name the other side of a transfer. */
+export const NETWORK_NAMES = String.raw`M[-\s]?PESA|Airtel(?:\s*Money)?|Mixx(?:\s+by\s+Yas)?|Tigo\s*Pesa|Halo\s*Pesa|T[-\s]?PESA`;
+
 export interface Marker {
   match: RegExp;
   /** Shown in "How we got this": what was recognized. */
@@ -83,8 +86,12 @@ export const COMMON_PATTERNS = {
   ],
   /** "Ada ----": the layout's way of saying no fee. */
   noFee: /\bada\s*:?\s*-{2,}/i,
-  // HaloPesa's "TOZO ya serikali TSH …" and Mixx's plain "Tozo TSh …".
-  levy: [re(String.raw`\btozo(?:\s+(?:ya|la)\s+serikali)?\s*:?\s*${CUR}\s*${NUM}`)],
+  // HaloPesa's "TOZO ya serikali TSH …", Mixx's plain "Tozo TSh …", and
+  // Airtel Money's English "Govt Levy Tsh …" inside its charges breakdown.
+  levy: [
+    re(String.raw`\btozo(?:\s+(?:ya|la)\s+serikali)?\s*:?\s*${CUR}\s*${NUM}`),
+    re(String.raw`\bgov(?:'?t|ernment)?\.?\s*levy\s*:?\s*(?:${CUR}\s*${NUM}|${NUM}\s*${CUR})`),
+  ],
   balance: [
     re(String.raw`\bsalio\s+lako\s+jipya\s+ni\s*:?\s*${CUR}\s*${NUM}`),
     re(String.raw`\bsalio\s+lako\s+la\s+[\w-]+(?:\s+pesa)?\s+ni\s*:?\s*${CUR}\s*${NUM}`),
@@ -92,6 +99,8 @@ export const COMMON_PATTERNS = {
     re(String.raw`\bsalio\s+lako\s+ni\s*:?\s*(?:${CUR}\s*${NUM}|${NUM}\s*${CUR})`),
     re(String.raw`\b(?:new\s+)?balance\s*(?:is\s*)?:?\s*(?:${CUR}\s*${NUM}|${NUM}\s*${CUR})`),
     re(String.raw`\bsalio\s*(?:ni\s*)?:?\s*${CUR}\s*${NUM}`),
+    // Airtel Money writes the balance the other way round: "Salio 6,840.00 Tsh".
+    re(String.raw`\bsalio\s*(?:ni\s*)?:?\s*${NUM}\s*${CUR}`),
   ],
   sender: [
     re(String.raw`\bkutoka\s*\(\s*jina\s+la\s+akaunti\s*:\s*([^)\n]+?)\s*\)`),
@@ -121,7 +130,13 @@ export const COMMON_PATTERNS = {
   controlNumber: /\bcontrol\s*(?:number|no\.?|namba)\s*:?\s*(\d{6,20})/i,
   bankName: /\b(NMB|CRDB|NBC|ABSA|KCB|DTB|EQUITY|STANBIC|EXIM|AZANIA|AKIBA)\b/i,
   bankAccount: /\b(?:akaunti|account|a\/c)\s*(?:namba|no\.?|number)?\s*:?\s*([\d*]{6,20})/i,
-  /** The network on the other side: "kwenda M-PESA", "kutoka Airtel Money". */
-  network:
-    /\b(?:kwenda|kutoka)\s+(?:kwa\s+)?(M[-\s]?PESA|Airtel(?:\s*Money)?|Mixx|Tigo\s*Pesa|Halo\s*Pesa|T[-\s]?PESA)\b/i,
+  /**
+   * The network on the other side: "kwenda M-PESA", "kutoka Airtel Money",
+   * HaloPesa's English "to M-Pesa" and "via Airtel Money", and the network
+   * written after the number in brackets: "(0713000123, Mixx by Yas)".
+   */
+  network: new RegExp(
+    String.raw`(?:\b(?:kwenda|kutoka|to|from|via)\s+(?:kwa\s+)?|,\s*)(${NETWORK_NAMES})\b`,
+    'i',
+  ),
 };

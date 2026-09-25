@@ -1,7 +1,8 @@
 /**
  * Mixx by Yas and LUKU messages in their real layouts, anonymized.
  *
- * The layouts come from messages the user supplied on 2026-09-12. Every name,
+ * The layouts come from messages the user supplied on 2026-09-12, 2026-09-15,
+ * 2026-09-19 and 2026-09-22. Every name,
  * phone number, Lipa number, reference, receipt, balance, meter number and
  * token has been replaced with an invented one. The fee and VAT figures are
  * tariff amounts, kept as they were so the arithmetic checks are real; the
@@ -53,6 +54,52 @@ export const TZ = {
 
   mixxCashOutLarge:
     'Salio lako jipya ni TSh 520. Umetuma pesa kwa Wakala - HALIMA JUMA, kiasi TSh 50,000. Jumla ya Makato TSh 3,273. (Ada TSh 2,700, Tozo TSh 573), VAT TSh 412. Kumbukumbu No.: 26600000000022. 19/09/26 07:50.',
+
+  /**
+   * HaloPesa's English layout ("SUCCESSFUL! Tnx …"), supplied 2026-09-22.
+   * Paying a Vodacom Lipa number through M-Pesa: the Lipa number follows
+   * "Ref", and the fee is written "fee: 60 TZS".
+   */
+  haloSentMpesaLipa:
+    'SUCCESSFUL!\nTnx 6260000000000011. Sent 1,000 TZS to M-Pesa, name LIPA ZAINABU HAMZA KILEO (Ref 54000321), fee: 60 TZS at 22/09/2026 07:58:03.\nNew balance: 3,780.00 TZS.',
+
+  /** The same layout buying LUKU electricity for a meter. */
+  haloLuku:
+    'SUCCESSFUL!\nTnx 6260000000000012. Bought LUKU 4,000 TZS for meter 24300000111 at 20/09/2026 23:39:36. Fee: 80 TZS. \nNew balance: 5,920.00 TZS.',
+
+  /** Sent to a person on another network: the number and network in brackets. */
+  haloSentMixx:
+    'SUCCESSFUL!\nTnx 6260000000000013. Sent 1,000 TZS to NEEMA KIMARO (0713000123, Mixx by Yas) at 21/09/2026 19:37:06. Content: NEEMA DANIEL KIMARO transfer from HaloPesa. Fee: 40 TZS.\nNew balance: 4,880.00 TZS.',
+
+  /** Received from another network, with no "SUCCESSFUL!" heading. */
+  haloReceivedAirtel:
+    'Tnx 6260000000000014. Received 1,000 TZS from NEEMA DANIEL KIMARO (255660000456) via Airtel Money at 21/09/2026 19:41:00. Content: Halopesa.\nNew balance: 5,880.00 TZS.',
+
+  haloSentAirtel:
+    'SUCCESSFUL!\nTnx 6260000000000015. Sent 1,000 TZS to NEEMA DANIEL KIMARO (0660000456, Airtel Money) at 21/09/2026 19:42:40. Content: NEEMA DANIEL KIMARO transfer from HaloPesa. Fee: 40 TZS.\nNew balance: 4,840.00 TZS.',
+
+  /**
+   * Airtel Money's own layouts, supplied 2026-09-22. The reference is
+   * labelled "TID:", and one payment arrives twice: in English with the
+   * charges broken down, and in Swahili through TIPS, both with the same TID.
+   */
+  airtelLipaQr:
+    'Umelipa 2,000 Tsh kwa VODALIPA TNQR.LIPA ZAINABU HAMZA KILEO. 54000321, Makato Tsh 70.00. Salio 6,840.00 Tsh. TID:XX260922.0754.A11111',
+
+  airtelTipsLipa:
+    'Umelipa 2,000.00 Tsh kwenda TIPS TIPS. Makato Tsh 70.00. Salio 6,840.00 Tsh TID:XX260922.0754.A11111',
+
+  airtelReceived:
+    'Umepokea Tsh 1,000.00 kutoka kwa NEEMA DANIEL KIMARO . Salio Tsh8,910.00. TID: XX260921.1942.B22222',
+
+  airtelPaidPerson:
+    'Paid 1000.00 TZS to 255617000789 NEEMA DANIEL KIMARO. Charges Tsh 45.00 (Service charge Tsh 45.00 + Govt Levy Tsh 0.00). Balance 7,910.00 Tsh. TID:XX260921.1940.C33333',
+
+  airtelPaidPersonLocal:
+    'Paid 1000.00 TZS to 0713000123 NEEMA KIMARO. Charges Tsh 45.00 (Service charge Tsh 45.00 + Govt Levy Tsh 0.00). Balance 8,955.00 Tsh. TID:XX260921.1935.D44444',
+
+  airtelTipsSmall:
+    'Umelipa 1,000.00 Tsh kwenda TIPS TIPS. Makato Tsh 45.00. Salio 7,910.00 Tsh TID:XX260921.1940.C33333',
 
   /** A LUKU receipt: meter, reference, units, token, then itemised lines to the TOTAL. */
   lukuReceipt:

@@ -11,7 +11,7 @@
 import { OPERATOR_INFO, SENDER_ID_HINTS } from './types/operator';
 import type { NormalizedSmsMessage } from './types/parser-result';
 import type { Direction, TzStatus, TzTransactionType } from './types/transaction';
-import { ALL_OPERATOR_PATTERNS, type OperatorPatterns } from './patterns';
+import { ALL_OPERATOR_PATTERNS, NETWORK_NAMES, type OperatorPatterns } from './patterns';
 
 /** §28's example weights. */
 export const SIGNAL_WEIGHTS = {
@@ -37,6 +37,10 @@ export interface OperatorEvidence {
 const COUNTERPARTY_PHRASES = [
   /\b(?:kwenda|kutoka)\s+(?:kwa\s+)?(?:mpokeaji\s+wa\s+)?[A-Z][\w-]*(?:\s+(?:pesa|money))?/gi,
   /\b(?:payment|paid|sent)\s+to\b[^,\n]*/gi,
+  // HaloPesa's English layout: "Sent 1,000 TZS to M-Pesa", "via Airtel Money",
+  // and the network beside the number: "(0713000123, Mixx by Yas)".
+  new RegExp(String.raw`\b(?:to|via)\s+(?:${NETWORK_NAMES})\b`, 'gi'),
+  new RegExp(String.raw`\(\s*(?:\+?255|0)\d{8,9}\s*,\s*(?:${NETWORK_NAMES})\s*\)`, 'gi'),
 ];
 
 export function ownWords(text: string): string {
