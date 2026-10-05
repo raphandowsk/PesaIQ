@@ -16,6 +16,8 @@ module.exports = defineConfig([
       'android/**',
       'ios/**',
       'Android app design questions/**',
+      // The launch video's local build output (kept out of git).
+      'brag-output*/**',
       // Supabase Edge Function entry points run on Deno, with URL imports.
       // Their rules live beside them in logic.ts, which is linted and tested.
       'supabase/functions/*/index.ts',

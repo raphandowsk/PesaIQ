@@ -1,4 +1,4 @@
-import { isPickerCancelled, saveExport } from '../services/export/saveExport';
+import { isPickerCancelled, saveExport } from '../services/export/saveToFolder';
 
 // The native module is not available under Jest; only its shape matters here.
 const mockPick = jest.fn();

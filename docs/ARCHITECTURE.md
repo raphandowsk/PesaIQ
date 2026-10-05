@@ -725,7 +725,9 @@ reports what happened in a toast.
 
 ### Export
 
-`features/export/format.ts` is pure; `services/export/saveExport` writes.
+`features/export/format.ts` is pure; `services/export/saveExport` writes, per
+platform: `saveToFolder.ts` (Android), `saveViaShareSheet.ts` (iPhone, picked by
+`saveExport.ios.ts`), `saveExport.web.ts`.
 
 - **Format:** CSV (the brief's header: `Date,Type,Provider,Amount,Currency,Sender,Reference,Confidence`)
   or JSON (every field worth keeping, plus notes saying what is not included).
@@ -743,6 +745,14 @@ reports what happened in a toast.
   picker) and `createFile`, so the file lands where the user chose and nothing is
   shared. On the web, a browser download. Cancelling the picker saves nothing.
   `expo-file-system` became a direct dependency; it ships in Expo Go.
+- **Saving on iPhone (2026-10-05):** iOS has no folder picker for apps. The file
+  is written to the app's cache under its own name and offered with
+  `expo-sharing`'s share sheet (Save to Files, AirDrop, Mail, an app), with its
+  Apple type identifier so the right apps are offered; the cache copy is
+  deleted when the sheet closes, even if it fails. The sheet does not report the
+  choice, so the outcome is `shared`, never `saved`. Receiving shares through
+  `expo-sharing` is left off (its plugin's default), so it cannot clash with
+  `expo-share-intent` on Android. Not yet run on an iPhone.
 
 ### Fixed along the way
 
@@ -932,10 +942,13 @@ records are left out, as they are everywhere else.
 fonts or images to fetch. It carries totals and categories only: no names, phone
 or account numbers, references or message text. Labels are HTML-escaped.
 
-- **Android** (`services/reports/saveReportPdf.ts`):
+- **Android** (`services/reports/printToFolder.ts`):
   - The user picks a folder first. Backing out saves nothing.
   - `expo-print` renders the page to a PDF in the app's cache.
   - Its bytes are written into the folder, and the cache copy is deleted.
+- **iPhone** (`printToShareSheet.ts`, picked by `saveReportPdf.ios.ts`):
+  - `expo-print` renders the PDF to the cache; it is renamed to the report's
+    file name and offered in the share sheet, then deleted.
 - **Web** (`saveReportPdf.web.ts`):
   - The page is printed from a hidden frame, where the browser offers "Save as
     PDF". `expo-print`'s web build would print the whole app page instead.

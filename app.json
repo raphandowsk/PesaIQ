@@ -23,7 +23,7 @@
       "predictiveBackGestureEnabled": false
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "tz.svl.pesaiq"
     },
     "web": {
@@ -44,7 +44,8 @@
           ],
           "disableIOS": true
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

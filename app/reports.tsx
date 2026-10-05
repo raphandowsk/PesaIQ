@@ -39,11 +39,17 @@ const BAR_HEIGHT = 8;
 const MIN_BAR_PCT = 3;
 const STEP = 44;
 
-// Both are true to how the PDF is saved on each platform.
+// Each is true to how the PDF is saved on that platform.
 const SAVE_NOTE =
   Platform.OS === 'web'
     ? 'The PDF is made only when you tap the button. Choose "Save as PDF" in the print window; nothing is sent anywhere.'
-    : 'The PDF is made only when you tap the button. You pick a folder on this device; nothing is sent anywhere.';
+    : Platform.OS === 'ios'
+      ? 'The PDF is made only when you tap the button. You choose where it goes, such as Files, AirDrop or an app; PesaIQ sends nothing itself.'
+      : 'The PDF is made only when you tap the button. You pick a folder on this device; nothing is sent anywhere.';
+const SAVE_FAILED =
+  Platform.OS === 'ios'
+    ? 'The PDF could not be made. Try again.'
+    : 'The PDF could not be saved. Try again, or pick another folder.';
 
 const leave = () => (router.canGoBack() ? router.back() : router.replace('/dashboard'));
 
@@ -102,12 +108,14 @@ export default function Reports() {
       toast(
         outcome.status === 'saved'
           ? `Saved ${outcome.name}.`
-          : outcome.status === 'printing'
-            ? 'Choose "Save as PDF" in the print window.'
-            : 'Cancelled. Nothing was saved.',
+          : outcome.status === 'shared'
+            ? `Done. If you picked a place, ${outcome.name} went there.`
+            : outcome.status === 'printing'
+              ? 'Choose "Save as PDF" in the print window.'
+              : 'Cancelled. Nothing was saved.',
       );
     } catch {
-      setError('The PDF could not be saved. Try again, or pick another folder.');
+      setError(SAVE_FAILED);
     } finally {
       setBusy(false);
     }

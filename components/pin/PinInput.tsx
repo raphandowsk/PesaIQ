@@ -27,6 +27,8 @@ export function PinInput({
       autoFocus
       editable={!disabled}
       autoComplete="off"
+      // iOS: no password suggestions above a PIN.
+      textContentType="none"
       importantForAutofill="no"
       accessibilityLabel={label}
       accessibilityState={{ disabled }}

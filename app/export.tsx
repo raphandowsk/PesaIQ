@@ -17,11 +17,17 @@ import { colors, fonts, MIN_TOUCH, radius, shadow, space } from '../theme';
 
 const leave = () => (router.canGoBack() ? router.back() : router.replace('/settings'));
 
-// Both are true to how the file is saved on each platform.
+// Each is true to how the file is saved on that platform.
 const SAVE_NOTE =
   Platform.OS === 'web'
     ? 'Export runs only when you tap the button. Your browser saves the file; nothing is sent anywhere.'
-    : 'Export runs only when you tap the button. You pick a folder on this device; nothing is sent anywhere.';
+    : Platform.OS === 'ios'
+      ? 'Export runs only when you tap the button. You choose where the file goes, such as Files, AirDrop or an app; PesaIQ sends nothing itself.'
+      : 'Export runs only when you tap the button. You pick a folder on this device; nothing is sent anywhere.';
+const SAVE_FAILED =
+  Platform.OS === 'ios'
+    ? 'The file could not be prepared. Try again.'
+    : 'The file could not be saved. Try again, or pick another folder.';
 
 /**
  * Export: choose a format and range, see exactly what will be written, then
@@ -51,10 +57,12 @@ export default function ExportData() {
       toast(
         outcome.status === 'saved'
           ? `Saved ${outcome.name}.`
-          : 'Export cancelled. Nothing was saved.',
+          : outcome.status === 'shared'
+            ? `Done. If you picked a place, ${outcome.name} went there.`
+            : 'Export cancelled. Nothing was saved.',
       );
     } catch {
-      setError('The file could not be saved. Try again, or pick another folder.');
+      setError(SAVE_FAILED);
     } finally {
       setBusy(false);
     }

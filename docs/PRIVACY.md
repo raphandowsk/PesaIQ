@@ -31,8 +31,10 @@ read on the phone, and none is sent to an AI (see "AI reading (paused)").
 - **Identifiers are masked** wherever displayed: `07** *** 678`, `**** 4312`.
 - **No analytics containing message content.**
 - **Export is user-initiated only.** Nothing is written without a tap. On Android
-  the user picks the folder; on the web the browser saves the file. PesaIQ itself
-  sends the file nowhere.
+  the user picks the folder; on iPhone the user chooses where it goes in the share
+  sheet; on the web the browser saves the file. PesaIQ itself sends the file
+  nowhere. On iPhone the temporary copy in the app's cache is deleted once the
+  share sheet closes.
 - **Exports carry what the app shows, no more.** Masked identifiers only, never
   source messages, and never the invented demo samples. Once saved, an export is
   outside PesaIQ: deleting data in the app does not delete a file already exported.
@@ -83,7 +85,8 @@ storage model above would not change: still local, still no upload by default.
 ## Reports (2026-09-12)
 
 - **A report PDF is made only when Save PDF is tapped.** On Android the user
-  picks the folder; on the web the browser's print window saves it. PesaIQ sends
+  picks the folder; on iPhone the user chooses in the share sheet; on the web the
+  browser's print window saves it. PesaIQ sends
   it nowhere.
 - **The PDF carries totals and categories only:** no names, phone or account
   numbers, references, LUKU tokens or message text.
